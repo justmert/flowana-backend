@@ -1,0 +1,10 @@
+[{
+    "name":"polkadot",
+    "update": true,
+    "crawl": true,
+    "crawler_tomls": [
+        "polkadot"
+    ]
+}
+
+]

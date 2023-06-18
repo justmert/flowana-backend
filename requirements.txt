@@ -1,0 +1,6 @@
+requests-cache==1.0.1
+requests==2.31.0
+firebase==3.0.1
+python-dotenv==0.16.0
+schedule==1.2.0
+pytest==7.3.1
