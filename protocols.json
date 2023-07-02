@@ -1,7 +1,7 @@
 [{
     "name":"polkadot",
     "update": true,
-    "crawl": true,
+    "crawl": false,
     "crawler_tomls": [
         "polkadot"
     ]
