@@ -121,7 +121,7 @@ class Actor():
     def github_rest_make_request(self, url, variables=None, max_page_fetch=float('inf')):
 
         url = f"{self.github_rest_endpoint}{url}"
-        result = None
+        result = []
 
         current_fetch_count = 0
         logger.info(f'[GET] fetching data from the url {url}')
@@ -140,17 +140,28 @@ class Actor():
                 continue
 
             elif response.status_code == 200:
+                json_response = response.json()
                 url = response.links.get("next", {}).get("url", None)
-                if max_page_fetch == 1 or url is None:
-                    return response.json()
+                if max_page_fetch == 1:
+                    return json_response
+                
 
-                if result is None:
-                    result = []
+                if isinstance(json_response, list):
+                    result.extend(json_response)
+                
+                else:
+                    result.append(json_response)
 
-                result.extend(response.json())
+                if url is None:
+                    logger.info(
+                        f' [.] No more pages to fetch. Fetched {current_fetch_count + 1} pages.')
+                    
+                    if current_fetch_count == 0:
+                        return json_response
+
                 current_fetch_count += 1
             else:
                 logger.error(
                     f" [-] Failed to retrieve from API. Status code: {response.status_code}")
-                return None
+                break
         return result
