@@ -1,4 +1,4 @@
-from request_actor import Actor
+from github_actor import GithubActor
 import logging
 import log_config
 import json
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class GithubWidgets():
 
-    def __init__(self, actor: Actor, collection_refs):
+    def __init__(self, actor: GithubActor, collection_refs):
         self.actor = actor
         self.collection_refs = collection_refs
         pass

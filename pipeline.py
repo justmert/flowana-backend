@@ -1,4 +1,4 @@
-from request_actor import Actor
+from github_actor import GithubActor
 import logging
 import log_config
 import json
@@ -8,23 +8,39 @@ import pandas as pd
 from datetime import timedelta
 from github_widgets import GithubWidgets
 from github_cumulative import GithubCumulative
+from discourse_widgets import DiscourseWidgets
+from discourse_actor import DiscourseActor
 logger = logging.getLogger(__name__)
 
 
 class Pipeline:
-    def __init__(self, app, db, actor: Actor):
+    def __init__(self, app, db, github_actor: GithubActor):
         self.app = app
         self.db = db
-        self.actor = actor
         self.repositories = []
+        self.github_actor = github_actor
         self.project_pipeline_functions = []
         self.collection_refs = {}
 
-    def contruct_pipeline(self, protocol_name, collection_refs):
+    def contruct_pipeline(self, protocol, collection_refs):
+        
+        self.protocol_name = protocol['name']
+
+        if protocol.get('forum', None):
+            logger.info(
+                f'Found forum configuration for protocol {self.protocol_name}.')
+            forum_base_url = protocol['forum'][:-1] if protocol['forum'].endswith(
+                '/') else protocol['forum']
+            self.discourse_actor = DiscourseActor(forum_base_url)
+            self.discourse_widgets = DiscourseWidgets(self.discourse_actor, collection_refs)
+            self.protocol_discourse_functions = [
+                self.discourse_widgets.categories
+            ]
+
+
         self.collection_refs = collection_refs
-        self.protocol_name = protocol_name
         repositories_ref_stream = self.db.collection(
-            f'{protocol_name}-projects').stream()
+            f'{self.protocol_name}-projects').stream()
 
         self.repositories = []
 
@@ -33,10 +49,10 @@ class Pipeline:
             self.repositories.append(repository.to_dict())
 
         logger.info(
-            f'Found {len(self.repositories)} repositories for protocol {protocol_name} to be updated.')
+            f'Found {len(self.repositories)} repositories for protocol {self.protocol_name} to be updated.')
 
-        self.github_widgets = GithubWidgets(self.actor, collection_refs)
-        self.github_cumulative = GithubCumulative(self.actor, collection_refs)
+        self.github_widgets = GithubWidgets(self.github_actor, collection_refs)
+        self.github_cumulative = GithubCumulative(self.github_actor, collection_refs)
 
         self.project_pipeline_functions = [
 
@@ -66,8 +82,8 @@ class Pipeline:
             self.github_widgets.recent_releases,
         ]
 
-        self.cumulative_functions = [
-            self.github_cumulative.cumulative_repository_stats,
+        self.protocol_github_functions = [
+            self.github_cumulative.cumulative_stats,
             self.github_cumulative.cumulative_commit_activity,
             self.github_cumulative.cumulative_code_frequency,
             self.github_cumulative.cumulative_participation,
@@ -91,17 +107,40 @@ class Pipeline:
             self.github_cumulative.cumulative_recent_releases
         ]
 
-    def run_pipeline(self):
+
+    def run_pipelines(self):
+        # self.run_project_github_pipeline()
+        # self.run_protocol_pipeline(self.protocol_github_functions)
+        print('---')
+        self.run_protocol_pipeline(self.protocol_discourse_functions)
+        print('2---')
+
+
+
+
+    def run_protocol_pipeline(self, protocol_pipeline):
+        for item in protocol_pipeline:
+            if isinstance(item, tuple) or isinstance(item, list):
+                logging.info(
+                    f'[*] Running cumulative github function: {item[0].__name__}')
+                if len(item) == 1:
+                    func = item[0]
+                    func()
+                else:
+                    func, args = item
+                    func(**args)
+            else:
+                logging.info(
+                    f'[*] Running cumulative github function: {item.__name__}')
+                item()
+
+    def run_project_github_pipeline(self):
         # for repository in self.repositories:
         for repository in [
-            #     {'owner': 'lensterxyz', 'repo': 'lenster'},
-            #    {'owner': 'lenstube-xyz', 'repo': 'lenstube'},
-            #    {'owner': 'lens-protocol', 'repo': 'core'},
-            #    {'owner': 'SendACoin', 'repo': 'sendacoin.to'},
             {'owner': 'justmert', 'repo': 'test'}
         ]:
 
-            is_valid = self.actor.check_repo_validity(
+            is_valid = self.github_actor.check_repo_validity(
                 repository['owner'], repository['repo'])
             if not is_valid:
                 logger.info(
@@ -137,17 +176,3 @@ class Pipeline:
             logger.info(
                 f'Finished running pipeline for repository {repository["owner"]}/{repository["repo"]}')
 
-        for item in self.cumulative_functions:
-            if isinstance(item, tuple) or isinstance(item, list):
-                logging.info(
-                    f'[*] Running cumulative function: {item[0].__name__}')
-                if len(item) == 1:
-                    func = item[0]
-                    func()
-                else:
-                    func, args = item
-                    func(**args)
-            else:
-                logging.info(
-                    f'[*] Running cumulative function: {item.__name__}')
-                item()

@@ -7,7 +7,8 @@ import os
 import json
 import pyfiglet
 from requests_cache import CachedSession
-from request_actor import Actor
+from github_actor import GithubActor
+from discourse_actor import DiscourseActor
 from crawler import Crawler
 import requests
 import api
@@ -28,7 +29,7 @@ class Flowana():
 
     @property
     def get_actor(self):
-        return self.actor
+        return self.github_actor
 
     def __init__(self):
         ascii_banner = pyfiglet.figlet_format("Flowana")
@@ -51,9 +52,11 @@ class Flowana():
             self.protocols = json.load(f)
 
         self.session = CachedSession('session', backend='sqlite', expire_after=timedelta(days=30))
-        self.actor = Actor(self.session) # do not need caching actor for crawler
-        self.crawler = Crawler(self.app, self.db, self.actor) 
-        self.pipeline = Pipeline(self.app, self.db, self.actor)        
+        self.github_actor = GithubActor(self.session) # do not need caching actor for crawler
+
+
+        self.crawler = Crawler(self.app, self.db, self.github_actor) 
+        self.pipeline = Pipeline(self.app, self.db, self.github_actor)        
         logger.info(f"Loaded protocols {','.join([protocol['name'].upper() for protocol in self.protocols])}.")
 
 
@@ -73,7 +76,9 @@ class Flowana():
         for protocol in self.protocols:
             collection_refs = {'projects': self.db.collection(f'{protocol["name"]}-projects'),
                                 'widgets': self.db.collection(f'{protocol["name"]}-widgets'), 
-                                'cumulative': self.db.collection(f'{protocol["name"]}-cumulative')}
+                                'cumulative': self.db.collection(f'{protocol["name"]}-cumulative'),
+                                'discourse': self.db.collection(f'{protocol["name"]}-discourse')
+                                }
 
             # Create the collections if they don't exist
             [self.check_collection(collection_ref) for collection_ref in collection_refs.values()]
@@ -82,8 +87,8 @@ class Flowana():
                 self.session.cache.clear()
 
             if protocol['update'] == True:
-                self.run_protocol_update(protocol['name'], collection_refs)
-            
+                self.run_protocol_update(protocol, collection_refs)
+
             self.session.cache.clear()
             # Delete the dummy documents
             [self.delete_dummy_docs(collection_ref) for collection_ref in collection_refs.values()]
@@ -92,9 +97,11 @@ class Flowana():
         logger.info(f"Crawling protocol {protocol_name} with [{','.join(tomls)}]] tomls.")
         self.crawler.run(protocol_name, tomls)
 
-    def run_protocol_update(self, protocol_name, collection_refs):
+    def run_protocol_update(self, protocol, collection_refs):
+        protocol_name = protocol['name']
         logger.info(f"Updating protocol {protocol_name}")
         ascii_banner = pyfiglet.figlet_format(protocol_name)
         print(ascii_banner)
-        self.pipeline.contruct_pipeline(protocol_name, collection_refs)
-        self.pipeline.run_pipeline()
+
+        self.pipeline.contruct_pipeline(protocol, collection_refs)
+        self.pipeline.run_pipelines()

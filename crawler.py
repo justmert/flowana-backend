@@ -6,13 +6,13 @@ import toml
 import requests
 import logging
 import log_config
-from request_actor import Actor
+from github_actor import GithubActor
 
 logger = logging.getLogger(__name__)
 
 
 class Crawler:
-    def __init__(self, app, db, actor: Actor):
+    def __init__(self, app, db, actor: GithubActor):
         self.base_url = 'https://raw.githubusercontent.com/electric-capital/crypto-ecosystems/master/data/ecosystems/'
         self.app = app
         self.db = db

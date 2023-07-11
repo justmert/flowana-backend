@@ -4,7 +4,8 @@
     "crawl": false,
     "crawler_tomls": [
         "polkadot"
-    ]
+    ],
+    "forum": "https://forum.polkadot.network/"
 }
 
 ]

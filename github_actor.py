@@ -9,7 +9,7 @@ import log_config
 
 logger = logging.getLogger(__name__)
 
-class Actor():
+class GithubActor():
 
     @property
     def get_session(self):

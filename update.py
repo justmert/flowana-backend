@@ -1,5 +1,5 @@
 import json
-from request_actor import Actor
+from github_actor import GithubActor
 from datetime import datetime
 # import pandas as pd
 # from collections import defaultdict
@@ -25,7 +25,7 @@ class Update:
         # - overall_collection_ref: A reference to the collection in the Firestore database containing overall data about the ecosystem.
         # - all_repo_names: A list of all repository names in the ecosystem.
 
-        self.make_request = Actor()
+        self.make_request = GithubActor()
         self.data = {}
         self.collection_index = 0
 
