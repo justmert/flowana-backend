@@ -56,25 +56,8 @@ class DiscourseActor():
 
             elif response.status_code == 200:
                 json_response = response.json()
-                url = response.links.get("next", {}).get("url", None)
-                if max_page_fetch == 1:
-                    return json_response
-                
+                return json_response
 
-                if isinstance(json_response, list):
-                    result.extend(json_response)
-                
-                else:
-                    result.append(json_response)
-
-                if url is None:
-                    logger.info(
-                        f' [.] No more pages to fetch. Fetched {current_fetch_count + 1} pages.')
-                    
-                    if current_fetch_count == 0:
-                        return json_response
-
-                current_fetch_count += 1
             else:
                 logger.error(
                     f" [-] Failed to retrieve from API. Status code: {response.status_code}")
