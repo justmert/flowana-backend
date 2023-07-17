@@ -35,14 +35,13 @@ class Pipeline:
             self.discourse_widgets = DiscourseWidgets(self.discourse_actor, collection_refs)
             self.protocol_discourse_functions = [
                 self.discourse_widgets.topics,
-                # self.discourse_widgets.users,
-                # self.discourse_widgets.posts,
-                # self.discourse_widgets.categories,
+                self.discourse_widgets.users,
+                self.discourse_widgets.categories,
                 self.discourse_widgets.tags,
-                # self.discourse_widgets.top_topics,
-                # self.discourse_widgets.latest_topics,
-                # self.discourse_widgets.latest_posts,
-                # self.discourse_widgets.top_users,
+                self.discourse_widgets.top_topics,
+                self.discourse_widgets.latest_topics,
+                self.discourse_widgets.latest_posts,
+                self.discourse_widgets.top_users,
             ]
 
 

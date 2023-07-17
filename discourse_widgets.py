@@ -79,23 +79,10 @@ class DiscourseWidgets():
                 f'[#invalid] No topics for protocol ')
             return
 
-        # Convert dictionary to pandas dataframe
-        # df = pd.DataFrame(list(date_and_count.items()), columns=['Date', 'Count'])
-        # df['Date'] = pd.to_datetime(df['Date'])
-
-        # # Set the date as index
-        # df.set_index('Date', inplace=True)
-
-        # # Aggregate the data to different time intervals
-        # yearly_data = df.resample('Y').sum()
-        # monthly_data = df.resample('M').sum()
-        # weekly_data = df.resample('W').sum()
-        # daily_data = df.resample('D').sum()
-
         self.collection_refs['discourse'].document(
             'topic_activity').set({'data': date_and_count})
 
-        self.collection_refs['discourse'].document('topic_metrics').set({'data': {
+        data = {
             'total_topics': total_topics,
             'total_posts': total_posts,
             'total_replies': total_replies,
@@ -105,7 +92,13 @@ class DiscourseWidgets():
             'average_replies_per_topic': average_replies_per_topic,
             'average_views_per_topic': average_views_per_topic,
             'average_likes_per_topic': average_likes_per_topic
-        }})
+        }
+
+        for k,v in data.items():
+            if isinstance(v, float):
+                data[k] = round(v, 2)
+
+        self.collection_refs['discourse'].document('topic_metrics').set({'data': data})
 
     def users(self, **kwargs):
 
@@ -164,8 +157,7 @@ class DiscourseWidgets():
         users_average_posts_read = users_total_posts_read / total_users
         users_average_days_visited = users_total_days_visited / total_users
 
-        self.collection_refs['discourse'].document(
-            f'user_metrics').set({'data': {
+        data = {
                 'total_users': total_users,
                 'users_total_likes_received': users_total_likes_received,
                 'users_total_likes_given': users_total_likes_given,
@@ -181,7 +173,14 @@ class DiscourseWidgets():
                 'users_average_post_count': users_average_post_count,
                 'users_average_posts_read': users_average_posts_read,
                 'users_average_days_visited': users_average_days_visited
-            }})
+            }
+
+        for k,v in data.items():
+            if isinstance(v, float):
+                data[k] = round(v, 2)
+
+        self.collection_refs['discourse'].document(
+            f'user_metrics').set({'data': data})
 
     def categories(self, **kwargs):
         # formatting will be in frontend
@@ -292,7 +291,7 @@ class DiscourseWidgets():
                     break
 
         self.collection_refs['discourse'].document(
-            'tags').set({'data': topics})
+            'top_topics').set({'data': topics})
 
     def latest_topics(self, **kwargs):
 
