@@ -54,7 +54,12 @@ class Crawler:
                             "owner": owner,
                             "repo": repo_name,
                             "description": data['description'],
-                            "topics": data['topics']
+                            "topics": data['topics'],
+                            "url": data['html_url'],
+                            "stars": data['stargazers_count'],
+                            "avatar_url": data['owner']['avatar_url'],
+                            "created_at": data['created_at'],
+                            "updated_at": data['updated_at'],
                         }
                     )
                     logger.info(

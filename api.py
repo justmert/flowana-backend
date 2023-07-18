@@ -53,6 +53,10 @@ tags_metadata = [
         "description": "Discourse (Forum) related endpoints for ecosystem"
     },
     {
+        "name": "Developers - Ecosystem",
+        "description": "Developer related endpoints for ecosystem"
+    },
+    {
         "name": "Auth",
         "description": "Authentication related endpoints"
     }
@@ -246,27 +250,50 @@ async def test_auth():
                  "description": "Repository information",
                  "content": {
                      "application/json": {
-                         "example": [
-                             {
-                                 "commit_comment_count": 0,
-                                 "created_at": "2022-10-21T11:05:51Z",
-                                 "default_branch_commit_count": 26,
-                                 "description": "Swiss Army Knife for the IPFS",
-                                 "disk_usage": 41555,
-                                 "environment_count": 0,
-                                 "fork_count": 0,
-                                 "is_archived": False,
-                                 "is_empty": False,
-                                 "is_fork": False,
-                                 "issue_count": 0,
-                                 "owner_avatar_url": "https://avatars.githubusercontent.com/u/37740842?u=6fc366c4ce246b26178d89302c061bb0d4089a99&v=4",
-                                 "owner_login": "justmert",
-                                 "primary_language_color": "#f1e05a",
-                                 "primary_language_name": "JavaScript",
-                                 "pull_request_count": 0,
-                                 "release_count": 0,
-                                 "stargazer_count": 2}
-                         ]
+                         "example": {
+                             "fork_count": 1207,
+                             "is_fork": False,
+                             "watcher_count": 102,
+                             "issue_count": 1122,
+                             "commit_comment_count": 4645,
+                             "release_count": 15,
+                             "owner_avatar_url": "https://avatars.githubusercontent.com/u/103585522?v=4",
+                             "topics": [
+                                 "web3",
+                                 "blockchain",
+                                 "graphql",
+                                 "hacktoberfest",
+                                 "nextjs",
+                                 "react",
+                                 "social-media",
+                                 "typescript",
+                                 "arweave",
+                                 "ipfs",
+                                 "lens-protocol",
+                                 "polygon",
+                                 "turborepo",
+                                 "tailwindcss",
+                                 "wagmi",
+                                 "dapp",
+                                 "playwright"
+                             ],
+                             "pull_request_count": 2107,
+                             "created_at": "2022-03-19T15:01:46Z",
+                             "description": "Lenster is a decentralized and permissionless social media app built with Lens Protocol 🌿",
+                             "owner_login": "lensterxyz",
+                             "primary_language_color": "#3178c6",
+                             "stargazer_count": 20601,
+                             "environment_count": 8,
+                             "primary_language_name": "TypeScript",
+                             "url": "https://github.com/lensterxyz/lenster",
+                             "default_branch_commit_count": 6405,
+                             "is_archived": False,
+                             "updated_at": "2023-07-18T12:39:12Z",
+                             "disk_usage": 30200,
+                             "is_empty": False,
+                             "owner": "lensterxyz",
+                             "repo": "lenster"
+                         }
                      }
                  }
              },
@@ -326,6 +353,7 @@ def repository_info(
         raise HTTPException(
             status_code=204, detail="Content is empty.")
 
+    data.update({"owner": owner, "repo": repo})
     return data
 
 
@@ -422,7 +450,7 @@ def commit_activity(
                  "content": {
                      "application/json": {
                          "example": {
-                             "xAxis": {"type": "category"},
+                             "xAxis": {"type": "category", 'data': ["2022-07-26", "2022-08-02", "2022-08-09"]},
                              "yAxis": {"type": "value"},
                              "series": [{"name": "All", "data": [3, 5, 7], "type": "line"},
                                         {"name": "Owners", "data": [
@@ -471,6 +499,78 @@ def participation(
     try:
         ref = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
             field_paths=['participation']).to_dict()
+
+        if ref is None:
+            raise exceptions.NotFound('Collection or document not found')
+
+    except exceptions.NotFound as ex:
+        # Handle case where document or collection does not exist
+        raise HTTPException(
+            status_code=404, detail=str(ex))
+
+    except Exception as e:
+        # Handle other exceptions
+        raise HTTPException(
+            status_code=500, detail=f"An error occurred {str(e)}")
+
+    data = ref.get('participation', None)
+    if not data:
+        raise HTTPException(
+            status_code=204, detail="Content is empty.")
+
+    return data
+
+
+@app.get("/protocols/{protocol_name}/participation_count", dependencies=[Depends(get_current_user)],
+         tags=["Github - Project"],
+
+         responses={
+             200: {
+                 "description": "Participation Count",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             'owner': 24,
+                             'all': 12,
+                         }
+                     }
+                 }
+             },
+
+             204: {
+                 "description": "No content found",
+                 "content": {
+                     "application/json": {
+                         "example": None
+                     }
+                 }
+             },
+
+             404: {
+                 "description": "Not found",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                                "error": "Error description"
+                         }
+                     }
+                 }
+             },
+}
+)
+def participation_count(
+    protocol_name: str = Path(..., description="Protocol name"),
+    owner: str = Query(..., description="Project owner name"),
+    repo: str = Query(..., description="Project repository name"),
+):
+    """
+    Returns the participation count data of last 52 weeks for the owner and all.
+
+    """
+
+    try:
+        ref = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
+            field_paths=['participation_count']).to_dict()
 
         if ref is None:
             raise exceptions.NotFound('Collection or document not found')
@@ -653,6 +753,114 @@ def punch_card(
             status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get('punch_card', None)
+    if not data:
+        raise HTTPException(
+            status_code=204, detail="Content is empty.")
+
+    return data
+
+
+@app.get("/protocols/{protocol_name}/contributors",
+         dependencies=[Depends(get_current_user)],
+         tags=["Github - Project"],
+
+         responses={
+             200: {
+                 "description": "Contributors",
+                 "content": {
+                     "application/json": {
+                         "example":	{
+                             "total": 4617,
+                             "weeks": [
+                                 {
+                                     "w": 1647129600,
+                                     "a": 20478,
+                                     "d": 656,
+                                     "c": 82
+                                 },
+                             ],
+                             "author": {
+                                 "login": "bigint",
+                                 "id": 69431456,
+                                 "node_id": "MDQ6VXNlcjY5NDMxNDU2",
+                                 "avatar_url": "https://avatars.githubusercontent.com/u/69431456?v=4",
+                                 "gravatar_id": "",
+                                 "url": "https://api.github.com/users/bigint",
+                                 "html_url": "https://github.com/bigint",
+                                 "followers_url": "https://api.github.com/users/bigint/followers",
+                                 "following_url": "https://api.github.com/users/bigint/following{/other_user}",
+                                 "gists_url": "https://api.github.com/users/bigint/gists{/gist_id}",
+                                 "starred_url": "https://api.github.com/users/bigint/starred{/owner}{/repo}",
+                                 "subscriptions_url": "https://api.github.com/users/bigint/subscriptions",
+                                 "organizations_url": "https://api.github.com/users/bigint/orgs",
+                                 "repos_url": "https://api.github.com/users/bigint/repos",
+                                 "events_url": "https://api.github.com/users/bigint/events{/privacy}",
+                                 "received_events_url": "https://api.github.com/users/bigint/received_events",
+                                 "type": "User",
+                                 "site_admin": False
+                             }
+                         }
+
+                     }
+                 }
+             },
+
+             204: {
+                 "description": "No content found",
+                 "content": {
+                     "application/json": {
+                         "example": None
+                     }
+                 }
+             },
+
+             404: {
+                 "description": "Not found",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                                "error": "Error description"
+                         }
+                     }
+                 }
+             },
+         }
+         )
+def contributors(
+    protocol_name: str = Path(..., description="Protocol name"),
+    owner: str = Query(..., description="Project owner name"),
+    repo: str = Query(..., description="Project repository name"),
+):
+    """
+        Returns the total number of commits authored by the contributor. In addition, the response includes a Weekly Hash (weeks array) with the following information:
+
+        * w - Start of the week, given as a Unix timestamp.
+        * a - Number of additions
+        * d - Number of deletions
+        * c - Number of commits
+
+
+    **_NOTE:_**  Wrapper for [stats/contributors](https://docs.github.com/en/rest/metrics/statistics?apiVersion=2022-11-28#get-all-contributor-commit-activity) endpoint.
+    """
+
+    try:
+        ref = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
+            field_paths=['contributors']).to_dict()
+
+        if ref is None:
+            raise exceptions.NotFound('Collection or document not found')
+
+    except exceptions.NotFound as ex:
+        # Handle case where document or collection does not exist
+        raise HTTPException(
+            status_code=404, detail=str(ex))
+
+    except Exception as e:
+        # Handle other exceptions
+        raise HTTPException(
+            status_code=500, detail=f"An error occurred {str(e)}")
+
+    data = ref.get('contributors', None)
     if not data:
         raise HTTPException(
             status_code=204, detail="Content is empty.")
@@ -1121,6 +1329,7 @@ class RecentIssuesOrder(str, Enum):
                              "created_at": "2023-07-03T20:37:49Z",
                              "number": 3213,
                              "state": "OPEN",
+                             "url": "https://www.github.com/lensterxyz/lenster/issues/3213",
                              "title": "CONNECTOR NOT FOUND",
                              "updated_at": "2023-07-03T23:28:53Z",
                              "owner": "lensterxyz",
@@ -1164,9 +1373,15 @@ def recent_issues(
         protocol_name (str): Protocol name.
         owner (str): Project owner name.
         repo (str): Project repository name.
-        order_by (RecentIssuesOrder): Field by which to order the issues. Can be one of the following values: CREATED_AT, UPDATED_AT.
+        order_by (RecentIssuesOrder): Field by which to order the issues. Can be one of the following values: created_at, updated_at.
     """
-    field_name = f'recent_{order_by.value}_issues'
+
+    field_name = None
+    if order_by == RecentIssuesOrder.created_at:
+        field_name = 'recent_created_issues'
+
+    elif order_by == RecentIssuesOrder.updated_at:
+        field_name = f'recent_updated_issues'
 
     try:
         collection_ref = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
@@ -1215,6 +1430,7 @@ class RecentPullRequestOrder(str, Enum):
                              "created_at": "2023-07-03T18:03:24Z",
                              "number": 3212,
                              "state": "OPEN",
+                             "url": "https://www.github.com/lensterxyz/lenster/pull/3212",
                              "title": "chore: update dependencies 📦",
                              "updated_at": "2023-07-04T05:28:28Z",
                              "owner": "lensterxyz",
@@ -1258,7 +1474,12 @@ def recent_pull_requests(
 
     """
 
-    field_name = f'recent_{order_by}_pull_requests'
+    field_name = None
+    if order_by == RecentPullRequestOrder.created_at:
+        field_name = 'recent_created_pull_requests'
+
+    elif order_by == RecentPullRequestOrder.updated_at:
+        field_name = f'recent_updated_pull_requests'
 
     try:
         collection_ref = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
@@ -1362,6 +1583,314 @@ def recent_stargazing_activity(
             status_code=204, detail="Content is empty.")
 
     return data
+
+
+class IssueActivityInterval(str, Enum):
+    week = 'week'
+    month = 'month'
+    year = 'year'
+
+
+@app.get("/protocols/{protocol_name}/issue-activity", tags=["Github - Project"], dependencies=[Depends(get_current_user)],
+         responses={
+    200: {
+        "description": "Issue activity",
+        "content": {
+            "application/json": {
+                "example": {
+                    "xAxis": {
+                        "data": [
+                            "2022-12-31",
+                            "2023-12-31"
+                        ]
+                    },
+                    "series": [
+                        {
+                            "name": "New",
+                            "data": [
+                                442,
+                                680
+                            ]
+                        },
+                        {
+                            "name": "Closed",
+                            "data": [
+                                331,
+                                638
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    },
+
+    204: {
+        "description": "No content found",
+        "content": {
+            "application/json": {
+                "example": None
+            }
+        }
+    },
+
+    404: {
+        "description": "Not found",
+        "content": {
+            "application/json": {
+                "example": {
+                    "error": "Error description"
+                }
+            }
+        }
+    },
+}
+
+)
+def issue_activity(
+    protocol_name: str = Path(..., description="Protocol name"),
+    owner: str = Query(..., description="Project owner name"),
+    repo: str = Query(..., description="Project repository name"),
+    interval: IssueActivityInterval = Query(..., description="Interval"),
+):
+    """
+        Returns the issue activity in Apache e-chart format based on interval. 
+
+
+        It gives answers to questions like 'How many issues were opened and closed in specified interval?'.
+    """
+
+    try:
+        ref = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
+            field_paths=['issue_activity']).to_dict()
+
+        if ref is None:
+            raise exceptions.NotFound('Collection or document not found')
+
+    except exceptions.NotFound as ex:
+        # Handle case where document or collection does not exist
+        raise HTTPException(
+            status_code=404, detail=str(ex))
+
+    except Exception as e:
+        # Handle other exceptions
+        raise HTTPException(
+            status_code=500, detail=f"An error occurred {str(e)}")
+
+    data = ref.get('issue_activity', None)
+    if not data:
+        raise HTTPException(
+            status_code=204, detail="Content is empty.")
+
+    # process here
+    try:
+        # Process data
+        issues_df = pd.DataFrame(data)
+
+        # Convert createdAt and closedAt to datetime format
+        issues_df['createdAt'] = pd.to_datetime(issues_df['createdAt'])
+        issues_df['closedAt'] = pd.to_datetime(issues_df['closedAt'])
+
+        pd_interval = None
+        if interval.value == 'week':
+            pd_interval = 'W'
+
+        elif interval.value == 'month':
+            pd_interval = 'M'
+
+        elif interval.value == 'year':
+            pd_interval = 'Y'
+
+        # Group by date and count new and closed issues separately
+        new_issues = issues_df.resample(pd_interval, on='createdAt').size()
+        closed_issues = issues_df[issues_df['closed']].resample(
+            pd_interval, on='closedAt').size()
+
+        # Ensure new_issues and closed_issues have the same index
+        all_dates = new_issues.index.union(closed_issues.index)
+        new_issues = new_issues.reindex(all_dates, fill_value=0)
+        closed_issues = closed_issues.reindex(all_dates, fill_value=0)
+
+        # Convert data to ECharts format
+        dates = all_dates.strftime('%Y-%m-%d').tolist()
+        echart_data = {
+            'xAxis': {
+                'data': dates
+            },
+            'series': [
+                {
+                    'name': 'Opened',
+                    'data': new_issues.tolist()
+                },
+                {
+                    'name': 'Closed',
+                    'data': closed_issues.tolist()
+                }
+            ]
+        }
+
+    except Exception as e:
+        # Handle exceptions during data processing
+        raise HTTPException(
+            status_code=500, detail=f"An error occurred during data processing: {str(e)}")
+
+    return echart_data
+
+
+class PullRequestActivityInterval(str, Enum):
+    week = 'week'
+    month = 'month'
+    year = 'year'
+
+
+@app.get("/protocols/{protocol_name}/pull-request-activity", tags=["Github - Project"], dependencies=[Depends(get_current_user)],
+         responses={
+    200: {
+        "description": "Pull request activity",
+        "content": {
+            "application/json": {
+                "example": {
+                    "xAxis": {
+                        "data": [
+                            "2022-12-31",
+                            "2023-12-31"
+                        ]
+                    },
+                    "series": [
+                        {
+                            "name": "New",
+                            "data": [
+                                442,
+                                680
+                            ]
+                        },
+                        {
+                            "name": "Closed",
+                            "data": [
+                                331,
+                                638
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    },
+
+    204: {
+        "description": "No content found",
+        "content": {
+            "application/json": {
+                "example": None
+            }
+        }
+    },
+
+    404: {
+        "description": "Not found",
+        "content": {
+            "application/json": {
+                "example": {
+                    "error": "Error description"
+                }
+            }
+        }
+    },
+}
+
+)
+def pull_request_activity(
+    protocol_name: str = Path(..., description="Protocol name"),
+    owner: str = Query(..., description="Project owner name"),
+    repo: str = Query(..., description="Project repository name"),
+    interval: PullRequestActivityInterval = Query(..., description="Interval"),
+):
+    """
+        Returns the pull request activity in Apache e-chart format based on interval. 
+
+
+        It gives answers to questions like 'How many pull requests were opened and closed in specified interval?'.
+    """
+
+    try:
+        ref = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
+            field_paths=['pull_request_activity']).to_dict()
+
+        if ref is None:
+            raise exceptions.NotFound('Collection or document not found')
+
+    except exceptions.NotFound as ex:
+        # Handle case where document or collection does not exist
+        raise HTTPException(
+            status_code=404, detail=str(ex))
+
+    except Exception as e:
+        # Handle other exceptions
+        raise HTTPException(
+            status_code=500, detail=f"An error occurred {str(e)}")
+
+    data = ref.get('pull_request_activity', None)
+    if not data:
+        raise HTTPException(
+            status_code=204, detail="Content is empty.")
+
+    # process here
+    try:
+        # Process data
+        pull_requests_df = pd.DataFrame(data)
+
+        # Convert createdAt and closedAt to datetime format
+        pull_requests_df['createdAt'] = pd.to_datetime(
+            pull_requests_df['createdAt'])
+        pull_requests_df['closedAt'] = pd.to_datetime(
+            pull_requests_df['closedAt'])
+
+        pd_interval = None
+        if interval.value == 'week':
+            pd_interval = 'W'
+
+        elif interval.value == 'month':
+            pd_interval = 'M'
+
+        elif interval.value == 'year':
+            pd_interval = 'Y'
+
+        # Group by date and count new and closed issues separately
+        new_pull_requests = pull_requests_df.resample(
+            pd_interval, on='createdAt').size()
+        closed_pull_requests = pull_requests_df[pull_requests_df['closed']].resample(
+            pd_interval, on='closedAt').size()
+
+        # Ensure new_issues and closed_issues have the same index
+        all_dates = new_pull_requests.index.union(closed_pull_requests.index)
+        new_pull_requests = new_pull_requests.reindex(all_dates, fill_value=0)
+        closed_pull_requests = closed_pull_requests.reindex(
+            all_dates, fill_value=0)
+
+        # Convert data to ECharts format
+        dates = all_dates.strftime('%Y-%m-%d').tolist()
+        echart_data = {
+            'xAxis': {
+                'data': dates
+            },
+            'series': [
+                {
+                    'name': 'Opened',
+                    'data': new_pull_requests.tolist()
+                },
+                {
+                    'name': 'Closed',
+                    'data': closed_pull_requests.tolist()
+                }
+            ]
+        }
+
+    except Exception as e:
+        # Handle exceptions during data processing
+        raise HTTPException(
+            status_code=500, detail=f"An error occurred during data processing: {str(e)}")
+
+    return echart_data
 
 
 @app.get("/protocols/{protocol_name}/recent-commits", dependencies=[Depends(get_current_user)],
@@ -1493,8 +2022,7 @@ def recent_releases(
     repo: str = Query(..., description="Project repository name"),
 ):
     """
-    Returns the recent commits for the repository. The author is selected as the one who has committed the code. Is the author is not available, then the committer is selected.
-
+    Returns the recent releases for the repository.
 
     """
 
@@ -1515,16 +2043,16 @@ def recent_releases(
         raise HTTPException(
             status_code=500, detail=f"An error occurred {str(e)}")
 
-    data = ref.get('recent_releases ', None)
+    data = ref.get('recent_releases', None)
     if not data:
         raise HTTPException(
             status_code=204, detail="Content is empty.")
 
-    return data
+    return data[-10:]
 
 
 @app.get("/protocols/{protocol_name}/cumulative-stats", dependencies=[Depends(get_current_user)],
-         tags=["Github - Project"],
+         tags=["Github - Ecosystem"],
 
          responses={
              200: {
@@ -2276,10 +2804,16 @@ def cumulative_recent_issues(
     """
     Returns the cumulative recent issues for the protocol.
 
-    `order_by` can be one of the following values: CREATED_AT, UPDATED_AT
+    `order_by` can be one of the following values: created_at, updated_at
 
     """
-    field_name = f"recent_{order_by}_issues"
+
+    field_name = None
+    if order_by == RecentIssuesOrder.created_at:
+        field_name = 'recent_created_issues'
+
+    elif order_by == RecentIssuesOrder.updated_at:
+        field_name = f'recent_updated_issues'
 
     try:
         ref = db.collection(f'{protocol_name}-cumulative').document(f'cumulative_{field_name}').get(
@@ -2360,11 +2894,16 @@ def cumulative_recent_pull_requests(
     """
     Returns the cumulative recent pull requests for the protocol.
 
-    `order_by` can be one of the following values: CREATED_AT, UPDATED_AT
+    `order_by` can be one of the following values: created_at, updated_at
 
     """
 
-    field_name = f"recent_{order_by}_pull_requests"
+    field_name = None
+    if order_by == RecentIssuesOrder.created_at:
+        field_name = 'recent_created_pull_requests'
+
+    elif order_by == RecentIssuesOrder.updated_at:
+        field_name = f'recent_updated_pull_requests'
 
     try:
         ref = db.collection(f'{protocol_name}-cumulative').document(f'cumulative_{field_name}').get(
@@ -3255,7 +3794,7 @@ def discourse_latest_topics(
 @app.get("/protocols/{protocol_name}/discourse-latest-posts",
          tags=["Discourse - Ecosystem"],
 
-         # dependencies=[Depends(get_current_user)],
+         dependencies=[Depends(get_current_user)],
          responses={
              200: {
                  "description": "Discourse Latest Posts",
@@ -3347,6 +3886,7 @@ class TopUsersInterval(str, Enum):
     weekly = "weekly"
     daily = "daily"
 
+
 class TopUsersOrder(str, Enum):
     likes_received = "likes_received"
     likes_given = "likes_given"
@@ -3358,7 +3898,7 @@ class TopUsersOrder(str, Enum):
 
 
 @app.get("/protocols/{protocol_name}/discourse-top-users",
-                     tags=["Discourse - Ecosystem"],
+         tags=["Discourse - Ecosystem"],
          dependencies=[Depends(get_current_user)],
          responses={
              200: {
@@ -3462,7 +4002,7 @@ def discourse_top_users(
     if not interval_data:
         raise HTTPException(
             status_code=204, detail="Content is empty.")
-    
+
     order_data = None
     if order == TopUsersOrder.likes_received:
         order_data = interval_data['likes_received']
@@ -3488,8 +4028,706 @@ def discourse_top_users(
     if not order_data:
         raise HTTPException(
             status_code=204, detail="Content is empty.")
-    
+
     return order_data
 
 
-        
+@app.get("/protocols/{protocol_name}/developers-full-time",
+         tags=["Developers - Ecosystem"],
+         dependencies=[Depends(get_current_user)],
+         responses={
+             200: {
+                 "description": "Full Time",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             'count': 56,
+                             'subtitle': "AS OF JUN-01-2023",
+                             'title': "FULL-TIME DEVS"
+                         }
+                     }
+                 }
+             },
+
+             204: {
+                 "description": "No content found.",
+                 "content": {
+                     "application/json": {
+                         "example": None
+                     }
+                 }
+             },
+
+             404: {
+                 "description": "Not found",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                                "error": "Error description"
+                         }
+                     }
+                 }
+             },
+         }
+         )
+def developers_full_time(
+    protocol_name: str = Path(..., description="Protocol name"),
+):
+    """
+    Returns the number of developers working full time on the protocol.
+
+    """
+
+    try:
+        ref = db.collection(f'{protocol_name}-developers').document(f'full_time').get(
+            field_paths=['data']).to_dict()
+
+        if ref is None:
+            raise exceptions.NotFound('Collection or document not found')
+
+    except exceptions.NotFound as ex:
+        # Handle case where document or collection does not exist
+        raise HTTPException(
+            status_code=404, detail=str(ex))
+
+    except Exception as e:
+        # Handle other exceptions
+        raise HTTPException(
+            status_code=500, detail=f"An error occurred {str(e)}")
+
+    data = ref.get('data', None)
+    if not data:
+        raise HTTPException(
+            status_code=204, detail="Content is empty.")
+
+    return data
+
+
+@app.get("/protocols/{protocol_name}/developers-monthly-active-devs",
+         tags=["Developers - Ecosystem"],
+         dependencies=[Depends(get_current_user)],
+         responses={
+             200: {
+                 "description": "Monthly Active Devs",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             'count': 203,
+                             'subtitle': "AS OF JUN-01-2023",
+                             'title': "MONTHLY ACTIVE DEVS"
+                         }
+                     }
+                 }
+             },
+
+             204: {
+                 "description": "No content found.",
+                 "content": {
+                     "application/json": {
+                         "example": None
+                     }
+                 }
+             },
+
+             404: {
+                 "description": "Not found",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                                "error": "Error description"
+                         }
+                     }
+                 }
+             },
+         }
+         )
+def developers_monthly_active_devs(
+    protocol_name: str = Path(..., description="Protocol name"),
+):
+    """
+    Returns the number of monthly active developers on the protocol.
+
+    """
+
+    try:
+        ref = db.collection(f'{protocol_name}-developers').document(f'monthly_active_devs').get(
+            field_paths=['data']).to_dict()
+
+        if ref is None:
+            raise exceptions.NotFound('Collection or document not found')
+
+    except exceptions.NotFound as ex:
+        # Handle case where document or collection does not exist
+        raise HTTPException(
+            status_code=404, detail=str(ex))
+
+    except Exception as e:
+        # Handle other exceptions
+        raise HTTPException(
+            status_code=500, detail=f"An error occurred {str(e)}")
+
+    data = ref.get('data', None)
+    if not data:
+        raise HTTPException(
+            status_code=204, detail="Content is empty.")
+
+    return data
+
+
+@app.get("/protocols/{protocol_name}/developers-total-repos",
+         tags=["Developers - Ecosystem"],
+         dependencies=[Depends(get_current_user)],
+         responses={
+             200: {
+                 "description": "Total Repos",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             'count': 2627,
+                             'subtitle': "AS OF JUN-01-2023",
+                             'title': "TOTAL FLOW REPOS",
+                         }
+                     }
+                 }
+             },
+
+             204: {
+                 "description": "No content found.",
+                 "content": {
+                     "application/json": {
+                         "example": None
+                     }
+                 }
+             },
+
+             404: {
+                 "description": "Not found",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                                "error": "Error description"
+                         }
+                     }
+                 }
+             },
+         }
+         )
+def developers_total_repos(
+    protocol_name: str = Path(..., description="Protocol name"),
+):
+    """
+    Returns the total number of repos on the protocol.
+
+    """
+
+    try:
+        ref = db.collection(f'{protocol_name}-developers').document(f'total_repos').get(
+            field_paths=['data']).to_dict()
+
+        if ref is None:
+            raise exceptions.NotFound('Collection or document not found')
+
+    except exceptions.NotFound as ex:
+        # Handle case where document or collection does not exist
+        raise HTTPException(
+            status_code=404, detail=str(ex))
+
+    except Exception as e:
+        # Handle other exceptions
+        raise HTTPException(
+            status_code=500, detail=f"An error occurred {str(e)}")
+
+    data = ref.get('data', None)
+    if not data:
+        raise HTTPException(
+            status_code=204, detail="Content is empty.")
+
+    return data
+
+
+@app.get("/protocols/{protocol_name}/developers-total-commits",
+         tags=["Developers - Ecosystem"],
+         dependencies=[Depends(get_current_user)],
+         responses={
+             200: {
+                 "description": "Total Repos",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             'count': 937888,
+                             'subtitle': "AS OF JUN-01-2023",
+                             'title': "TOTAL FLOW COMMITS"
+                         }
+                     }
+                 }
+             },
+
+             204: {
+                 "description": "No content found.",
+                 "content": {
+                     "application/json": {
+                         "example": None
+                     }
+                 }
+             },
+
+             404: {
+                 "description": "Not found",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                                "error": "Error description"
+                         }
+                     }
+                 }
+             },
+         }
+         )
+def developers_total_commits(
+    protocol_name: str = Path(..., description="Protocol name"),
+):
+    """
+    Returns the total number of commits on the protocol.
+
+    """
+
+    try:
+        ref = db.collection(f'{protocol_name}-developers').document(f'total_commits').get(
+            field_paths=['data']).to_dict()
+
+        if ref is None:
+            raise exceptions.NotFound('Collection or document not found')
+
+    except exceptions.NotFound as ex:
+        # Handle case where document or collection does not exist
+        raise HTTPException(
+            status_code=404, detail=str(ex))
+
+    except Exception as e:
+        # Handle other exceptions
+        raise HTTPException(
+            status_code=500, detail=f"An error occurred {str(e)}")
+
+    data = ref.get('data', None)
+    if not data:
+        raise HTTPException(
+            status_code=204, detail="Content is empty.")
+
+    return data
+
+
+@app.get("/protocols/{protocol_name}/developers-monthly-active-dev-chart",
+         tags=["Developers - Ecosystem"],
+         dependencies=[Depends(get_current_user)],
+         responses={
+             200: {
+                 "description": "Monthly Active Developers Chart",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "yAxis": {},
+                             "xAxis": {
+                                 "type": "datetime"
+                             },
+                             "series": [
+                                 {"name": "Full-Time Developers", "data": [{
+                                     'date': '1423440000000',
+                                     'value': 32
+                                 }]},
+                                 {"name": "Part-Time Developers", "data": [{
+                                     'date': '1423440000000',
+                                     'value': 15
+                                 }]},
+                                 {"name": "One-Time Developers", "data": [{
+                                     'date': '1423440000000',
+                                     'value': 23
+                                 }]}
+                             ],
+                         }
+                     }
+                 }
+             },
+
+             204: {
+                 "description": "No content found.",
+                 "content": {
+                     "application/json": {
+                         "example": None
+                     }
+                 }
+             },
+
+             404: {
+                 "description": "Not found",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                                "error": "Error description"
+                         }
+                     }
+                 }
+             },
+         }
+         )
+def developers_monthly_active_dev_chart(
+    protocol_name: str = Path(..., description="Protocol name"),
+):
+    """
+    Returns the monthly active developers on the protocol in a chart format.
+
+    """
+
+    try:
+        ref = db.collection(f'{protocol_name}-developers').document(f'monthly_active_dev_chart').get(
+            field_paths=['data']).to_dict()
+
+        if ref is None:
+            raise exceptions.NotFound('Collection or document not found')
+
+    except exceptions.NotFound as ex:
+        # Handle case where document or collection does not exist
+        raise HTTPException(
+            status_code=404, detail=str(ex))
+
+    except Exception as e:
+        # Handle other exceptions
+        raise HTTPException(
+            status_code=500, detail=f"An error occurred {str(e)}")
+
+    data = ref.get('data', None)
+    if not data:
+        raise HTTPException(
+            status_code=204, detail="Content is empty.")
+
+    return data
+
+
+@app.get("/protocols/{protocol_name}/developers-total-monthly-active-dev-chart",
+         tags=["Developers - Ecosystem"],
+         dependencies=[Depends(get_current_user)],
+         responses={
+             200: {
+                 "description": "Total monthly Active Developers Chart",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "yAxis": {},
+                             "xAxis": {
+                                 "type": "datetime"
+                             },
+                             "series": [
+                                 {"name": "Total Monthly Active Developers", "data": [{
+                                     'date': '1423440000000',
+                                     'value': 32
+                                 }]}
+                             ],
+                         }
+                     }
+                 }
+             },
+
+             204: {
+                 "description": "No content found.",
+                 "content": {
+                     "application/json": {
+                         "example": None
+                     }
+                 }
+             },
+
+             404: {
+                 "description": "Not found",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                                "error": "Error description"
+                         }
+                     }
+                 }
+             },
+         }
+         )
+def developers_total_monthly_active_dev_chart(
+    protocol_name: str = Path(..., description="Protocol name"),
+):
+    """
+    Returns the total monthly number of commits on the protocol in a chart format.
+
+    """
+
+    try:
+        ref = db.collection(f'{protocol_name}-developers').document(f'total_monthly_active_dev_chart').get(
+            field_paths=['data']).to_dict()
+
+        if ref is None:
+            raise exceptions.NotFound('Collection or document not found')
+
+    except exceptions.NotFound as ex:
+        # Handle case where document or collection does not exist
+        raise HTTPException(
+            status_code=404, detail=str(ex))
+
+    except Exception as e:
+        # Handle other exceptions
+        raise HTTPException(
+            status_code=500, detail=f"An error occurred {str(e)}")
+
+    data = ref.get('data', None)
+    if not data:
+        raise HTTPException(
+            status_code=204, detail="Content is empty.")
+
+    return data
+
+
+@app.get("/protocols/{protocol_name}/developers-dev-type-table",
+         tags=["Developers - Ecosystem"],
+         dependencies=[Depends(get_current_user)],
+         responses={
+             200: {
+                 "description": "Developer Type Table",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "header": [
+                                 {"index": "developer_type",
+                                     "title": "Developer Type"},
+                                 {"index": "jun-01_2023", "title": "Jun-01 2023"},
+                                 {"index": "1y_%", "title": "1y %"},
+                                 {"index": "2y_%", "title": "2y %"},
+                                 {"index": "3y_%", "title": "3y %"},
+                             ],
+                             "rows": [
+                                 {
+                                     "1y_%": -44,
+                                     "2y_%": 0,
+                                     "3y_%": 250,
+                                     "developer_type": [
+                                         "Total",
+                                         "Only original code authors count toward developer numbers. Developers who merge pull requests, developers from forked commits, and bots are not counted as active developers."
+                                     ],
+                                     "jun-01_2023": 203,
+                                     "key": "total",
+                                 },
+                             ],
+                         }
+                     }
+                 }
+             },
+
+             204: {
+                 "description": "No content found.",
+                 "content": {
+                     "application/json": {
+                         "example": None
+                     }
+                 }
+             },
+
+             404: {
+                 "description": "Not found",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                                "error": "Error description"
+                         }
+                     }
+                 }
+             },
+         }
+         )
+def developers_dev_type_table(
+    protocol_name: str = Path(..., description="Protocol name"),
+):
+    """
+    Returns the counts based on developer types with changes in years. Returned data is in table format.
+
+    """
+
+    try:
+        ref = db.collection(f'{protocol_name}-developers').document(f'dev_type_table').get(
+            field_paths=['data']).to_dict()
+
+        if ref is None:
+            raise exceptions.NotFound('Collection or document not found')
+
+    except exceptions.NotFound as ex:
+        # Handle case where document or collection does not exist
+        raise HTTPException(
+            status_code=404, detail=str(ex))
+
+    except Exception as e:
+        # Handle other exceptions
+        raise HTTPException(
+            status_code=500, detail=f"An error occurred {str(e)}")
+
+    data = ref.get('data', None)
+    if not data:
+        raise HTTPException(
+            status_code=204, detail="Content is empty.")
+
+    return data
+
+
+@app.get("/protocols/{protocol_name}/developers-monthly-commits-by-dev-type-chart",
+         tags=["Developers - Ecosystem"],
+         dependencies=[Depends(get_current_user)],
+         responses={
+             200: {
+                 "description": "Monthly Commits by Developer Type Chart",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "yAxis": {},
+                             "xAxis": {
+                                 "type": "datetime"
+                             },
+                             "series": [
+                                 {"name": "Full-Time Developers", "data": [{
+                                     'date': '1423440000000',
+                                     'value': 32
+                                 }]},
+                                 {"name": "Part-Time Developers", "data": [{
+                                     'date': '1423440000000',
+                                     'value': 15
+                                 }]},
+                                 {"name": "One-Time Developers", "data": [{
+                                     'date': '1423440000000',
+                                     'value': 23
+                                 }]}
+                             ],
+                         }
+                     }
+                 }
+             },
+
+             204: {
+                 "description": "No content found.",
+                 "content": {
+                     "application/json": {
+                         "example": None
+                     }
+                 }
+             },
+
+             404: {
+                 "description": "Not found",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                                "error": "Error description"
+                         }
+                     }
+                 }
+             },
+         }
+         )
+def developers_monthly_commits_by_dev_type_chart(
+    protocol_name: str = Path(..., description="Protocol name"),
+):
+    """
+    Returns the monthly commits by developer type in a chart format.
+
+    """
+
+    try:
+        ref = db.collection(f'{protocol_name}-developers').document(f'monthly_commits_by_dev_type_chart').get(
+            field_paths=['data']).to_dict()
+
+        if ref is None:
+            raise exceptions.NotFound('Collection or document not found')
+
+    except exceptions.NotFound as ex:
+        # Handle case where document or collection does not exist
+        raise HTTPException(
+            status_code=404, detail=str(ex))
+
+    except Exception as e:
+        # Handle other exceptions
+        raise HTTPException(
+            status_code=500, detail=f"An error occurred {str(e)}")
+
+    data = ref.get('data', None)
+    if not data:
+        raise HTTPException(
+            status_code=204, detail="Content is empty.")
+
+    return data
+
+
+@app.get("/protocols/{protocol_name}/developers-monthly-commits-chart",
+         tags=["Developers - Ecosystem"],
+         dependencies=[Depends(get_current_user)],
+         responses={
+             200: {
+                 "description": "Monthly Commits Chart",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "yAxis": {},
+                             "xAxis": {
+                                 "type": "datetime"
+                             },
+                             "series": [
+                                 {"name": "Total", "data": [{
+                                     'date': '1423440000000',
+                                     'value': 32
+                                 }]}
+                             ],
+                         }
+                     }
+                 }
+             },
+
+             204: {
+                 "description": "No content found.",
+                 "content": {
+                     "application/json": {
+                         "example": None
+                     }
+                 }
+             },
+
+             404: {
+                 "description": "Not found",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                                "error": "Error description"
+                         }
+                     }
+                 }
+             },
+         }
+         )
+def developers_monthly_commits_chart(
+    protocol_name: str = Path(..., description="Protocol name"),
+):
+    """
+    Returns the total monthly commits in a chart format.
+
+    """
+
+    try:
+        ref = db.collection(f'{protocol_name}-developers').document(f'monthly_commits_chart').get(
+            field_paths=['data']).to_dict()
+
+        if ref is None:
+            raise exceptions.NotFound('Collection or document not found')
+
+    except exceptions.NotFound as ex:
+        # Handle case where document or collection does not exist
+        raise HTTPException(
+            status_code=404, detail=str(ex))
+
+    except Exception as e:
+        # Handle other exceptions
+        raise HTTPException(
+            status_code=500, detail=f"An error occurred {str(e)}")
+
+    data = ref.get('data', None)
+    if not data:
+        raise HTTPException(
+            status_code=204, detail="Content is empty.")
+
+    return data

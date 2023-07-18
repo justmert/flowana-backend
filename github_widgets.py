@@ -6,6 +6,11 @@ from datetime import datetime
 from enum import Enum
 import pandas as pd
 from datetime import timedelta
+import math
+import numpy as np
+from google.cloud import exceptions
+from datetime import timezone
+from dateutil import parser
 
 logger = logging.getLogger(__name__)
 
@@ -133,6 +138,147 @@ class GithubWidgets():
             'repository_info': flattened_data
         })
 
+    def _score_repository_activity(self, owner, repo):
+
+        # # We could use an exponential decay function where commits from the current week have a weight of 1, commits from the previous week have a weight of e^(-λ), commits from two weeks ago have a weight of e^(-2λ), and so forth. Here, λ is a decay parameter that you can adjust to change how quickly the weight decreases over time.
+
+        # # Decay parameter
+        # lambda_ = 0.1
+
+        # # Time-Weighted Commit Activity Score
+        # CAS = sum(math.exp(-lambda_ * i) * commits[i] for i in range(len(commits)))
+
+        # # Normalize CAS (optional)
+        # # CAS /= normalization_factor_commits
+
+        # # Time-Weighted Issue Activity Score (IAS): We could weight each issue by a factor that decays with time. For example, we could use an exponential decay function where issues from the current week have a weight of 1, issues from the previous week have a weight of e^(-λ), issues from two weeks ago have a weight of e^(-2λ), and so forth. Here, λ is a decay parameter that you can adjust to change how quickly the weight decreases over time.
+
+        # # List of open and closed issues, each represented as a tuple of (status, date)
+        # # where 'status' is either 'open' or 'closed' and 'date' is the date when the issue was opened or resolved.
+        # issues = [
+        #     ('closed', datetime(2023, 6, 1)),
+        #     ('open', datetime(2023, 5, 30)),
+        #     ('closed', datetime(2023, 5, 29)),
+        #     ('open', datetime(2023, 5, 28)),
+        #     # ...
+        # ]  # for example
+
+        # # Weights for open and closed issues
+        # Wc = 2  # weight for closed issues
+        # Wo = 1  # weight for open issues
+
+        # # Decay parameter
+        # lambda_ = 0.1
+
+        # # Current date
+        # now = datetime.now()
+
+        # # Time-Weighted Issue Activity Score
+        # IAS = 0
+        # for status, date in issues:
+        #     days_ago = (now - date).days
+        #     if status == 'closed':
+        #         score = Wc / math.sqrt(days_ago + 1)
+        #     else:  # status == 'open'
+        #         score = Wo / math.sqrt(days_ago + 1)
+        #     IAS += math.exp(-lambda_ * days_ago) * score
+
+        # # Time-Weighted Pull Request Activity Score (PRAS): We could weight each pull request by a factor that decays with time. For example, we could use an exponential decay function where pull requests from the current week have a weight of 1, pull requests from the previous week have a weight of e^(-λ), pull requests from two weeks ago have a weight of e^(-2λ), and so forth. Here, λ is a decay parameter that you can adjust to change how quickly the weight decreases over time.
+
+        # # List of open and closed pull requests, each represented as a tuple of (status, date)
+        # # where 'status' is either 'open' or 'closed' and 'date' is the date when the pull request was opened or resolved.
+        # prs = [
+        #     ('closed', datetime(2023, 6, 1)),
+        #     ('open', datetime(2023, 5, 30)),
+        #     ('closed', datetime(2023, 5, 29)),
+        #     ('open', datetime(2023, 5, 28)),
+        #     # ...
+        # ]  # for example
+
+        # # Weights for open and closed pull requests
+        # Wc_pr = 2  # weight for closed pull requests
+        # Wo_pr = 1  # weight for open pull requests
+
+        # # Decay parameter
+        # lambda_ = 0.1
+
+        # # Current date
+        # now = datetime.now()
+
+        # # Time-Weighted Pull Request Activity Score
+        # PRAS = 0
+        # for status, date in prs:
+        #     days_ago = (now - date).days
+        #     if status == 'closed':
+        #         score = Wc_pr / math.sqrt(days_ago + 1)
+        #     else:  # status == 'open'
+        #         score = Wo_pr / math.sqrt(days_ago + 1)
+        #     PRAS += math.exp(-lambda_ * days_ago) * score
+
+        # -------------------------------------------------------------------
+        try:
+            ref = self.collection_refs['widgets'].document(self.get_repo_hash(owner, repo)).get(
+                field_paths=['recent_releases']).to_dict()
+
+            if ref is None:
+                raise exceptions.NotFound('Collection or document not found')
+
+        except exceptions.NotFound as ex:
+            # Handle case where document or collection does not exist
+            pass
+
+        else:
+            releases = ref.get('recent_releases', None)
+            if releases:
+                # Convert 'published_at' strings to datetime objects and sort in descending order
+                release_dates = sorted([parser.isoparse(
+                    release['published_at']) for release in releases], reverse=True)
+
+                # Decay parameter
+                lambda_ = 0.1
+
+                # Penalty parameter
+                penalty_param = 0.01
+
+                # Compute the list of release intervals (in days)
+                release_intervals = [
+                    (release_dates[i-1] - release_dates[i]).days for i in range(1, len(release_dates))]
+
+                # Compute the standard deviation of the release intervals
+                std_dev = np.std(release_intervals)
+
+                # Compute the inverse of the standard deviation, with a small constant added for stability
+                inverse_std_dev = 1 / (std_dev + 0.01)
+
+                # Compute the time since the last release (in days)
+                time_since_last_release = (datetime.now(
+                    timezone.utc) - release_dates[0]).days
+
+                # Penalty factor
+                penalty = 1 / (1 + penalty_param * time_since_last_release)
+
+                # Time-Weighted Release Activity Score with Release Interval Consistency and Penalty for Time Since Last Release
+                RAS = 0
+                for i in range(len(release_dates)):
+                    RAS += penalty * math.exp(-lambda_ * i) * inverse_std_dev
+
+    def health_score(self, owner, repo, **kwargs):
+        # Repository Activity is calculated by taking the sum of commit activity, issue count, pull request count, and recent releases. This reflects the amount of development activity within the repository.
+
+        # Collaboration is represented by the participation count, number of contributors, and recent pull requests. This indicator is intended to measure the level of collaboration within the project.
+
+        # Popularity can be inferred from recent stargazing activity. This measure represents the community's interest in the project.
+
+        # Code Evolution can be evaluated using code frequency. This parameter shows how frequently the codebase is updated.
+
+        # Community could be measured with the community profile.
+
+        # Diversity can be determined by the language breakdown. This can provide insight into the range of skills and technologies incorporated into the project.
+
+        self._score_repository_activity(owner, repo)
+
+        pass
+
     def commit_activity(self, owner, repo, **kwargs):
         # formatting will be in frontend
         data = self.actor.github_rest_make_request(
@@ -147,6 +293,21 @@ class GithubWidgets():
             'commit_activity': data
         })
 
+    def contributors(self, owner, repo, **kwargs):
+        # formatting will be in frontend
+        data = self.actor.github_rest_make_request(
+            f'/repos/{owner}/{repo}/stats/contributors')
+
+        if not self.is_valid(data):
+            logger.info(
+                f'[#invalid] No contributors for repository {owner}/{repo}')
+            return
+
+        # get latest 10 contributors
+        self.collection_refs['widgets'].document(self.get_repo_hash(owner, repo)).update({
+            'contributors': data
+        })
+
     def participation(self, owner, repo, **kwargs):
         # formatting will be in here
         data = self.actor.github_rest_make_request(
@@ -157,8 +318,13 @@ class GithubWidgets():
                 f'[#invalid] No participation for repository {owner}/{repo}')
             return
 
+        # Generate dates for last 52 weeks
+        today = datetime.now()
+        dates = [(today - timedelta(weeks=i)).strftime('%Y-%m-%d')
+                 for i in range(52)][::-1]
+
         chart_data = {
-            "xAxis": {"type": "category"},
+            "xAxis": {"type": "category", "data": dates},
             "yAxis": {"type": "value"},
             "series": []
         }
@@ -166,6 +332,9 @@ class GithubWidgets():
         # Subtract 'owner' from 'all' to get 'others'
         others = [all_count - owner_count for all_count,
                   owner_count in zip(data["all"], data["owner"])]
+
+        owner_sum = sum(data["owner"])
+        others_sum = sum(others)
 
         chart_data["series"] = [
             {"name": "All", "data": data["all"], "type": "line"},
@@ -175,6 +344,13 @@ class GithubWidgets():
 
         self.collection_refs['widgets'].document(self.get_repo_hash(owner, repo)).update({
             'participation': chart_data
+        })
+
+        self.collection_refs['widgets'].document(self.get_repo_hash(owner, repo)).update({
+            'participation_count': {
+                'owner': owner_sum,
+                'others': others_sum
+            }
         })
 
     def code_frequency(self, owner, repo, **kwargs):
@@ -264,13 +440,12 @@ class GithubWidgets():
             }
         })
 
-    @DeprecationWarning
     def issue_activity(self, owner, repo, **kwargs):
         # formatting will be in api
         query = """
-            query ($owner: String!, $name: String!, $cursor: String) {
+            query ($owner: String!, $name: String!, $cursor: String, $orderBy: IssueOrderField!) {
                 repository(owner: $owner, name: $name) {
-                    issues(first: 100, after: $cursor) {
+                    issues(first: 100, after: $cursor, orderBy: {field: $orderBy, direction: DESC}) {
                         pageInfo {
                             endCursor
                             hasNextPage
@@ -280,6 +455,10 @@ class GithubWidgets():
                             createdAt
                             closedAt
                             closed
+                            comments {
+								totalCount
+							}
+
                         }
                     }
                 }
@@ -295,7 +474,7 @@ class GithubWidgets():
         while has_next_page:
             # Send the GraphQL request
             result = self.actor.github_graphql_make_query(
-                query, {'owner': owner, 'name': repo, 'cursor': cursor})
+                query, {'owner': owner, 'name': repo, 'cursor': cursor, 'orderBy': 'CREATED_AT'})
 
             if not self.is_valid(result):
                 logger.info(
@@ -312,14 +491,10 @@ class GithubWidgets():
                 closed_at = node["closedAt"]
                 closed = node["closed"]
                 issues.append({"createdAt": created_at,
-                              "closedAt": closed_at, "closed": closed})
+                              "closedAt": closed_at, "closed": closed, "commend_count": node["comments"]["totalCount"]})
 
             # Set the next cursor for pagination
             cursor = end_cursor
-
-        # Sort the data points by createdAt timestamp
-        issues.sort(key=lambda x: datetime.strptime(
-            x["createdAt"], "%Y-%m-%dT%H:%M:%SZ"))
 
         # Calculate the average days to close an issue
         total_days = 0
@@ -346,7 +521,91 @@ class GithubWidgets():
         })
 
         self.collection_refs['widgets'].document(self.get_repo_hash(owner, repo)).update({
-            'average_days_to_close_issue': total_days / closed_issue_count
+            'average_days_to_close_issue': round(total_days / closed_issue_count, 2)
+        })
+
+    def pull_request_activity(self, owner, repo, **kwargs):
+        # formatting will be in api
+        query = """
+            query ($owner: String!, $name: String!, $cursor: String, $orderBy: IssueOrderField!) {
+                repository(owner: $owner, name: $name) {
+                    pullRequests(first: 100, after: $cursor, orderBy: {field: $orderBy, direction: DESC}) {
+                        pageInfo {
+                            endCursor
+                            hasNextPage
+                        }
+                        totalCount
+                        nodes {
+                            createdAt
+                            closedAt
+                            closed
+                            comments {
+								totalCount
+							}
+
+                        }
+                    }
+                }
+            }
+        """
+
+        # List to store the data points
+        pull_requests = []
+
+        # Execute the GraphQL query with pagination
+        has_next_page = True
+        cursor = None
+        while has_next_page:
+            # Send the GraphQL request
+            result = self.actor.github_graphql_make_query(
+                query, {'owner': owner, 'name': repo, 'cursor': cursor, 'orderBy': 'CREATED_AT'})
+
+            if not self.is_valid(result):
+                logger.info(
+                    f'[#invalid] No pull request activity for repository {owner}/{repo}')
+                return
+
+            nodes = result["data"]["repository"]["pullRequests"]["nodes"]
+            end_cursor = result["data"]["repository"]["pullRequests"]["pageInfo"]["endCursor"]
+            has_next_page = result["data"]["repository"]["pullRequests"]["pageInfo"]["hasNextPage"]
+
+            # Extract relevant data points
+            for node in nodes:
+                created_at = node["createdAt"]
+                closed_at = node["closedAt"]
+                closed = node["closed"]
+                pull_requests.append({"createdAt": created_at,
+                                      "closedAt": closed_at, "closed": closed, "commend_count": node["comments"]["totalCount"]})
+
+            # Set the next cursor for pagination
+            cursor = end_cursor
+
+        # Calculate the average days to close an pull request
+        total_days = 0
+        closed_pull_request_count = 0
+
+        # Process the pull request data
+        for pull_request in pull_requests:
+            created_at = pull_request["createdAt"]
+            closed_at = pull_request["closedAt"]
+            closed = pull_request["closed"]
+
+            created_at_time = datetime.strptime(
+                pull_request['createdAt'], "%Y-%m-%dT%H:%M:%SZ")
+
+            if closed:
+                closed_at_time = datetime.strptime(
+                    pull_request['closedAt'], "%Y-%m-%dT%H:%M:%SZ")
+                days_to_close = (closed_at_time - created_at_time).days
+                total_days += days_to_close
+                closed_pull_request_count += 1
+
+        self.collection_refs['widgets'].document(self.get_repo_hash(owner, repo)).update({
+            'pull_request_activity': pull_requests
+        })
+
+        self.collection_refs['widgets'].document(self.get_repo_hash(owner, repo)).update({
+            'average_days_to_close_pull_request': round(total_days / closed_pull_request_count, 2)
         })
 
     def most_active_issues(self, owner, repo, **kwargs):
@@ -429,6 +688,7 @@ class GithubWidgets():
                     'closed_at': issue['closedAt'],
                     'created_at': issue['createdAt'],
                     'updated_at': issue['updatedAt'],
+                    'url': issue['url'],
                     'repo': issue['repository']['name'],
                     'owner': issue['repository']['owner']['login'],
                 }
@@ -466,186 +726,6 @@ class GithubWidgets():
                 'closed': data['data']['repository']['closedPullRequests']['totalCount']
             }
         })
-
-    # @DeprecationWarning
-    # def pull_request_activity(self, owner, repo, **kwargs):
-    #     # formatting will be in api
-    #     query = """
-    #     query ($owner: String!, $name: String!, $cursor: String) {
-    #         repository(owner: $owner, name: $name) {
-    #             pullRequests(first: 100, after: $cursor) {
-    #                 pageInfo {
-    #                     endCursor
-    #                     hasNextPage
-    #                 }
-    #                 nodes {
-    #                     createdAt
-    #                     closedAt
-    #                     closed
-    #                 }
-    #             }
-    #         }
-    #     }
-    #     """
-    #     cursor = None
-    #     has_next_page = True
-    #     pull_requests = []
-
-    #     # Paginate through the results
-    #     while has_next_page:
-    #         # Make the request
-    #         result = self.actor.github_graphql_make_query(
-    #             query, {'owner': owner, 'name': repo, 'cursor': cursor})
-
-    #         if not self.is_valid(result):
-    #             logger.info(f'[#invalid] No pull request activity for repository {owner}/{repo}')
-    #             return
-
-    #         # Extract the data
-    #         nodes = result["data"]["repository"]["pullRequests"]["nodes"]
-    #         end_cursor = result["data"]["repository"]["pullRequests"]["pageInfo"]["endCursor"]
-    #         has_next_page = result["data"]["repository"]["pullRequests"]["pageInfo"]["hasNextPage"]
-
-    #         # Extract relevant data points
-    #         for node in nodes:
-    #             created_at = node["createdAt"]
-    #             closed_at = node["closedAt"]
-    #             closed = node["closed"]
-    #             pull_requests.append(
-    #                 {"createdAt": created_at, "closedAt": closed_at, "closed": closed})
-
-    #         # Set the next cursor for pagination
-    #         cursor = end_cursor
-
-    #     # Sort the data points by createdAt timestamp
-    #     pull_requests.sort(key=lambda x: datetime.strptime(
-    #         x["createdAt"], "%Y-%m-%dT%H:%M:%SZ"))
-
-    #     # Initialize empty lists for the x-axis (time) and y-axes (opened and closed pull requests)
-    #     # time_axis = []
-    #     # opened_pull_requests = []
-    #     # closed_pull_requests = []
-
-    #     # Calculate the average days to close a pull request
-    #     total_days = 0
-    #     closed_pull_request_count = 0
-
-    #     # Process the pull requests data
-    #     for pull_request in pull_requests:
-    #         created_at = pull_request["createdAt"]
-    #         closed_at = pull_request["closedAt"]
-    #         closed = pull_request["closed"]
-
-    #         # time_axis.append(created_at)
-
-    #         # if closed:
-    #         #     opened_pull_requests.append(None)
-    #         #     closed_pull_requests.append(closed_at)
-    #         # else:
-    #         #     opened_pull_requests.append(created_at)
-    #         #     closed_pull_requests.append(None)
-
-    #         created_at_time = datetime.strptime(
-    #             pull_request['createdAt'], "%Y-%m-%dT%H:%M:%SZ")
-    #         if closed:
-    #             closed_at_time = datetime.strptime(
-    #                 pull_request['closedAt'], "%Y-%m-%dT%H:%M:%SZ")
-    #             days_to_close = (closed_at_time - created_at_time).days
-    #             total_days += days_to_close
-    #             closed_pull_request_count += 1
-
-    #     # # Convert the data to Apache ECharts format
-    #     # echarts_data = {
-    #     #     "xAxis": {"data": time_axis},
-    #     #     "yAxis": {},
-    #     #     "series": [
-    #     #         {"name": "Opened", "type": "line", "data": opened_pull_requests},
-    #     #         {"name": "Closed", "type": "line", "data": closed_pull_requests}
-    #     #     ]
-    #     # }
-
-    #     # # Convert the data to JSON
-    #     # echarts_json = json.dumps(echarts_data)
-
-    #     self.collection_refs['widgets'].document(self.get_repo_hash(owner, repo)).update({
-    #         'pull_request_activity': pull_requests
-    #     })
-
-    #     self.collection_refs['widgets'].document(self.get_repo_hash(owner, repo)).update({
-    #         'average_days_to_close_pull_request': total_days / closed_pull_request_count
-    #     })
-
-    # @DeprecationWarning
-    # def most_active_pull_requests(self, owner, repo, **kwargs):
-    #     # formatting will be in frontend
-
-    #     flattened_data = {}
-    #     for interval in ['day', 'week', 'month', 'year']:
-    #         if interval == 'day':
-    #             current_time = datetime.now()
-    #             since = current_time - timedelta(days=1)
-
-    #         elif interval == 'week':
-    #             current_time = datetime.now()
-    #             since = current_time - timedelta(days=7)
-
-    #         elif interval == 'month':
-    #             current_time = datetime.now()
-    #             since = current_time - timedelta(days=30)
-
-    #         elif interval == 'year':
-    #             current_time = datetime.now()
-    #             since = current_time - timedelta(days=365)
-
-    #         query = """
-    #         query ($owner: String!, $name: String!, $since: DateTime!) {
-    #         repository(owner: $owner, name: $name) {
-    #             pullRequests(first: 100, orderBy: {field: COMMENTS, direction: DESC}, states: OPEN, filterBy: {since: $since}) {
-    #             nodes {
-    #                 number
-    #                 author {
-    #                 avatarUrl
-    #                 login
-    #                 }
-    #                 title
-    #                 state
-    #                 comments {
-    #                 totalCount
-    #                 }
-    #                 createdAt
-    #                 updatedAt
-    #             }
-    #             }
-    #         }
-    #         }
-    #         """
-    #         data = self.actor.github_graphql_make_query(
-    #             query, {'owner': owner, 'name': repo, 'since': since.isoformat()})
-
-    #         if not self.is_valid(data):
-    #             logger.info(f'[#invalid] No most active pull requests for repository {owner}/{repo}')
-    #             return
-
-    #         # Extract the pull requests from the response
-    #         pull_requests = data['repository']['pullRequests']['nodes']
-
-    #         # Iterate through the pull requests and flatten the data
-    #         for pull_request in pull_requests:
-    #             flattened_pull_request = {
-    #                 'number': pull_request['number'],
-    #                 'author_avatar_url': pull_request['author']['avatarUrl'],
-    #                 'author_login': pull_request['author']['login'],
-    #                 'title': pull_request['title'],
-    #                 'state': pull_request['state'],
-    #                 'comments_count': pull_request['comments']['totalCount'],
-    #                 'created_at': pull_request['createdAt'],
-    #                 'updated_at': pull_request['updatedAt']
-    #             }
-    #             flattened_data[interval].append(flattened_pull_request)
-
-    #     self.collection_refs['widgets'].document(self.get_repo_hash(owner, repo)).update({
-    #         'most_active_pull_requests': flattened_data
-    #     })
 
     def language_breakdown(self, owner, repo, **kwargs):
         # formatting will be in api
@@ -694,13 +774,18 @@ class GithubWidgets():
             'language_breakdown': flattened_data
         })
 
+    class RecentIssuesOrder(Enum):
+        CREATED_AT = 'CREATED_AT'
+        UPDATED_AT = 'UPDATED_AT'
+
+    class RecentPullRequestsOrder(Enum):
+        CREATED_AT = 'CREATED_AT'
+        UPDATED_AT = 'UPDATED_AT'
+
     def recent_issues(self, owner, repo, **kwargs):
         # formatting will be in frontend
 
-        order_by = kwargs.get('order_by').upper().strip()
-        if not (order_by == 'CREATED_AT' or order_by == 'UPDATED_AT'):
-            raise ValueError(
-                'order_by must be either CREATED_AT or UPDATED_AT')
+        order_by = kwargs.get('order_by', self.RecentIssuesOrder.CREATED_AT)
 
         query = """
         query ($owner: String!, $name: String!, $order_by: IssueOrderField!) {
@@ -717,6 +802,7 @@ class GithubWidgets():
                         comments {
                             totalCount
                         }
+                        url
                         createdAt
                         updatedAt
                         repository {
@@ -731,7 +817,7 @@ class GithubWidgets():
         }
         """
         data = self.actor.github_graphql_make_query(
-            query, {'owner': owner, 'name': repo, 'order_by': order_by})
+            query, {'owner': owner, 'name': repo, 'order_by': order_by.value})
 
         if not self.is_valid(data):
             logger.info(
@@ -754,32 +840,30 @@ class GithubWidgets():
                 'comments_count': issue['comments']['totalCount'],
                 'created_at': issue['createdAt'],
                 'updated_at': issue['updatedAt'],
+                'url': issue['url'],
                 'repo': issue['repository']['name'],
                 'owner': issue['repository']['owner']['login'],
             }
             flattened_data.append(flattened_issue)
 
-        if order_by == 'CREATED_AT':
+        if order_by == self.RecentIssuesOrder.CREATED_AT:
             self.collection_refs['widgets'].document(self.get_repo_hash(owner, repo)).update({
                 'recent_created_issues': flattened_data
             })
-        elif order_by == 'UPDATED_AT':
+        elif order_by == self.RecentIssuesOrder.UPDATED_AT:
             self.collection_refs['widgets'].document(self.get_repo_hash(owner, repo)).update({
                 'recent_updated_issues': flattened_data
             })
 
     def recent_pull_requests(self, owner, repo, **kwargs):
         # formatting will be in frontend
-        order_by = kwargs.get('order_by').strip().upper()
-        if not (order_by == 'CREATED_AT' or order_by == 'UPDATED_AT'):
-            raise ValueError(
-                'order_by must be either CREATED_AT or UPDATED_AT')
 
-        order_by = 'UPDATED_AT'
+        order_by = kwargs.get(
+            'order_by', self.RecentPullRequestsOrder.CREATED_AT)
         query = f"""
             query ($owner: String!, $name: String!) {{
                 repository(owner: $owner, name: $name) {{
-                    pullRequests(first: 10, orderBy: {{field: {order_by}, direction: DESC}}) {{
+                    pullRequests(first: 10, orderBy: {{field: {order_by.value}, direction: DESC}}) {{
                         nodes {{
                             number
                             author {{
@@ -793,6 +877,7 @@ class GithubWidgets():
                             }}
                             createdAt
                             updatedAt
+                            url
                             repository {{
 							name
 							owner {{
@@ -807,7 +892,7 @@ class GithubWidgets():
         """
 
         data = self.actor.github_graphql_make_query(
-            query, {'owner': owner, 'name': repo, 'order_by': order_by})
+            query, {'owner': owner, 'name': repo, 'order_by': order_by.value})
 
         if not self.is_valid(data):
             logger.info(
@@ -830,17 +915,18 @@ class GithubWidgets():
                 'comments_count': pull_request['comments']['totalCount'],
                 'created_at': pull_request['createdAt'],
                 'updated_at': pull_request['updatedAt'],
+                'url': pull_request['url'],
                 'repo': pull_request['repository']['name'],
                 'owner': pull_request['repository']['owner']['login'],
             }
             flattened_data.append(flattened_pull_request)
 
-        if order_by == 'CREATED_AT':
+        if order_by == self.RecentPullRequestsOrder.CREATED_AT:
             self.collection_refs['widgets'].document(self.get_repo_hash(owner, repo)).update({
                 'recent_created_pull_requests': flattened_data
             })
 
-        elif order_by == 'UPDATED_AT':
+        elif order_by == self.RecentPullRequestsOrder.UPDATED_AT:
             self.collection_refs['widgets'].document(self.get_repo_hash(owner, repo)).update({
                 'recent_updated_pull_requests': flattened_data
             })
@@ -936,12 +1022,12 @@ class GithubWidgets():
     def recent_commits(self, owner, repo, **kwargs):
         # formatting will be in frontend
         query = """
-        query ($owner: String!, $name: String!) {
+        query ($owner: String!, $name: String!, $count: Int!) {
             repository(owner: $owner, name: $name) {
                 defaultBranchRef {
                     target {
                         ... on Commit {
-                            history(first: 100) {
+                            history(first: $count) {
                                 nodes {
                                     author {
                                         avatarUrl
@@ -974,7 +1060,7 @@ class GithubWidgets():
         }
         """
         data = self.actor.github_graphql_make_query(
-            query, {'owner': owner, 'name': repo})
+            query, {'owner': owner, 'name': repo, 'count': 10})
 
         if not self.is_valid(data):
             logger.info(
@@ -1012,51 +1098,66 @@ class GithubWidgets():
 
     def recent_releases(self, owner, repo, **kwargs):
         # formatting will be in frontend
-        query = """
-        query ($owner: String!, $name: String!) {
-            repository(owner: $owner, name: $name) {
-                releases(last: 10) {
-                    nodes {
-                        name
-                        tagName
-                        publishedAt
-                        url
-                        repository {
-                            name
-                            owner {
-                                login
-                            }
-                        }                                    
 
+        flattened_data = []
+        cursor = None
+        query = """
+            query ($owner: String!, $name: String!, $orderBy: ReleaseOrderField!, $cursor: String) {
+                repository(owner: $owner, name: $name) {
+                    releases(last: 100, before: $cursor, orderBy: {field: $orderBy, direction: DESC}) {
+                        pageInfo {
+                            endCursor
+                            hasNextPage
+                        }
+                        nodes {
+                            name
+                            tagName
+                            publishedAt
+                            url
+                            repository {
+                                name
+                                owner {
+                                    login
+                                }
+                            }                                    
+                        }
                     }
                 }
             }
-        }
-        """
-        data = self.actor.github_graphql_make_query(
-            query, {'owner': owner, 'name': repo})
+            """
 
-        if not self.is_valid(data):
-            logger.info(
-                f'[#invalid] No recent releases for repository {owner}/{repo}')
-            return
+        has_next_page = True
+        while has_next_page:
+            data = self.actor.github_graphql_make_query(
+                query, {'owner': owner, 'name': repo, 'cursor': cursor, 'orderBy': 'CREATED_AT'})
 
-        flattened_data = []
+            if not self.is_valid(data):
+                logger.info(
+                    f'[#invalid] No recent releases for repository {owner}/{repo}')
+                break
 
-        # Extract the releases from the response
-        releases = data['data']['repository']['releases']['nodes']
+            # Extract the releases from the response
+            releases = data['data']['repository']['releases']['nodes']
 
-        # Iterate through the releases and flatten the data
-        for release in releases:
-            flattened_release = {
-                'name': release['name'],
-                'tag_name': release['tagName'],
-                'published_at': release['publishedAt'],
-                'url': release['url'],
-                'repo': release['repository']['name'],
-                'owner': release['repository']['owner']['login'],
-            }
-            flattened_data.append(flattened_release)
+            # Iterate through the releases and flatten the data
+            for release in releases:
+                flattened_release = {
+                    'name': release['name'],
+                    'tag_name': release['tagName'],
+                    'published_at': release['publishedAt'],
+                    'url': release['url'],
+                    'repo': release['repository']['name'],
+                    'owner': release['repository']['owner']['login'],
+                }
+                flattened_data.append(flattened_release)
+
+            # Check if there is another page of data to fetch
+            has_next_page = data['data']['repository']['releases']['pageInfo']['hasNextPage']
+            if not has_next_page:
+                break
+
+            # Update the cursor
+            cursor = data['data']['repository']['releases']['pageInfo']['endCursor']
 
         self.collection_refs['widgets'].document(self.get_repo_hash(owner, repo)).update({
             'recent_releases': flattened_data

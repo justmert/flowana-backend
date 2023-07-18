@@ -10,6 +10,9 @@ from github_widgets import GithubWidgets
 from github_cumulative import GithubCumulative
 from discourse_widgets import DiscourseWidgets
 from discourse_actor import DiscourseActor
+from developers_widgets import DevelopersWidget
+from developers_actor import DevelopersActor
+
 logger = logging.getLogger(__name__)
 
 
@@ -23,7 +26,7 @@ class Pipeline:
         self.collection_refs = {}
 
     def contruct_pipeline(self, protocol, collection_refs):
-        
+
         self.protocol_name = protocol['name']
 
         if protocol.get('forum', None):
@@ -32,7 +35,8 @@ class Pipeline:
             forum_base_url = protocol['forum'][:-1] if protocol['forum'].endswith(
                 '/') else protocol['forum']
             self.discourse_actor = DiscourseActor(forum_base_url)
-            self.discourse_widgets = DiscourseWidgets(self.discourse_actor, collection_refs)
+            self.discourse_widgets = DiscourseWidgets(
+                self.discourse_actor, collection_refs)
             self.protocol_discourse_functions = [
                 self.discourse_widgets.topics,
                 self.discourse_widgets.users,
@@ -44,6 +48,24 @@ class Pipeline:
                 self.discourse_widgets.top_users,
             ]
 
+        if protocol.get('developers', None):
+            logger.info(
+                f'Found dev reports configuration for protocol {self.protocol_name}.')
+            self.developers_actor = DevelopersActor()
+            self.developers_widget = DevelopersWidget(
+                self.developers_actor, collection_refs, protocol["developers"])
+            self.protocol_developers_functions = [
+                self.developers_widget.full_time,
+                self.developers_widget.monthly_active_devs,
+                self.developers_widget.total_repos,
+                self.developers_widget.total_commits,
+                self.developers_widget.monthly_active_dev_chart,
+                self.developers_widget.total_monthly_active_dev_chart,
+                self.developers_widget.dev_type_table,
+                self.developers_widget.monthly_commits_by_dev_type_chart,
+                self.developers_widget.monthly_commits_chart
+
+            ]
 
         self.collection_refs = collection_refs
         repositories_ref_stream = self.db.collection(
@@ -59,34 +81,45 @@ class Pipeline:
             f'Found {len(self.repositories)} repositories for protocol {self.protocol_name} to be updated.')
 
         self.github_widgets = GithubWidgets(self.github_actor, collection_refs)
-        self.github_cumulative = GithubCumulative(self.github_actor, collection_refs)
+        self.github_cumulative = GithubCumulative(
+            self.github_actor, collection_refs)
 
         self.project_pipeline_functions = [
 
-            self.github_widgets.repository_info,
-            self.github_widgets.commit_activity,
-            self.github_widgets.code_frequency,
-            self.github_widgets.participation,
-            self.github_widgets.code_frequency,
-            self.github_widgets.community_profile,
-            self.github_widgets.punch_card,
+            # self.github_widgets.repository_info,
+            # self.github_widgets.commit_activity,
+            # self.github_widgets.code_frequency,
+            # self.github_widgets.participation,
+            # self.github_widgets.code_frequency,
+            # self.github_widgets.community_profile,
+            # self.github_widgets.punch_card,
+            # self.github_widgets.contributors,  # added new
 
-            self.github_widgets.issue_count,
-            (self.github_widgets.recent_issues, {'order_by': 'CREATED_AT'}),
-            (self.github_widgets.recent_issues, {'order_by': 'UPDATED_AT'}),
-            self.github_widgets.most_active_issues,
+            # self.github_widgets.issue_count,
+            # (self.github_widgets.recent_issues, {
+            #  'order_by': self.github_widgets.RecentIssuesOrder.CREATED_AT}),
+            # (self.github_widgets.recent_issues, {
+            #  'order_by': self.github_widgets.RecentIssuesOrder.UPDATED_AT}),
+            # self.github_widgets.most_active_issues,
 
 
-            self.github_widgets.pull_request_count,
-            (self.github_widgets.recent_pull_requests,
-             {'order_by': 'CREATED_AT'}),
-            (self.github_widgets.recent_pull_requests,
-             {'order_by': 'UPDATED_AT'}),
+            # self.github_widgets.pull_request_count,
+            # (self.github_widgets.recent_pull_requests,
+            #  {'order_by': self.github_widgets.RecentPullRequestsOrder.CREATED_AT}),
+            # (self.github_widgets.recent_pull_requests,
+            #  {'order_by': self.github_widgets.RecentPullRequestsOrder.UPDATED_AT}),
 
-            self.github_widgets.language_breakdown,
-            self.github_widgets.recent_stargazing_activity,
-            self.github_widgets.recent_commits,
-            self.github_widgets.recent_releases,
+            # self.github_widgets.language_breakdown,
+            # self.github_widgets.recent_stargazing_activity,
+            # self.github_widgets.recent_commits,
+            # self.github_widgets.recent_releases,
+
+            # self.github_widgets.health_score # added new
+
+            # self.github_widgets.issue_activity # added new
+            self.github_widgets.pull_request_activity # added new
+
+
         ]
 
         self.protocol_github_functions = [
@@ -98,30 +131,27 @@ class Pipeline:
 
             self.github_cumulative.cumulative_issue_count,
             (self.github_cumulative.cumulative_recent_issues,
-             {'order_by': 'CREATED_AT'}),
+             {'order_by': self.github_cumulative.CumulativeRecentIssuesOrder.CREATED_AT}),
             (self.github_cumulative.cumulative_recent_issues,
-             {'order_by': 'UPDATED_AT'}),
+             {'order_by': self.github_cumulative.CumulativeRecentPullRequestsOrder.UPDATED_AT}),
             self.github_cumulative.cumulative_most_active_issues,
 
             self.github_cumulative.cumulative_pull_request_count,
             (self.github_cumulative.cumulative_recent_pull_requests,
-             {'order_by': 'CREATED_AT'}),
+             {'order_by': self.github_cumulative.CumulativeRecentIssuesOrder.CREATED_AT}),
             (self.github_cumulative.cumulative_recent_pull_requests,
-             {'order_by': 'UPDATED_AT'}),
+             {'order_by': self.github_cumulative.CumulativeRecentPullRequestsOrder.UPDATED_AT}),
 
             self.github_cumulative.cumulative_language_breakdown,
             self.github_cumulative.cumulative_recent_commits,
             self.github_cumulative.cumulative_recent_releases
         ]
 
-
     def run_pipelines(self):
-        # self.run_project_github_pipeline()
+        # self.run_protocol_pipeline(self.protocol_developers_functions)
+        self.run_project_github_pipeline()
         # self.run_protocol_pipeline(self.protocol_github_functions)
-        self.run_protocol_pipeline(self.protocol_discourse_functions)
-
-
-
+        # self.run_protocol_pipeline(self.protocol_discourse_functions)
 
     def run_protocol_pipeline(self, protocol_pipeline):
         for item in protocol_pipeline:
@@ -142,7 +172,7 @@ class Pipeline:
     def run_project_github_pipeline(self):
         # for repository in self.repositories:
         for repository in [
-            {'owner': 'justmert', 'repo': 'test'}
+            {'owner': 'lensterxyz', 'repo': 'lenster'}
         ]:
 
             is_valid = self.github_actor.check_repo_validity(
@@ -180,4 +210,3 @@ class Pipeline:
 
             logger.info(
                 f'Finished running pipeline for repository {repository["owner"]}/{repository["repo"]}')
-

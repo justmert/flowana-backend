@@ -77,7 +77,8 @@ class Flowana():
             collection_refs = {'projects': self.db.collection(f'{protocol["name"]}-projects'),
                                 'widgets': self.db.collection(f'{protocol["name"]}-widgets'), 
                                 'cumulative': self.db.collection(f'{protocol["name"]}-cumulative'),
-                                'discourse': self.db.collection(f'{protocol["name"]}-discourse')
+                                'discourse': self.db.collection(f'{protocol["name"]}-discourse'),
+                                'developers': self.db.collection(f'{protocol["name"]}-developers'),
                                 }
 
             # Create the collections if they don't exist

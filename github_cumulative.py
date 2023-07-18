@@ -298,15 +298,20 @@ class GithubCumulative():
         self.collection_refs['cumulative'].document(
             'cumulative_language_breakdown').set({'data': cumulative_flatten})
 
+
+    class CumulativeRecentIssuesOrder(Enum):
+        CREATED_AT = 'CREATED_AT'
+        UPDATED_AT = 'UPDATED_AT    '
+
     def cumulative_recent_issues(self, **kwargs):
         docs = self.collection_refs['widgets'].stream()
 
-        order_by = kwargs.get('order_by').strip().lower()
+        order_by = kwargs.get('order_by', self.CumulativeRecentIssuesOrder.CREATED_AT)
 
-        if order_by == 'created_at':
+        if order_by == self.CumulativeRecentIssuesOrder.CREATED_AT:
             field_name = 'recent_created_issues'
 
-        elif order_by == 'updated_at':
+        elif order_by == self.CumulativeRecentIssuesOrder.UPDATED_AT:
             field_name = 'recent_updated_issues'
 
         cumulative_recent_issues = []
@@ -322,15 +327,21 @@ class GithubCumulative():
         self.collection_refs['cumulative'].document(
             f'cumulative_{field_name}').set({'data':cumulative_recent_issues})
 
+
+    class CumulativeRecentPullRequestsOrder(Enum):
+        CREATED_AT = 'CREATED_AT'
+        UPDATED_AT = 'UPDATED_AT    '
+
+
     def cumulative_recent_pull_requests(self, **kwargs):
         docs = self.collection_refs['widgets'].stream()
 
-        order_by = kwargs.get('order_by').strip().lower()
+        order_by = kwargs.get('order_by', self.CumulativeRecentIssuesOrder.CREATED_AT)
 
-        if order_by == 'created_at':
+        if order_by == self.CumulativeRecentIssuesOrder.CREATED_AT:
             field_name = 'recent_created_pull_requests'
 
-        elif order_by == 'updated_at':
+        elif order_by == self.CumulativeRecentIssuesOrder.UPDATED_AT:
             field_name = 'recent_updated_pull_requests'
 
         cumulative_recent_issues = []

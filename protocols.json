@@ -5,7 +5,7 @@
     "crawler_tomls": [
         "polkadot"
     ],
-    "forum": "https://forum.onflow.org"
+    "forum": "https://forum.onflow.org",
+    "developers": "flow"
 }
-
 ]
