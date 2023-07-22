@@ -117,7 +117,7 @@ class GithubWidgets():
         flattened_data['commit_comment_count'] = repository['commitComments']['totalCount']
         flattened_data['issue_count'] = repository['issues']['totalCount']
         flattened_data['description'] = repository['description']
-        flattened_data['topics'] = [node['topic']['name']
+        flattened_data['categories.lvl0'] = [node['topic']['name']
                                     for node in repository['repositoryTopics']['nodes']]
         flattened_data['watcher_count'] = repository['watchers']['totalCount']
         flattened_data['is_fork'] = repository['isFork']
@@ -142,125 +142,233 @@ class GithubWidgets():
 
         # # We could use an exponential decay function where commits from the current week have a weight of 1, commits from the previous week have a weight of e^(-λ), commits from two weeks ago have a weight of e^(-2λ), and so forth. Here, λ is a decay parameter that you can adjust to change how quickly the weight decreases over time.
 
-        # # Decay parameter
-        # lambda_ = 0.1
+        if True:
+            try:
+                ref = self.collection_refs['widgets'].document(self.get_repo_hash(owner, repo)).get(
+                    field_paths=['commit_activity']).to_dict()
 
-        # # Time-Weighted Commit Activity Score
-        # CAS = sum(math.exp(-lambda_ * i) * commits[i] for i in range(len(commits)))
+                if ref is None:
+                    raise exceptions.NotFound(
+                        'Collection or document not found')
 
-        # # Normalize CAS (optional)
-        # # CAS /= normalization_factor_commits
+                ref2 = self.collection_refs['widgets'].document(self.get_repo_hash(owner, repo)).get(
+                    field_paths=['commit_activity']).to_dict()
+
+            except exceptions.NotFound as ex:
+                # Handle case where document or collection does not exist
+                pass
+
+            else:
+                commit_activity = ref.get('commit_activity', None)
+                if commit_activity:
+                                        # Decay parameter
+                    lambda_ = 0.05
+
+                    # Current date
+                    now = datetime.now(timezone.utc)
+
+                    # Convert now to a Unix timestamp (seconds since 1970-01-01 00:00:00 UTC)
+                    now_timestamp = int(now.timestamp())
+
+                    # Compute the list of commit intervals
+                    commit_intervals = [(commit_activity[i-1]['week'] - commit_activity[i]['week']) for i in range(1, len(commit_activity))]
+
+                    # Compute the standard deviation of the commit intervals
+                    std_dev = np.std(commit_intervals)
+
+                    # Compute the inverse of the standard deviation, with a small constant added for stability
+                    inverse_std_dev = 1 / (std_dev + 0.01)
+
+                    # Time-Weighted Commit Activity Score with Commit Interval Consistency
+                    CAS = 0
+                    for data in commit_activity:
+                        weeks_ago = (now_timestamp - data['week']) // (7 * 24 * 60 * 60)  # convert from seconds to weeks
+                        commit_volume = data['total']
+                        CAS += commit_volume * math.exp(-lambda_ * weeks_ago) * inverse_std_dev
+
+                    # Normalize CAS by the total number of weeks
+                    CAS /= len(commit_activity)
+
+        print(CAS)
 
         # # Time-Weighted Issue Activity Score (IAS): We could weight each issue by a factor that decays with time. For example, we could use an exponential decay function where issues from the current week have a weight of 1, issues from the previous week have a weight of e^(-λ), issues from two weeks ago have a weight of e^(-2λ), and so forth. Here, λ is a decay parameter that you can adjust to change how quickly the weight decreases over time.
 
-        # # List of open and closed issues, each represented as a tuple of (status, date)
-        # # where 'status' is either 'open' or 'closed' and 'date' is the date when the issue was opened or resolved.
-        # issues = [
-        #     ('closed', datetime(2023, 6, 1)),
-        #     ('open', datetime(2023, 5, 30)),
-        #     ('closed', datetime(2023, 5, 29)),
-        #     ('open', datetime(2023, 5, 28)),
-        #     # ...
-        # ]  # for example
+        if False:
+            try:
+                ref = self.collection_refs['widgets'].document(self.get_repo_hash(owner, repo)).get(
+                    field_paths=['pull_request_activity']).to_dict()
 
-        # # Weights for open and closed issues
-        # Wc = 2  # weight for closed issues
-        # Wo = 1  # weight for open issues
+                if ref is None:
+                    raise exceptions.NotFound(
+                        'Collection or document not found')
 
-        # # Decay parameter
-        # lambda_ = 0.1
+                ref2 = self.collection_refs['widgets'].document(self.get_repo_hash(owner, repo)).get(
+                    field_paths=['average_days_to_close_pull_request']).to_dict()
 
-        # # Current date
-        # now = datetime.now()
+            except exceptions.NotFound as ex:
+                # Handle case where document or collection does not exist
+                pass
 
-        # # Time-Weighted Issue Activity Score
-        # IAS = 0
-        # for status, date in issues:
-        #     days_ago = (now - date).days
-        #     if status == 'closed':
-        #         score = Wc / math.sqrt(days_ago + 1)
-        #     else:  # status == 'open'
-        #         score = Wo / math.sqrt(days_ago + 1)
-        #     IAS += math.exp(-lambda_ * days_ago) * score
+            else:
+                pull_requests = ref.get('pull_request_activity', None)
+                avg_days_to_close_pull_request = ref2.get('average_days_to_close_pull_request', None)
+                if pull_requests:
+                    # Weights for open and closed pull_requests
+                    weight_closed = 2
+                    weight_open = 1
 
-        # # Time-Weighted Pull Request Activity Score (PRAS): We could weight each pull request by a factor that decays with time. For example, we could use an exponential decay function where pull requests from the current week have a weight of 1, pull requests from the previous week have a weight of e^(-λ), pull requests from two weeks ago have a weight of e^(-2λ), and so forth. Here, λ is a decay parameter that you can adjust to change how quickly the weight decreases over time.
+                    # Decay parameter
+                    lambda_ = 0.05
 
-        # # List of open and closed pull requests, each represented as a tuple of (status, date)
-        # # where 'status' is either 'open' or 'closed' and 'date' is the date when the pull request was opened or resolved.
-        # prs = [
-        #     ('closed', datetime(2023, 6, 1)),
-        #     ('open', datetime(2023, 5, 30)),
-        #     ('closed', datetime(2023, 5, 29)),
-        #     ('open', datetime(2023, 5, 28)),
-        #     # ...
-        # ]  # for example
+                    # Average time to close an issue (in days)
+                    # avg_days_to_close_issue = 7
 
-        # # Weights for open and closed pull requests
-        # Wc_pr = 2  # weight for closed pull requests
-        # Wo_pr = 1  # weight for open pull requests
+                    # Comment reward factor
+                    comment_reward_factor = 0.05  # for example
 
-        # # Decay parameter
-        # lambda_ = 0.1
+                    # Current date
+                    now = datetime.now(timezone.utc)
 
-        # # Current date
-        # now = datetime.now()
+                    # Time-Weighted Pull request Activity Score
+                    PRAS = 0
+                    for pull_request in pull_requests:
+                        days_since_created = (now - parser.isoparse(pull_request['createdAt'])).days
+                        comment_reward = pull_request['comment_count'] * comment_reward_factor
+                        if pull_request['closed']:
+                            days_since_closed = (now - parser.isoparse(pull_request['closedAt'])).days
+                            time_to_close = days_since_created - days_since_closed
+                            close_time_factor = avg_days_to_close_pull_request / (time_to_close + 0.01)  # add a small constant to avoid division by zero
+                            PRAS += (weight_closed * close_time_factor + comment_reward) * math.exp(-lambda_ * days_since_closed)
+                        else:  # issue is still open
+                            PRAS += (weight_open + comment_reward) * math.exp(-lambda_ * days_since_created)
 
-        # # Time-Weighted Pull Request Activity Score
-        # PRAS = 0
-        # for status, date in prs:
-        #     days_ago = (now - date).days
-        #     if status == 'closed':
-        #         score = Wc_pr / math.sqrt(days_ago + 1)
-        #     else:  # status == 'open'
-        #         score = Wo_pr / math.sqrt(days_ago + 1)
-        #     PRAS += math.exp(-lambda_ * days_ago) * score
+                    # Normalize PRAS by the total number of pull_requests
+                    PRAS /= len(pull_requests)
+
+
+        if False:
+            try:
+                ref = self.collection_refs['widgets'].document(self.get_repo_hash(owner, repo)).get(
+                    field_paths=['issue_activity']).to_dict()
+
+                if ref is None:
+                    raise exceptions.NotFound(
+                        'Collection or document not found')
+
+                ref2 = self.collection_refs['widgets'].document(self.get_repo_hash(owner, repo)).get(
+                    field_paths=['average_days_to_close_issue']).to_dict()
+
+            except exceptions.NotFound as ex:
+                # Handle case where document or collection does not exist
+                pass
+
+            else:
+                issues = ref.get('issue_activity', None)
+                avg_days_to_close_issue = ref2.get('average_days_to_close_issue', None)
+                if issues:
+                    # Weights for open and closed issues
+                    weight_closed = 2
+                    weight_open = 1
+
+                    # Decay parameter
+                    lambda_ = 0.05
+
+                    # Average time to close an issue (in days)
+                    # avg_days_to_close_issue = 7
+
+                    # Comment reward factor
+                    comment_reward_factor = 0.05  # for example
+
+                    # Current date
+                    now = datetime.now(timezone.utc)
+
+                    # Time-Weighted Issue Activity Score
+                    IAS = 0
+                    for pull_request in issues:
+                        print(pull_request)
+                        days_since_created = (now - parser.isoparse(pull_request['createdAt'])).days
+                        comment_reward = pull_request['comment_count'] * comment_reward_factor
+                        if pull_request['closed']:
+                            days_since_closed = (now - parser.isoparse(pull_request['closedAt'])).days
+                            time_to_close = days_since_created - days_since_closed
+                            close_time_factor = avg_days_to_close_issue / (time_to_close + 0.01)  # add a small constant to avoid division by zero
+                            IAS += (weight_closed * close_time_factor + comment_reward) * math.exp(-lambda_ * days_since_closed)
+                        else:  # issue is still open
+                            IAS += (weight_open + comment_reward) * math.exp(-lambda_ * days_since_created)
+
+                    # Normalize IAS by the total number of issues
+                    IAS /= len(issues)
 
         # -------------------------------------------------------------------
+
+        if False:
+            try:
+                ref = self.collection_refs['widgets'].document(self.get_repo_hash(owner, repo)).get(
+                    field_paths=['recent_releases']).to_dict()
+
+                if ref is None:
+                    raise exceptions.NotFound(
+                        'Collection or document not found')
+
+            except exceptions.NotFound as ex:
+                # Handle case where document or collection does not exist
+                pass
+
+            else:
+                releases = ref.get('recent_releases', None)
+                if releases:
+                    # Convert 'published_at' strings to datetime objects and sort in descending order
+                    release_dates = sorted([parser.isoparse(
+                        release['published_at']) for release in releases], reverse=True)
+
+                    # Decay parameter
+                    lambda_ = 0.1
+
+                    # Penalty parameter
+                    penalty_param = 0.01
+
+                    # Compute the list of release intervals (in days)
+                    release_intervals = [
+                        (release_dates[i-1] - release_dates[i]).days for i in range(1, len(release_dates))]
+
+                    # Compute the standard deviation of the release intervals
+                    std_dev = np.std(release_intervals)
+
+                    # Compute the inverse of the standard deviation, with a small constant added for stability
+                    inverse_std_dev = 1 / (std_dev + 0.01)
+
+                    # Compute the time since the last release (in days)
+                    time_since_last_release = (datetime.now(
+                        timezone.utc) - release_dates[0]).days
+
+                    # Penalty factor
+                    penalty = 1 / (1 + penalty_param * time_since_last_release)
+
+                    # Time-Weighted Release Activity Score with Release Interval Consistency and Penalty for Time Since Last Release
+                    RAS = 0
+                    for i in range(len(release_dates)):
+                        RAS += penalty * \
+                            math.exp(-lambda_ * i) * inverse_std_dev
+
+    def _score_community(self, owner, repo, **kwargs):
         try:
             ref = self.collection_refs['widgets'].document(self.get_repo_hash(owner, repo)).get(
-                field_paths=['recent_releases']).to_dict()
+                field_paths=['community_profile']).to_dict()
 
             if ref is None:
-                raise exceptions.NotFound('Collection or document not found')
+                raise exceptions.NotFound(
+                    'Collection or document not found')
 
         except exceptions.NotFound as ex:
             # Handle case where document or collection does not exist
             pass
 
         else:
-            releases = ref.get('recent_releases', None)
-            if releases:
-                # Convert 'published_at' strings to datetime objects and sort in descending order
-                release_dates = sorted([parser.isoparse(
-                    release['published_at']) for release in releases], reverse=True)
+            data = ref.get('community_profile', None)
+            if data:
+                return data
 
-                # Decay parameter
-                lambda_ = 0.1
 
-                # Penalty parameter
-                penalty_param = 0.01
-
-                # Compute the list of release intervals (in days)
-                release_intervals = [
-                    (release_dates[i-1] - release_dates[i]).days for i in range(1, len(release_dates))]
-
-                # Compute the standard deviation of the release intervals
-                std_dev = np.std(release_intervals)
-
-                # Compute the inverse of the standard deviation, with a small constant added for stability
-                inverse_std_dev = 1 / (std_dev + 0.01)
-
-                # Compute the time since the last release (in days)
-                time_since_last_release = (datetime.now(
-                    timezone.utc) - release_dates[0]).days
-
-                # Penalty factor
-                penalty = 1 / (1 + penalty_param * time_since_last_release)
-
-                # Time-Weighted Release Activity Score with Release Interval Consistency and Penalty for Time Since Last Release
-                RAS = 0
-                for i in range(len(release_dates)):
-                    RAS += penalty * math.exp(-lambda_ * i) * inverse_std_dev
 
     def health_score(self, owner, repo, **kwargs):
         # Repository Activity is calculated by taking the sum of commit activity, issue count, pull request count, and recent releases. This reflects the amount of development activity within the repository.
@@ -272,9 +380,7 @@ class GithubWidgets():
         # Code Evolution can be evaluated using code frequency. This parameter shows how frequently the codebase is updated.
 
         # Community could be measured with the community profile.
-
-        # Diversity can be determined by the language breakdown. This can provide insight into the range of skills and technologies incorporated into the project.
-
+        self._score_community(owner, repo)
         self._score_repository_activity(owner, repo)
 
         pass
@@ -491,7 +597,10 @@ class GithubWidgets():
                 closed_at = node["closedAt"]
                 closed = node["closed"]
                 issues.append({"createdAt": created_at,
-                              "closedAt": closed_at, "closed": closed, "commend_count": node["comments"]["totalCount"]})
+                              "closedAt": closed_at,
+                               "closed": closed,
+                               "closed_interval": str(datetime.strptime(closed_at, "%Y-%m-%dT%H:%M:%SZ") - datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ")) if closed else None,
+                               "comment_count": node["comments"]["totalCount"]})
 
             # Set the next cursor for pagination
             cursor = end_cursor
@@ -542,7 +651,6 @@ class GithubWidgets():
                             comments {
 								totalCount
 							}
-
                         }
                     }
                 }
@@ -575,7 +683,8 @@ class GithubWidgets():
                 closed_at = node["closedAt"]
                 closed = node["closed"]
                 pull_requests.append({"createdAt": created_at,
-                                      "closedAt": closed_at, "closed": closed, "commend_count": node["comments"]["totalCount"]})
+                                      "closed_interval": str((datetime.strptime(closed_at, "%Y-%m-%dT%H:%M:%SZ") - datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ"))) if closed else None,
+                                      "closedAt": closed_at, "closed": closed, "comment_count": node["comments"]["totalCount"]})
 
             # Set the next cursor for pagination
             cursor = end_cursor

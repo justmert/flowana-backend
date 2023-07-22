@@ -114,10 +114,10 @@ class Pipeline:
             # self.github_widgets.recent_commits,
             # self.github_widgets.recent_releases,
 
-            # self.github_widgets.health_score # added new
 
-            # self.github_widgets.issue_activity # added new
-            self.github_widgets.pull_request_activity # added new
+            # self.github_widgets.issue_activity, # added new
+            # self.github_widgets.pull_request_activity, # added new
+            self.github_widgets.health_score # added new
 
 
         ]

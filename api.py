@@ -258,7 +258,7 @@ async def test_auth():
                              "commit_comment_count": 4645,
                              "release_count": 15,
                              "owner_avatar_url": "https://avatars.githubusercontent.com/u/103585522?v=4",
-                             "topics": [
+                             "categories.lvl0": [
                                  "web3",
                                  "blockchain",
                                  "graphql",
@@ -566,6 +566,7 @@ def participation_count(
     """
     Returns the participation count data of last 52 weeks for the owner and all.
 
+    
     """
 
     try:
@@ -585,7 +586,7 @@ def participation_count(
         raise HTTPException(
             status_code=500, detail=f"An error occurred {str(e)}")
 
-    data = ref.get('participation', None)
+    data = ref.get('participation_count', None)
     if not data:
         raise HTTPException(
             status_code=204, detail="Content is empty.")
@@ -1072,7 +1073,8 @@ def language_breakdown(
                      "application/json": {
                          "example": {
                              'closed': 12,
-                             'open': 2
+                             'open': 2,
+                             'average_days_to_close_issues': 23
                          }
                      }
                  }
@@ -1117,6 +1119,12 @@ def issue_count(
         if ref is None:
             raise exceptions.NotFound('Collection or document not found')
 
+        try:
+            ref2 = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
+                field_paths=['average_days_to_close_issues']).to_dict()   
+        except Exception as ex:
+            pass
+        
     except exceptions.NotFound as ex:
         # Handle case where document or collection does not exist
         raise HTTPException(
@@ -1131,6 +1139,9 @@ def issue_count(
     if not data:
         raise HTTPException(
             status_code=204, detail="Content is empty.")
+
+    if ref2:
+        data['average_days_to_close_issues'] = ref2.get('average_days_to_close_issues', 0)
 
     return data
 
@@ -1246,7 +1257,8 @@ def most_active_issues(
                      "application/json": {
                          "example": {
                              'closed': 12,
-                             'open': 2
+                             'open': 2,
+                             'average_days_to_close_pull_requests': 23
                          }
                      }
                  }
@@ -1290,6 +1302,13 @@ def pull_request_count(
 
         if ref is None:
             raise exceptions.NotFound('Collection or document not found')
+        
+        try:
+            ref2 = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
+                field_paths=['average_days_to_close_pull_requests']).to_dict()   
+        except Exception as ex:
+            pass
+
 
     except exceptions.NotFound as ex:
         # Handle case where document or collection does not exist
@@ -1305,6 +1324,9 @@ def pull_request_count(
     if not data:
         raise HTTPException(
             status_code=204, detail="Content is empty.")
+
+    if ref2:
+        data['average_days_to_close_pull_requests'] = ref2.get('average_days_to_close_pull_requests', 0)
 
     return data
 
@@ -1741,7 +1763,6 @@ class PullRequestActivityInterval(str, Enum):
     week = 'week'
     month = 'month'
     year = 'year'
-
 
 @app.get("/protocols/{protocol_name}/pull-request-activity", tags=["Github - Project"], dependencies=[Depends(get_current_user)],
          responses={
