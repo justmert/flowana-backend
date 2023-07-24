@@ -332,8 +332,8 @@ def repository_info(
     """
 
     try:
-        ref = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
-            field_paths=['repository_info']).to_dict()
+        ref = db.collection(f'{protocol_name}-widgets').document('repositories').collection(
+            f'{owner}#{repo}').document('repository_info').get(field_paths=['data']).to_dict()
 
         if ref is None:
             raise exceptions.NotFound('Collection or document not found')
@@ -348,12 +348,96 @@ def repository_info(
         raise HTTPException(
             status_code=500, detail=f"An error occurred {str(e)}")
 
-    data = ref.get('repository_info', None)
+    data = ref.get('data', None)
     if not data:
         raise HTTPException(
             status_code=204, detail="Content is empty.")
 
     data.update({"owner": owner, "repo": repo})
+    return data
+
+
+@app.get("/protocols/{protocol_name}/health-score", dependencies=[Depends(get_current_user)],
+         tags=["Github - Project"],
+         responses={
+             200: {
+                 "description": "Repository information",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             'commit_activity': 54.01,
+                             'contribution_activity': 0.59,
+                             'issue_activity': 67.87,
+                             'pull_request_activity': 8.32,
+                             'release_activity': 21
+                         }
+                     }
+                 }
+             },
+
+             204: {
+                 "description": "No content found",
+                 "content": {
+                     "application/json": {
+                         "example": None
+                     }
+                 }
+             },
+
+             404: {
+                 "description": "Not found",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                                "error": "Error description"
+                         }
+                     }
+                 }
+             },
+}
+)
+def health_score(
+    protocol_name: str = Path(..., description="Protocol name"),
+    owner: str = Query(..., description="Project owner name"),
+    repo: str = Query(..., description="Project repository name"),
+):
+    """
+    Returns the health score of a project. The health score is calculated based on the following metrics:
+
+    - `commit_activity`: A high score suggests frequent and recent commit activity. A low score may indicate infrequent or old commit activity.
+
+    - `issue_activity`: A high score indicates efficient issue management, such as closing issues quickly and getting many comments. A low score may suggest poor issue handling.
+
+    - `pull_request_activity`: A high score indicates effective pull request management, like quick closing times and receiving many comments. A low score suggests the opposite.
+
+    - `release_activity`: A high score represents frequent and recent software releases. A low score may imply less frequent or outdated releases.
+
+    - `contribution_activity`: A high score indicates a healthy number of contributors with increasing commit trends. A low score may suggest a lack of contributors or decreasing commit trends.
+
+    """
+
+    try:
+        ref = db.collection(f'{protocol_name}-widgets').document('repositories').collection(
+            f'{owner}#{repo}').document('health_score').get(field_paths=['data']).to_dict()
+
+        if ref is None:
+            raise exceptions.NotFound('Collection or document not found')
+
+    except exceptions.NotFound as ex:
+        # Handle case where document or collection does not exist
+        raise HTTPException(
+            status_code=404, detail=str(ex))
+
+    except Exception as e:
+        # Handle other exceptions
+        raise HTTPException(
+            status_code=500, detail=f"An error occurred {str(e)}")
+
+    data = ref.get('data', None)
+    if not data:
+        raise HTTPException(
+            status_code=204, detail="Content is empty.")
+
     return data
 
 
@@ -417,8 +501,8 @@ def commit_activity(
     """
 
     try:
-        ref = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
-            field_paths=['commit_activity']).to_dict()
+        ref = db.collection(f'{protocol_name}-widgets').document('repositories').collection(
+            f'{owner}#{repo}').document('commit_activity').get(field_paths=['data']).to_dict()
 
         if ref is None:
             raise exceptions.NotFound('Collection or document not found')
@@ -433,7 +517,7 @@ def commit_activity(
         raise HTTPException(
             status_code=500, detail=f"An error occurred {str(e)}")
 
-    data = ref.get('commit_activity', None)
+    data = ref.get('data', None)
     if not data:
         raise HTTPException(
             status_code=204, detail="Content is empty.")
@@ -497,8 +581,8 @@ def participation(
     """
 
     try:
-        ref = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
-            field_paths=['participation']).to_dict()
+        ref = db.collection(f'{protocol_name}-widgets').document('repositories').collection(
+            f'{owner}#{repo}').document('participation').get(field_paths=['data']).to_dict()
 
         if ref is None:
             raise exceptions.NotFound('Collection or document not found')
@@ -513,7 +597,7 @@ def participation(
         raise HTTPException(
             status_code=500, detail=f"An error occurred {str(e)}")
 
-    data = ref.get('participation', None)
+    data = ref.get('data', None)
     if not data:
         raise HTTPException(
             status_code=204, detail="Content is empty.")
@@ -566,12 +650,12 @@ def participation_count(
     """
     Returns the participation count data of last 52 weeks for the owner and all.
 
-    
+
     """
 
     try:
-        ref = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
-            field_paths=['participation_count']).to_dict()
+        ref = db.collection(f'{protocol_name}-widgets').document('repositories').collection(
+            f'{owner}#{repo}').document('participation_count').get(field_paths=['data']).to_dict()
 
         if ref is None:
             raise exceptions.NotFound('Collection or document not found')
@@ -586,7 +670,7 @@ def participation_count(
         raise HTTPException(
             status_code=500, detail=f"An error occurred {str(e)}")
 
-    data = ref.get('participation_count', None)
+    data = ref.get('data', None)
     if not data:
         raise HTTPException(
             status_code=204, detail="Content is empty.")
@@ -650,8 +734,8 @@ def code_frequency(
     """
 
     try:
-        ref = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
-            field_paths=['code_frequency']).to_dict()
+        ref = db.collection(f'{protocol_name}-widgets').document('repositories').collection(
+            f'{owner}#{repo}').document('code_frequency').get(field_paths=['data']).to_dict()
 
         if ref is None:
             raise exceptions.NotFound('Collection or document not found')
@@ -666,7 +750,7 @@ def code_frequency(
         raise HTTPException(
             status_code=500, detail=f"An error occurred {str(e)}")
 
-    data = ref.get('code_frequency', None)
+    data = ref.get('data', None)
     if not data:
         raise HTTPException(
             status_code=204, detail="Content is empty.")
@@ -737,8 +821,8 @@ def punch_card(
     """
 
     try:
-        ref = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
-            field_paths=['punch_card']).to_dict()
+        ref = db.collection(f'{protocol_name}-widgets').document('repositories').collection(
+            f'{owner}#{repo}').document('punch_card').get(field_paths=['data']).to_dict()
 
         if ref is None:
             raise exceptions.NotFound('Collection or document not found')
@@ -753,7 +837,7 @@ def punch_card(
         raise HTTPException(
             status_code=500, detail=f"An error occurred {str(e)}")
 
-    data = ref.get('punch_card', None)
+    data = ref.get('data', None)
     if not data:
         raise HTTPException(
             status_code=204, detail="Content is empty.")
@@ -845,11 +929,26 @@ def contributors(
     """
 
     try:
-        ref = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
-            field_paths=['contributors']).to_dict()
+        # ref = db.collection(f'{protocol_name}-widgets').document('repositories').collection(
+        #     f'{owner}#{repo}').document('contributors').get(field_paths=['data']).to_dict()
 
-        if ref is None:
-            raise exceptions.NotFound('Collection or document not found')
+        # if ref is None:
+        #     raise exceptions.NotFound('Collection or document not found')
+
+        doc_base = db.collection(f'{protocol_name}-widgets').document('repositories').collection(
+            f'{owner}#{repo}')
+
+        # Initialize an empty list to hold all contributors
+        data = []
+
+        # Fetch all documents that start with 'contributors' in their name
+        all_docs = doc_base.list_documents()
+        for doc in all_docs:
+            if 'contributors' in doc.id:
+                # Get 'data' field from each 'contributors' document and extend the all_contributors list
+                doc_dict = doc.get().to_dict()
+                if doc_dict and 'data' in doc_dict:
+                    data.extend(doc_dict['data'])
 
     except exceptions.NotFound as ex:
         # Handle case where document or collection does not exist
@@ -861,7 +960,7 @@ def contributors(
         raise HTTPException(
             status_code=500, detail=f"An error occurred {str(e)}")
 
-    data = ref.get('contributors', None)
+    # data = ref.get('data', None)
     if not data:
         raise HTTPException(
             status_code=204, detail="Content is empty.")
@@ -965,8 +1064,8 @@ def community_profile(
     """
 
     try:
-        ref = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
-            field_paths=['community_profile']).to_dict()
+        ref = db.collection(f'{protocol_name}-widgets').document('repositories').collection(
+            f'{owner}#{repo}').document('community_profile').get(field_paths=['data']).to_dict()
 
         if ref is None:
             raise exceptions.NotFound('Collection or document not found')
@@ -981,7 +1080,7 @@ def community_profile(
         raise HTTPException(
             status_code=500, detail=f"An error occurred {str(e)}")
 
-    data = ref.get('community_profile', None)
+    data = ref.get('data', None)
     if not data:
         raise HTTPException(
             status_code=204, detail="Content is empty.")
@@ -1039,8 +1138,8 @@ def language_breakdown(
     """
 
     try:
-        ref = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
-            field_paths=['language_breakdown']).to_dict()
+        ref = db.collection(f'{protocol_name}-widgets').document('repositories').collection(
+            f'{owner}#{repo}').document('language_breakdown').get(field_paths=['data']).to_dict()
 
         if ref is None:
             raise exceptions.NotFound('Collection or document not found')
@@ -1055,7 +1154,7 @@ def language_breakdown(
         raise HTTPException(
             status_code=500, detail=f"An error occurred {str(e)}")
 
-    data = ref.get('language_breakdown', None)
+    data = ref.get('data', None)
     if not data:
         raise HTTPException(
             status_code=204, detail="Content is empty.")
@@ -1113,18 +1212,19 @@ def issue_count(
     """
 
     try:
-        ref = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
-            field_paths=['issue_count']).to_dict()
+        ref = db.collection(f'{protocol_name}-widgets').document('repositories').collection(
+            f'{owner}#{repo}').document('issue_count').get(field_paths=['data']).to_dict()
 
         if ref is None:
             raise exceptions.NotFound('Collection or document not found')
 
         try:
-            ref2 = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
-                field_paths=['average_days_to_close_issues']).to_dict()   
+            ref2 = db.collection(f'{protocol_name}-widgets').document('repositories').collection(
+                f'{owner}#{repo}').document('average_days_to_close_issues').get(field_paths=['data']).to_dict()
+
         except Exception as ex:
             pass
-        
+
     except exceptions.NotFound as ex:
         # Handle case where document or collection does not exist
         raise HTTPException(
@@ -1135,13 +1235,13 @@ def issue_count(
         raise HTTPException(
             status_code=500, detail=f"An error occurred {str(e)}")
 
-    data = ref.get('issue_count', None)
+    data = ref.get('data', None)
     if not data:
         raise HTTPException(
             status_code=204, detail="Content is empty.")
 
     if ref2:
-        data['average_days_to_close_issues'] = ref2.get('average_days_to_close_issues', 0)
+        data['average_days_to_close_issues'] = ref2.get('data', 0)
 
     return data
 
@@ -1218,8 +1318,8 @@ def most_active_issues(
     """
 
     try:
-        ref = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
-            field_paths=['most_active_issues']).to_dict()
+        ref = db.collection(f'{protocol_name}-widgets').document('repositories').collection(
+            f'{owner}#{repo}').document('most_active_issues').get(field_paths=['data']).to_dict()
 
         if ref is None:
             raise exceptions.NotFound('Collection or document not found')
@@ -1234,7 +1334,7 @@ def most_active_issues(
         raise HTTPException(
             status_code=500, detail=f"An error occurred {str(e)}")
 
-    data = ref.get('most_active_issues', None)
+    data = ref.get('data', None)
     if not data:
         raise HTTPException(
             status_code=204, detail="Content is empty.")
@@ -1297,18 +1397,18 @@ def pull_request_count(
     """
 
     try:
-        ref = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
-            field_paths=['pull_request_count']).to_dict()
+        ref = db.collection(f'{protocol_name}-widgets').document('repositories').collection(
+            f'{owner}#{repo}').document('pull_request_count').get(field_paths=['data']).to_dict()
 
         if ref is None:
             raise exceptions.NotFound('Collection or document not found')
-        
+
         try:
-            ref2 = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
-                field_paths=['average_days_to_close_pull_requests']).to_dict()   
+            ref2 = db.collection(f'{protocol_name}-widgets').document('repositories').collection(
+                f'{owner}#{repo}').document('average_days_to_close_pull_requests').get(field_paths=['data']).to_dict()
+
         except Exception as ex:
             pass
-
 
     except exceptions.NotFound as ex:
         # Handle case where document or collection does not exist
@@ -1320,13 +1420,13 @@ def pull_request_count(
         raise HTTPException(
             status_code=500, detail=f"An error occurred {str(e)}")
 
-    data = ref.get('pull_request_count', None)
+    data = ref.get('data', None)
     if not data:
         raise HTTPException(
             status_code=204, detail="Content is empty.")
 
     if ref2:
-        data['average_days_to_close_pull_requests'] = ref2.get('average_days_to_close_pull_requests', 0)
+        data['average_days_to_close_pull_requests'] = ref2.get('data', 0)
 
     return data
 
@@ -1406,8 +1506,8 @@ def recent_issues(
         field_name = f'recent_updated_issues'
 
     try:
-        collection_ref = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
-            field_paths=[field_name]).to_dict()
+        collection_ref = db.collection(f'{protocol_name}-widgets').document('repositories').collection(
+            f'{owner}#{repo}').document(field_name).get(field_paths=['data']).to_dict()
 
         if collection_ref is None:
             raise HTTPException(
@@ -1423,7 +1523,7 @@ def recent_issues(
         raise HTTPException(
             status_code=500, detail=f"An error occurred: {str(e)}")
 
-    data = collection_ref.get(field_name, None)
+    data = collection_ref.get('data', None)
 
     if not data:
         raise HTTPException(
@@ -1504,8 +1604,8 @@ def recent_pull_requests(
         field_name = f'recent_updated_pull_requests'
 
     try:
-        collection_ref = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
-            field_paths=[field_name]).to_dict()
+        collection_ref = db.collection(f'{protocol_name}-widgets').document('repositories').collection(
+            f'{owner}#{repo}').document(field_name).get(field_paths=['data']).to_dict()
 
         if collection_ref is None:
             raise exceptions.NotFound('Collection or document not found')
@@ -1520,7 +1620,7 @@ def recent_pull_requests(
         raise HTTPException(
             status_code=500, detail=f"An error occurred {str(e)}")
 
-    data = collection_ref.get(field_name, None)
+    data = collection_ref.get('data', None)
 
     if not data:
         raise HTTPException(
@@ -1583,8 +1683,8 @@ def recent_stargazing_activity(
     """
 
     try:
-        ref = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
-            field_paths=['recent_stargazing_activity']).to_dict()
+        ref = db.collection(f'{protocol_name}-widgets').document('repositories').collection(
+            f'{owner}#{repo}').document('recent_stargazing_activity').get(field_paths=['data']).to_dict()
 
         if ref is None:
             raise exceptions.NotFound('Collection or document not found')
@@ -1599,7 +1699,7 @@ def recent_stargazing_activity(
         raise HTTPException(
             status_code=500, detail=f"An error occurred {str(e)}")
 
-    data = ref.get('recent_stargazing_activity', None)
+    data = ref.get('data', None)
     if (not data) or (not data['series'][0]['data']):
         raise HTTPException(
             status_code=204, detail="Content is empty.")
@@ -1683,11 +1783,27 @@ def issue_activity(
     """
 
     try:
-        ref = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
-            field_paths=['issue_activity']).to_dict()
+        ref = db.collection(f'{protocol_name}-widgets').document('repositories').collection(
+            f'{owner}#{repo}').document(f'issue_chart_{interval.value}').get(field_paths=['data']).to_dict()
 
         if ref is None:
             raise exceptions.NotFound('Collection or document not found')
+
+        # # Initialize the base reference
+        # doc_base = db.collection(f'{protocol_name}-widgets').document('repositories').collection(
+        #     f'{owner}#{repo}')
+
+        # # Initialize an empty list to hold all contributors
+        # data = []
+
+        # # Fetch all documents that start with 'contributors' in their name
+        # all_docs = doc_base.list_documents()
+        # for doc in all_docs:
+        #     if 'issue_activity' in doc.id:
+        #         # Get 'data' field from each 'contributors' document and extend the all_contributors list
+        #         doc_dict = doc.get().to_dict()
+        #         if doc_dict and 'data' in doc_dict:
+        #             data.extend(doc_dict['data'])
 
     except exceptions.NotFound as ex:
         # Handle case where document or collection does not exist
@@ -1699,70 +1815,71 @@ def issue_activity(
         raise HTTPException(
             status_code=500, detail=f"An error occurred {str(e)}")
 
-    data = ref.get('issue_activity', None)
+    data = ref.get('data', None)
     if not data:
         raise HTTPException(
             status_code=204, detail="Content is empty.")
 
     # process here
-    try:
-        # Process data
-        issues_df = pd.DataFrame(data)
+    # try:
+    #     # Process data
+    #     issues_df = pd.DataFrame(data)
 
-        # Convert createdAt and closedAt to datetime format
-        issues_df['createdAt'] = pd.to_datetime(issues_df['createdAt'])
-        issues_df['closedAt'] = pd.to_datetime(issues_df['closedAt'])
+    #     # Convert createdAt and closedAt to datetime format
+    #     issues_df['createdAt'] = pd.to_datetime(issues_df['createdAt'])
+    #     issues_df['closedAt'] = pd.to_datetime(issues_df['closedAt'])
 
-        pd_interval = None
-        if interval.value == 'week':
-            pd_interval = 'W'
+    #     pd_interval = None
+    #     if interval.value == 'week':
+    #         pd_interval = 'W'
 
-        elif interval.value == 'month':
-            pd_interval = 'M'
+    #     elif interval.value == 'month':
+    #         pd_interval = 'M'
 
-        elif interval.value == 'year':
-            pd_interval = 'Y'
+    #     elif interval.value == 'year':
+    #         pd_interval = 'Y'
 
-        # Group by date and count new and closed issues separately
-        new_issues = issues_df.resample(pd_interval, on='createdAt').size()
-        closed_issues = issues_df[issues_df['closed']].resample(
-            pd_interval, on='closedAt').size()
+    #     # Group by date and count new and closed issues separately
+    #     new_issues = issues_df.resample(pd_interval, on='createdAt').size()
+    #     closed_issues = issues_df[issues_df['closed']].resample(
+    #         pd_interval, on='closedAt').size()
 
-        # Ensure new_issues and closed_issues have the same index
-        all_dates = new_issues.index.union(closed_issues.index)
-        new_issues = new_issues.reindex(all_dates, fill_value=0)
-        closed_issues = closed_issues.reindex(all_dates, fill_value=0)
+    #     # Ensure new_issues and closed_issues have the same index
+    #     all_dates = new_issues.index.union(closed_issues.index)
+    #     new_issues = new_issues.reindex(all_dates, fill_value=0)
+    #     closed_issues = closed_issues.reindex(all_dates, fill_value=0)
 
-        # Convert data to ECharts format
-        dates = all_dates.strftime('%Y-%m-%d').tolist()
-        echart_data = {
-            'xAxis': {
-                'data': dates
-            },
-            'series': [
-                {
-                    'name': 'Opened',
-                    'data': new_issues.tolist()
-                },
-                {
-                    'name': 'Closed',
-                    'data': closed_issues.tolist()
-                }
-            ]
-        }
+    #     # Convert data to ECharts format
+    #     dates = all_dates.strftime('%Y-%m-%d').tolist()
+    #     echart_data = {
+    #         'xAxis': {
+    #             'data': dates
+    #         },
+    #         'series': [
+    #             {
+    #                 'name': 'Opened',
+    #                 'data': new_issues.tolist()
+    #             },
+    #             {
+    #                 'name': 'Closed',
+    #                 'data': closed_issues.tolist()
+    #             }
+    #         ]
+    #     }
 
-    except Exception as e:
-        # Handle exceptions during data processing
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred during data processing: {str(e)}")
+    # except Exception as e:
+    #     # Handle exceptions during data processing
+    #     raise HTTPException(
+    #         status_code=500, detail=f"An error occurred during data processing: {str(e)}")
 
-    return echart_data
+    return data
 
 
 class PullRequestActivityInterval(str, Enum):
     week = 'week'
     month = 'month'
     year = 'year'
+
 
 @app.get("/protocols/{protocol_name}/pull-request-activity", tags=["Github - Project"], dependencies=[Depends(get_current_user)],
          responses={
@@ -1834,11 +1951,27 @@ def pull_request_activity(
     """
 
     try:
-        ref = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
-            field_paths=['pull_request_activity']).to_dict()
+        ref = db.collection(f'{protocol_name}-widgets').document('repositories').collection(
+            f'{owner}#{repo}').document(f'pull_request_chart_{interval.value}').get(field_paths=['data']).to_dict()
 
         if ref is None:
             raise exceptions.NotFound('Collection or document not found')
+
+        # Initialize the base reference
+        # doc_base = db.collection(f'{protocol_name}-widgets').document('repositories').collection(
+        #     f'{owner}#{repo}')
+
+        # # Initialize an empty list to hold all contributors
+        # data = []
+
+        # # Fetch all documents that start with 'contributors' in their name
+        # all_docs = doc_base.list_documents()
+        # for doc in all_docs:
+        #     if 'pull_request_activity' in doc.id:
+        #         # Get 'data' field from each 'contributors' document and extend the all_contributors list
+        #         doc_dict = doc.get().to_dict()
+        #         if doc_dict and 'data' in doc_dict:
+        #             data.extend(doc_dict['data'])
 
     except exceptions.NotFound as ex:
         # Handle case where document or collection does not exist
@@ -1850,68 +1983,69 @@ def pull_request_activity(
         raise HTTPException(
             status_code=500, detail=f"An error occurred {str(e)}")
 
-    data = ref.get('pull_request_activity', None)
+    data = ref.get('data', None)
     if not data:
         raise HTTPException(
             status_code=204, detail="Content is empty.")
 
     # process here
-    try:
+    # try:
+
         # Process data
-        pull_requests_df = pd.DataFrame(data)
+        # pull_requests_df = pd.DataFrame(data)
 
-        # Convert createdAt and closedAt to datetime format
-        pull_requests_df['createdAt'] = pd.to_datetime(
-            pull_requests_df['createdAt'])
-        pull_requests_df['closedAt'] = pd.to_datetime(
-            pull_requests_df['closedAt'])
+        # # Convert createdAt and closedAt to datetime format
+        # pull_requests_df['createdAt'] = pd.to_datetime(
+        #     pull_requests_df['createdAt'])
+        # pull_requests_df['closedAt'] = pd.to_datetime(
+        #     pull_requests_df['closedAt'])
 
-        pd_interval = None
-        if interval.value == 'week':
-            pd_interval = 'W'
+        # pd_interval = None
+        # if interval.value == 'week':
+        #     pd_interval = 'W'
 
-        elif interval.value == 'month':
-            pd_interval = 'M'
+        # elif interval.value == 'month':
+        #     pd_interval = 'M'
 
-        elif interval.value == 'year':
-            pd_interval = 'Y'
+        # elif interval.value == 'year':
+        #     pd_interval = 'Y'
 
-        # Group by date and count new and closed issues separately
-        new_pull_requests = pull_requests_df.resample(
-            pd_interval, on='createdAt').size()
-        closed_pull_requests = pull_requests_df[pull_requests_df['closed']].resample(
-            pd_interval, on='closedAt').size()
+        # # Group by date and count new and closed issues separately
+        # new_pull_requests = pull_requests_df.resample(
+        #     pd_interval, on='createdAt').size()
+        # closed_pull_requests = pull_requests_df[pull_requests_df['closed']].resample(
+        #     pd_interval, on='closedAt').size()
 
-        # Ensure new_issues and closed_issues have the same index
-        all_dates = new_pull_requests.index.union(closed_pull_requests.index)
-        new_pull_requests = new_pull_requests.reindex(all_dates, fill_value=0)
-        closed_pull_requests = closed_pull_requests.reindex(
-            all_dates, fill_value=0)
+        # # Ensure new_issues and closed_issues have the same index
+        # all_dates = new_pull_requests.index.union(closed_pull_requests.index)
+        # new_pull_requests = new_pull_requests.reindex(all_dates, fill_value=0)
+        # closed_pull_requests = closed_pull_requests.reindex(
+        #     all_dates, fill_value=0)
 
-        # Convert data to ECharts format
-        dates = all_dates.strftime('%Y-%m-%d').tolist()
-        echart_data = {
-            'xAxis': {
-                'data': dates
-            },
-            'series': [
-                {
-                    'name': 'Opened',
-                    'data': new_pull_requests.tolist()
-                },
-                {
-                    'name': 'Closed',
-                    'data': closed_pull_requests.tolist()
-                }
-            ]
-        }
+        # # Convert data to ECharts format
+        # dates = all_dates.strftime('%Y-%m-%d').tolist()
+        # echart_data = {
+        #     'xAxis': {
+        #         'data': dates
+        #     },
+        #     'series': [
+        #         {
+        #             'name': 'Opened',
+        #             'data': new_pull_requests.tolist()
+        #         },
+        #         {
+        #             'name': 'Closed',
+        #             'data': closed_pull_requests.tolist()
+        #         }
+        #     ]
+        # }
 
-    except Exception as e:
-        # Handle exceptions during data processing
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred during data processing: {str(e)}")
+    # except Exception as e:
+    #     # Handle exceptions during data processing
+    #     raise HTTPException(
+    #         status_code=500, detail=f"An error occurred during data processing: {str(e)}")
 
-    return echart_data
+    return data
 
 
 @app.get("/protocols/{protocol_name}/recent-commits", dependencies=[Depends(get_current_user)],
@@ -1970,8 +2104,8 @@ def recent_commits(
     """
 
     try:
-        ref = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
-            field_paths=['recent_commits']).to_dict()
+        ref = db.collection(f'{protocol_name}-widgets').document('repositories').collection(
+            f'{owner}#{repo}').document('recent_commits').get(field_paths=['data']).to_dict()
 
         if ref is None:
             raise exceptions.NotFound('Collection or document not found')
@@ -1986,7 +2120,7 @@ def recent_commits(
         raise HTTPException(
             status_code=500, detail=f"An error occurred {str(e)}")
 
-    data = ref.get('recent_commits', None)
+    data = ref.get('data', None)
     if not data:
         raise HTTPException(
             status_code=204, detail="Content is empty.")
@@ -2048,8 +2182,8 @@ def recent_releases(
     """
 
     try:
-        ref = db.collection(f'{protocol_name}-widgets').document(f'{owner}#{repo}').get(
-            field_paths=['recent_releases']).to_dict()
+        ref = db.collection(f'{protocol_name}-widgets').document('repositories').collection(
+            f'{owner}#{repo}').document('recent_releases').get(field_paths=['data']).to_dict()
 
         if ref is None:
             raise exceptions.NotFound('Collection or document not found')
@@ -2064,7 +2198,7 @@ def recent_releases(
         raise HTTPException(
             status_code=500, detail=f"An error occurred {str(e)}")
 
-    data = ref.get('recent_releases', None)
+    data = ref.get('data', None)
     if not data:
         raise HTTPException(
             status_code=204, detail="Content is empty.")

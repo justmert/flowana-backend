@@ -75,7 +75,6 @@ class Flowana():
     def run(self):
         for protocol in self.protocols:
             collection_refs = {'projects': self.db.collection(f'{protocol["name"]}-projects'),
-                                'widgets': self.db.collection(f'{protocol["name"]}-widgets'), 
                                 'cumulative': self.db.collection(f'{protocol["name"]}-cumulative'),
                                 'discourse': self.db.collection(f'{protocol["name"]}-discourse'),
                                 'developers': self.db.collection(f'{protocol["name"]}-developers'),
@@ -83,6 +82,13 @@ class Flowana():
 
             # Create the collections if they don't exist
             [self.check_collection(collection_ref) for collection_ref in collection_refs.values()]
+
+            if not self.db.collection(f'{protocol["name"]}-widgets').get():
+                self.db.collection(f'{protocol["name"]}-widgets').document('repositories').set({})
+
+            # widgets (collection) -> repositories (doc) -> PROJECT_HASH (sub-collection) -> DATA_NAME (doc) -> 'data': data (field)
+            collection_refs['widgets'] = self.db.collection(f'{protocol["name"]}-widgets')
+
             if protocol['crawl'] == True:
                 self.run_crawler(protocol['name'], protocol['crawler_tomls'])
                 self.session.cache.clear()

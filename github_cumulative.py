@@ -8,6 +8,12 @@ import pandas as pd
 from datetime import timedelta
 from itertools import zip_longest
 from collections import defaultdict
+from sklearn.preprocessing import MinMaxScaler
+import numpy as np
+from sklearn.preprocessing import StandardScaler
+from scipy.stats import norm
+from sklearn.preprocessing import RobustScaler, quantile_transform
+
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +36,6 @@ class GithubCumulative():
 
         return True
 
-
     def cumulative_stats(self, **kwargs):
         docs = self.collection_refs['widgets'].stream()
         cum_disk_usage = 0
@@ -51,12 +56,12 @@ class GithubCumulative():
             cum_disk_usage += repo_info.get('disk_usage', 0)
             cum_commit_comment_count += repo_info.get(
                 'commit_comment_count', 0)
-            
+
             branch_commit_count = repo_info.get(
                 'default_branch_commit_count', 0)
-            
+
             cum_default_branch_commit_count += branch_commit_count if branch_commit_count is not None else 0
-            
+
             cum_environment_count += repo_info.get('environment_count', 0)
             cum_fork_count += repo_info.get('fork_count', 0)
             cum_pull_request_count += repo_info.get('pull_request_count', 0)
@@ -98,6 +103,55 @@ class GithubCumulative():
 
         self.collection_refs['cumulative'].document(
             'cumulative_commit_activity').set({'data': d1})
+
+    def normalize_health_score(self, **kwargs):
+
+        # Fetching sub-collections
+        collection_docs = self.collection_refs['widgets'].document(
+            'repositories').collections()
+
+        raw_scores = {}
+        for sub_collection in collection_docs:
+            doc_name = sub_collection.id
+            raw_health_score_doc = sub_collection.document(
+                'raw_health_score').get()
+
+            if not raw_health_score_doc.exists:
+                continue
+
+            data = raw_health_score_doc.to_dict().get('data', None)
+            if data is None:
+                continue
+            for key, value in data.items():
+                if key not in raw_scores:
+                    raw_scores[key] = []
+                raw_scores[key].append((doc_name, value))
+
+        # New dictionary to store normalized scores
+        new_scores = {}
+
+        for key, values in raw_scores.items():
+            names, scores = zip(*values)  # Unpack repo names and scores
+
+            total_score = sum(scores)
+            proportional_scores = [(name, score / total_score * 100)
+                                   for name, score in zip(names, scores)]
+
+            # Add each score to the new_scores dictionary
+            for name, score in proportional_scores:
+                if name not in new_scores:
+                    new_scores[name] = {}
+                new_scores[name][key] = score
+
+        for doc_name, scores in new_scores.items():
+            for key, value in scores.items():
+                if isinstance(value, float):
+                    scores[key] = round(value, 2)
+
+            scores['total'] = sum(scores.values()) / len(scores.values())
+
+            self.collection_refs['widgets'].document('repositories').collection(
+                doc_name).document('health_score').set({'data': scores})
 
     def cumulative_participation(self, **kwargs):
 
@@ -150,7 +204,6 @@ class GithubCumulative():
 
             return final_data
 
-
         docs = self.collection_refs['widgets'].stream()
 
         data1 = None
@@ -165,7 +218,6 @@ class GithubCumulative():
 
         self.collection_refs['cumulative'].document(
             'cumulative_code_frequency').set({'data': data1})
-
 
     def cumulative_punch_card(self, **kwargs):
 
@@ -197,11 +249,11 @@ class GithubCumulative():
             data = doc.to_dict().get('issue_count')
             if data is None:
                 continue
-            
+
             cumulative_open_sum += data['open']
             cumulative_closed_sum += data['closed']
 
-        self.collection_refs['cumulative'].document('cumulative_issue_count').set({'data':{
+        self.collection_refs['cumulative'].document('cumulative_issue_count').set({'data': {
             'open': cumulative_open_sum,
             'closed': cumulative_closed_sum
         }})
@@ -238,7 +290,7 @@ class GithubCumulative():
             yearly = sorted(
                 yearly, key=lambda x: x['comments_count'], reverse=True)[:10]
 
-        self.collection_refs['cumulative'].document('cumulative_most_active_issues').set({'data':{
+        self.collection_refs['cumulative'].document('cumulative_most_active_issues').set({'data': {
             'day': dayly,
             'week': weekly,
             'month': monthly,
@@ -260,7 +312,7 @@ class GithubCumulative():
             cumulative_open_sum += data['open']
             cumulative_closed_sum += data['closed']
 
-        self.collection_refs['cumulative'].document('cumulative_pull_request_count').set({'data':{
+        self.collection_refs['cumulative'].document('cumulative_pull_request_count').set({'data': {
             'open': cumulative_open_sum,
             'closed': cumulative_closed_sum
         }})
@@ -298,16 +350,16 @@ class GithubCumulative():
         self.collection_refs['cumulative'].document(
             'cumulative_language_breakdown').set({'data': cumulative_flatten})
 
-
     class CumulativeRecentIssuesOrder(Enum):
         CREATED_AT = 'CREATED_AT'
-        UPDATED_AT = 'UPDATED_AT    '
+        UPDATED_AT = 'UPDATED_AT'
 
     def cumulative_recent_issues(self, **kwargs):
         docs = self.collection_refs['widgets'].stream()
 
-        order_by = kwargs.get('order_by', self.CumulativeRecentIssuesOrder.CREATED_AT)
-
+        order_by = kwargs.get(
+            'order_by', self.CumulativeRecentIssuesOrder.CREATED_AT)
+        
         if order_by == self.CumulativeRecentIssuesOrder.CREATED_AT:
             field_name = 'recent_created_issues'
 
@@ -325,18 +377,17 @@ class GithubCumulative():
                 data, key=lambda x: x[order_by], reverse=True)[:10]
 
         self.collection_refs['cumulative'].document(
-            f'cumulative_{field_name}').set({'data':cumulative_recent_issues})
-
+            f'cumulative_{field_name}').set({'data': cumulative_recent_issues})
 
     class CumulativeRecentPullRequestsOrder(Enum):
         CREATED_AT = 'CREATED_AT'
-        UPDATED_AT = 'UPDATED_AT    '
-
+        UPDATED_AT = 'UPDATED_AT'
 
     def cumulative_recent_pull_requests(self, **kwargs):
         docs = self.collection_refs['widgets'].stream()
 
-        order_by = kwargs.get('order_by', self.CumulativeRecentIssuesOrder.CREATED_AT)
+        order_by = kwargs.get(
+            'order_by', self.CumulativeRecentIssuesOrder.CREATED_AT)
 
         if order_by == self.CumulativeRecentIssuesOrder.CREATED_AT:
             field_name = 'recent_created_pull_requests'
@@ -355,7 +406,7 @@ class GithubCumulative():
                 data, key=lambda x: x[order_by], reverse=True)[:10]
 
         self.collection_refs['cumulative'].document(
-            f'cumulative_{field_name}').set({'data':cumulative_recent_issues})
+            f'cumulative_{field_name}').set({'data': cumulative_recent_issues})
 
     def cumulative_recent_commits(self, **kwargs):
         docs = self.collection_refs['widgets'].stream()
@@ -371,7 +422,7 @@ class GithubCumulative():
                 data, key=lambda x: x['committed_date'], reverse=True)[:10]
 
         self.collection_refs['cumulative'].document(
-            f'cumulative_recent_commits').set({'data':cumulative_recent_commits})
+            f'cumulative_recent_commits').set({'data': cumulative_recent_commits})
 
     def cumulative_recent_releases(self, **kwargs):
         docs = self.collection_refs['widgets'].stream()
@@ -387,4 +438,4 @@ class GithubCumulative():
                 data, key=lambda x: x['published_at'], reverse=True)[:10]
 
         self.collection_refs['cumulative'].document(
-            f'cumulative_recent_releases').set({'data': cumulative_recent_releases}) 
+            f'cumulative_recent_releases').set({'data': cumulative_recent_releases})

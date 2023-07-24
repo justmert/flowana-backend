@@ -1,9 +1,9 @@
 [{
-    "name":"flow",
+    "name":"polkadot",
     "update": true,
     "crawl": false,
     "crawler_tomls": [
-        "flow"
+        "polkadot"
     ],
     "forum": "https://forum.onflow.org",
     "developers": "flow"

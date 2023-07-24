@@ -93,7 +93,6 @@ class Pipeline:
             # self.github_widgets.code_frequency,
             # self.github_widgets.community_profile,
             # self.github_widgets.punch_card,
-            # self.github_widgets.contributors,  # added new
 
             # self.github_widgets.issue_count,
             # (self.github_widgets.recent_issues, {
@@ -115,10 +114,10 @@ class Pipeline:
             # self.github_widgets.recent_releases,
 
 
-            # self.github_widgets.issue_activity, # added new
-            # self.github_widgets.pull_request_activity, # added new
-            self.github_widgets.health_score # added new
-
+            # self.github_widgets.contributors,  # paginated
+            # self.github_widgets.issue_activity, # paginated
+            self.github_widgets.pull_request_activity, # paginated
+            # self.github_widgets.health_score # added new
 
         ]
 
@@ -133,25 +132,26 @@ class Pipeline:
             (self.github_cumulative.cumulative_recent_issues,
              {'order_by': self.github_cumulative.CumulativeRecentIssuesOrder.CREATED_AT}),
             (self.github_cumulative.cumulative_recent_issues,
-             {'order_by': self.github_cumulative.CumulativeRecentPullRequestsOrder.UPDATED_AT}),
+             {'order_by': self.github_cumulative.CumulativeRecentIssuesOrder.UPDATED_AT}),
             self.github_cumulative.cumulative_most_active_issues,
 
             self.github_cumulative.cumulative_pull_request_count,
             (self.github_cumulative.cumulative_recent_pull_requests,
-             {'order_by': self.github_cumulative.CumulativeRecentIssuesOrder.CREATED_AT}),
+             {'order_by': self.github_cumulative.CumulativeRecentPullRequestsOrder.CREATED_AT}),
             (self.github_cumulative.cumulative_recent_pull_requests,
              {'order_by': self.github_cumulative.CumulativeRecentPullRequestsOrder.UPDATED_AT}),
 
             self.github_cumulative.cumulative_language_breakdown,
             self.github_cumulative.cumulative_recent_commits,
-            self.github_cumulative.cumulative_recent_releases
+            self.github_cumulative.cumulative_recent_releases,
+            self.github_cumulative.normalize_health_score,
         ]
 
     def run_pipelines(self):
-        # self.run_protocol_pipeline(self.protocol_developers_functions)
         self.run_project_github_pipeline()
         # self.run_protocol_pipeline(self.protocol_github_functions)
         # self.run_protocol_pipeline(self.protocol_discourse_functions)
+        # self.run_protocol_pipeline(self.protocol_developers_functions)
 
     def run_protocol_pipeline(self, protocol_pipeline):
         for item in protocol_pipeline:
@@ -172,7 +172,10 @@ class Pipeline:
     def run_project_github_pipeline(self):
         # for repository in self.repositories:
         for repository in [
-            {'owner': 'lensterxyz', 'repo': 'lenster'}
+            # {'owner': 'lensterxyz', 'repo': 'lenster'},
+            # {'owner': 'justmert', 'repo': 'eco-flow-frontend'},
+            {'owner': 'paritytech', 'repo': 'substrate'}
+            # {'owner': 'thirdweb-example', 'repo': 'lens'}
         ]:
 
             is_valid = self.github_actor.check_repo_validity(
@@ -182,13 +185,15 @@ class Pipeline:
                     f'Repository {repository["owner"]}/{repository["repo"]} is not valid.')
                 continue
 
-            doc_ref = self.collection_refs['widgets'].document(
-                f"{repository['owner']}#{repository['repo']}")
-            doc = doc_ref.get()
-            if not doc.exists:
+            docs = self.collection_refs['widgets'].document(
+                "repositories").collection(f"{repository['owner']}#{repository['repo']}").get()
+
+            # Check if the collection is empty
+            if not docs:
                 logger.info(
                     f'Repository {repository["owner"]}/{repository["repo"]} does not exist in database. Creating it now.')
-                doc_ref.set({})
+                self.collection_refs['widgets'].document(
+                    "repositories").collection(f"{repository['owner']}#{repository['repo']}").document('dummy').set({})
 
             logger.info(
                 f'Running pipeline for repository {repository["owner"]}/{repository["repo"]}')
