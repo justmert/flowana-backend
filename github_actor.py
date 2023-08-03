@@ -9,42 +9,47 @@ import log_config
 
 logger = logging.getLogger(__name__)
 
-class GithubActor():
 
+class GithubActor:
     @property
     def get_session(self):
         return self.session
-    
-    def __init__(self, session = None):
 
-        self.bearer_key = os.environ['GITHUB_BEARER_KEY']
-        self.github_graphql_endpoint = 'https://api.github.com/graphql'
+    def __init__(self, session=None):
+        self.bearer_key = os.environ["GITHUB_BEARER_KEY"]
+        self.github_graphql_endpoint = "https://api.github.com/graphql"
         self.github_graphql_headers = {
-            'Authorization': f'Bearer {self.bearer_key}'}
+            "Authorization": f"Bearer {self.bearer_key}"
+        }
 
-        self.github_rest_endpoint = 'https://api.github.com'
+        self.github_rest_endpoint = "https://api.github.com"
         self.github_rest_headers = {
-            'Accept': 'application/vnd.github+json',
-            'X-GitHub-Api-Version': '2022-11-28',
-            'Authorization': f'Bearer {self.bearer_key}'
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+            "Authorization": f"Bearer {self.bearer_key}",
         }
         self.session = session
         if not self.session:
             self.session = requests.Session()
-            
+
     def github_graphql_make_query(self, _query, variables=None):
-        logger.info(f'[GET] fetching data from the graphql API.')
+        logger.info(f"[GET] fetching data from the graphql API.")
         self.session.headers.update(self.github_graphql_headers)
-        response = self.session.post(self.github_graphql_endpoint, json={
-            'query': _query, 'variables': variables})
+        response = self.session.post(
+            self.github_graphql_endpoint,
+            json={"query": _query, "variables": variables},
+        )
 
         if response.status_code in (301, 302):
-            response = self.session.post(response.headers['location'], json={
-                'query': _query, 'variables': variables})
+            response = self.session.post(
+                response.headers["location"],
+                json={"query": _query, "variables": variables},
+            )
 
         if response.status_code != 200:
             logger.error(
-                f" [-] Failed to retrieve from API. Status code: {response.status_code}")
+                f" [-] Failed to retrieve from API. Status code: {response.status_code}"
+            )
             return None
 
         elif response.status_code == 403:
@@ -69,7 +74,8 @@ class GithubActor():
 
         elif response.status_code == 202:
             logger.info(
-                f"The request was successful and there is no response body. Trying again.")
+                f"The request was successful and there is no response body. Trying again."
+            )
             sleep(1)  # Wait for 1 second
             if try_val > 5:
                 logger.info(f"Too many tries. Aborting.")
@@ -82,13 +88,15 @@ class GithubActor():
 
         elif response.status_code == 401:
             logger.error(
-                f"The repository {repo} is private and the user is not authenticated.")
+                f"The repository {repo} is private and the user is not authenticated."
+            )
             return False
 
         elif response.status_code == 403:
             logger.info(
-                f"The user has exceeded the rate limit and needs to wait before making more requests.")
-            self.rate_limit_wait(response.headers['x-ratelimit-reset'])
+                f"The user has exceeded the rate limit and needs to wait before making more requests."
+            )
+            self.rate_limit_wait(response.headers["x-ratelimit-reset"])
             return True
 
         elif response.status_code == 404:
@@ -101,12 +109,14 @@ class GithubActor():
 
         elif response.status_code == 422:
             logger.error(
-                f"The request was well-formed but was unable to be followed due to semantic errors.")
+                f"The request was well-formed but was unable to be followed due to semantic errors."
+            )
             return False
 
         elif response.status_code == 429:
             logger.error(
-                f"The user has sent too many requests in a given amount of time.")
+                f"The user has sent too many requests in a given amount of time."
+            )
             return False
 
         elif response.status_code == 500:
@@ -115,24 +125,27 @@ class GithubActor():
 
         else:
             logger.error(
-                f"Unknown error [{response.status_code}] - {response.reason}: {response.text}")
+                f"Unknown error [{response.status_code}] - {response.reason}: {response.text}"
+            )
             return False
 
-    def github_rest_make_request(self, url, variables=None, max_page_fetch=float('inf')):
-
+    def github_rest_make_request(
+        self, url, variables=None, max_page_fetch=float("inf")
+    ):
         url = f"{self.github_rest_endpoint}{url}"
         result = []
 
         current_fetch_count = 0
-        logger.info(f'[GET] fetching data from the url {url}')
+        logger.info(f"[GET] fetching data from the url {url}")
         while url and (current_fetch_count < max_page_fetch):
             logger.info(
-                f' [.] Fetching page {current_fetch_count + 1} of {max_page_fetch}')
+                f" [.] Fetching page {current_fetch_count + 1} of {max_page_fetch}"
+            )
             self.session.headers.update(self.github_rest_headers)
             response = self.session.get(url, params=variables)
             if response.status_code == 202:
                 time.sleep(1)
-                logger.info(' [.] Waiting for the data to be ready...')
+                logger.info(" [.] Waiting for the data to be ready...")
                 continue  # fetch again!
 
             elif response.status_code == 403:
@@ -144,24 +157,25 @@ class GithubActor():
                 url = response.links.get("next", {}).get("url", None)
                 if max_page_fetch == 1:
                     return json_response
-                
 
                 if isinstance(json_response, list):
                     result.extend(json_response)
-                
+
                 else:
                     result.append(json_response)
 
                 if url is None:
                     logger.info(
-                        f' [.] No more pages to fetch. Fetched {current_fetch_count + 1} pages.')
-                    
+                        f" [.] No more pages to fetch. Fetched {current_fetch_count + 1} pages."
+                    )
+
                     if current_fetch_count == 0:
                         return json_response
 
                 current_fetch_count += 1
             else:
                 logger.error(
-                    f" [-] Failed to retrieve from API. Status code: {response.status_code}")
+                    f" [-] Failed to retrieve from API. Status code: {response.status_code}"
+                )
                 break
         return result

@@ -13,7 +13,7 @@
       "governance_id": "eip155:1:0xc0Da02939E1441F497fd74F78cE7Decb17B66529"
     },
     "messari": {
-      "asset": "comp"
+      "asset_key": "comp"
     }
   }
 ]
