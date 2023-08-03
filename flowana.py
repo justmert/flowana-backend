@@ -15,6 +15,10 @@ import api.api as api
 from datetime import timedelta
 from pipeline import Pipeline
 
+current_file_path = os.path.abspath(__file__)
+base_dir = os.path.dirname(current_file_path)
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -36,12 +40,12 @@ class Flowana:
         print(ascii_banner)
         logger.info("Initializing Flowana")
 
-        admin_sdk_path = os.environ["FIREBASE_ADMIN_SDK_PATH"]
+        admin_sdk_path = os.path.join(base_dir, os.environ["FIREBASE_ADMIN_SDK_NAME"])
         if not os.path.exists(admin_sdk_path):
             raise Exception(f"Admin SDK file not found in path {admin_sdk_path}")
 
-        cred = credentials.Certificate(os.environ["FIREBASE_ADMIN_SDK_PATH"])
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.environ["FIREBASE_ADMIN_SDK_PATH"]
+        cred = credentials.Certificate(admin_sdk_path)
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = admin_sdk_path
 
         self.app = firebase_admin.initialize_app(
             cred,
