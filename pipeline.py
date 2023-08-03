@@ -12,6 +12,8 @@ from discourse_widgets import DiscourseWidgets
 from discourse_actor import DiscourseActor
 from developers_widgets import DevelopersWidget
 from developers_actor import DevelopersActor
+from governance_actor import GovernanceActor
+from governance_widgets import GovernanceWidgets
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +69,31 @@ class Pipeline:
 
             ]
 
+        if protocol.get('governance', None):
+            logger.info(
+                f'Found governance configuration for protocol {self.protocol_name}.')
+            governance_id = protocol['governance'].get('governance_id', None)
+            organization_id = protocol['governance'].get(
+                'organization_id', None)
+            chain_id = protocol['governance'].get(
+                'chain_id', None)
+            slug = protocol['governance'].get('slug', None)
+            if governance_id is None or organization_id is None or chain_id is None or slug is None:
+                raise ValueError(
+                    f'Governance configuration for protocol {self.protocol_name} is missing governance_id, organization_id, chain_id or slug.')
+            
+            self.governance_actor = GovernanceActor()
+            self.governance_widgets = GovernanceWidgets(
+                self.governance_actor, collection_refs, governance_id, organization_id, chain_id, slug)
+            
+            self.protocol_governance_functions = [
+                self.governance_widgets.voting_power_chart,
+                self.governance_widgets.delegates,
+                self.governance_widgets.proposals,
+                self.governance_widgets.governance_info,
+                self.governance_widgets.safes,
+            ]
+
         self.collection_refs = collection_refs
         repositories_ref_stream = self.db.collection(
             f'{self.protocol_name}-projects').stream()
@@ -86,39 +113,38 @@ class Pipeline:
 
         self.project_pipeline_functions = [
 
-            # self.github_widgets.repository_info,
-            # self.github_widgets.commit_activity,
-            # self.github_widgets.code_frequency,
-            # self.github_widgets.participation,
-            # self.github_widgets.code_frequency,
-            # self.github_widgets.community_profile,
-            # self.github_widgets.punch_card,
+            self.github_widgets.repository_info,
+            self.github_widgets.commit_activity,
+            self.github_widgets.code_frequency,
+            self.github_widgets.participation,
+            self.github_widgets.code_frequency,
+            self.github_widgets.community_profile,
+            self.github_widgets.punch_card,
 
-            # self.github_widgets.issue_count,
-            # (self.github_widgets.recent_issues, {
-            #  'order_by': self.github_widgets.RecentIssuesOrder.CREATED_AT}),
-            # (self.github_widgets.recent_issues, {
-            #  'order_by': self.github_widgets.RecentIssuesOrder.UPDATED_AT}),
-            # self.github_widgets.most_active_issues,
-
-
-            # self.github_widgets.pull_request_count,
-            # (self.github_widgets.recent_pull_requests,
-            #  {'order_by': self.github_widgets.RecentPullRequestsOrder.CREATED_AT}),
-            # (self.github_widgets.recent_pull_requests,
-            #  {'order_by': self.github_widgets.RecentPullRequestsOrder.UPDATED_AT}),
-
-            # self.github_widgets.language_breakdown,
-            # self.github_widgets.recent_stargazing_activity,
-            # self.github_widgets.recent_commits,
-            # self.github_widgets.recent_releases,
+            self.github_widgets.issue_count,
+            (self.github_widgets.recent_issues, {
+             'order_by': self.github_widgets.RecentIssuesOrder.CREATED_AT}),
+            (self.github_widgets.recent_issues, {
+             'order_by': self.github_widgets.RecentIssuesOrder.UPDATED_AT}),
+            self.github_widgets.most_active_issues,
 
 
-            # self.github_widgets.contributors,  # paginated
-            # self.github_widgets.issue_activity, # paginated
-            self.github_widgets.pull_request_activity, # paginated
-            # self.github_widgets.health_score # added new
+            self.github_widgets.pull_request_count,
+            (self.github_widgets.recent_pull_requests,
+             {'order_by': self.github_widgets.RecentPullRequestsOrder.CREATED_AT}),
+            (self.github_widgets.recent_pull_requests,
+             {'order_by': self.github_widgets.RecentPullRequestsOrder.UPDATED_AT}),
 
+            self.github_widgets.language_breakdown,
+            self.github_widgets.recent_stargazing_activity,
+            self.github_widgets.recent_commits,
+            self.github_widgets.recent_releases,
+
+
+            self.github_widgets.contributors,  # paginated
+            self.github_widgets.issue_activity,  # paginated
+            self.github_widgets.pull_request_activity,  # paginated
+            self.github_widgets.health_score
         ]
 
         self.protocol_github_functions = [
@@ -148,10 +174,11 @@ class Pipeline:
         ]
 
     def run_pipelines(self):
-        self.run_project_github_pipeline()
+        # self.run_project_github_pipeline()
         # self.run_protocol_pipeline(self.protocol_github_functions)
         # self.run_protocol_pipeline(self.protocol_discourse_functions)
         # self.run_protocol_pipeline(self.protocol_developers_functions)
+        self.run_protocol_pipeline(self.protocol_governance_functions)
 
     def run_protocol_pipeline(self, protocol_pipeline):
         for item in protocol_pipeline:
@@ -172,10 +199,10 @@ class Pipeline:
     def run_project_github_pipeline(self):
         # for repository in self.repositories:
         for repository in [
-            # {'owner': 'lensterxyz', 'repo': 'lenster'},
-            # {'owner': 'justmert', 'repo': 'eco-flow-frontend'},
-            {'owner': 'paritytech', 'repo': 'substrate'}
-            # {'owner': 'thirdweb-example', 'repo': 'lens'}
+            {'owner': 'lensterxyz', 'repo': 'lenster'},
+            {'owner': 'justmert', 'repo': 'eco-flow-frontend'},
+            {'owner': 'paritytech', 'repo': 'substrate'},
+            {'owner': 'thirdweb-example', 'repo': 'lens'}
         ]:
 
             is_valid = self.github_actor.check_repo_validity(

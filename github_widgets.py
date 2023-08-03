@@ -153,46 +153,46 @@ class GithubWidgets():
                 'commit_activity').get(field_paths=['data']).to_dict()
 
             if ref is None:
-                raise exceptions.NotFound(
-                    'Collection or document not found')
+                raise exceptions.NotFound('Collection or document not found')
         except exceptions.NotFound as ex:
             # Handle case where document or collection does not exist
             pass
-
         else:
             commit_activity = ref.get('data', None)
             if commit_activity:
-                # Decay parameter
-                lambda_ = 0.05
-
                 # Current date
                 now = datetime.now(timezone.utc)
 
                 # Convert now to a Unix timestamp (seconds since 1970-01-01 00:00:00 UTC)
                 now_timestamp = int(now.timestamp())
 
-                # Compute the list of commit intervals
-                commit_intervals = [(commit_activity[i-1]['week'] - commit_activity[i]['week'])
-                                    for i in range(1, len(commit_activity))]
+                # Compute the list of commit counts
+                commit_counts = [data['total'] for data in commit_activity]
 
-                # Compute the standard deviation of the commit intervals
-                std_dev = np.std(commit_intervals)
+                # Calculate the mean and standard deviation of commit counts
+                mean_commit_count = np.mean(commit_counts)
+                std_dev_commit_count = np.std(commit_counts)
 
-                # Compute the inverse of the standard deviation, with a small constant added for stability
-                inverse_std_dev = 1 / (std_dev + 0.01)
+                # Calculate the coefficient of variation (CV)
+                cv_commit_count = std_dev_commit_count / mean_commit_count
+
+                # Apply a weight to the commit count consistency (you can adjust the factor as needed)
+                consistency_weight = math.exp(-10 * cv_commit_count)
+
+                # Decay parameter
+                lambda_ = 0.05
 
                 # Time-Weighted Commit Activity Score with Commit Interval Consistency
                 CAS = 0
                 for data in commit_activity:
                     # convert from seconds to weeks
-                    weeks_ago = (now_timestamp -
-                                 data['week']) // (7 * 24 * 60 * 60)
+                    weeks_ago = (now_timestamp - data['week']) // (7 * 24 * 60 * 60)
                     commit_volume = data['total']
-                    CAS += commit_volume * \
-                        math.exp(-lambda_ * weeks_ago) * inverse_std_dev
+                    CAS += commit_volume * math.exp(-lambda_ * weeks_ago)
 
-                # Normalize CAS by the total number of weeks
-                # CAS /= len(commit_activity)
+                # Apply the consistency weight to the final score
+                CAS *= consistency_weight
+
                 return CAS
         return 0
 
@@ -235,11 +235,11 @@ class GithubWidgets():
 
             if pull_requests:
                 # Weights for open and closed pull_requests
-                weight_closed = 2
+                weight_closed = 1.5
                 weight_open = 1
 
                 # Decay parameter
-                lambda_ = 0.05
+                lambda_ = 0.005
 
                 # Average time to close an issue (in days)
                 # avg_days_to_close_issue = 7
@@ -310,11 +310,11 @@ class GithubWidgets():
 
             if issues:
                 # Weights for open and closed issues
-                weight_closed = 2
+                weight_closed = 1.5
                 weight_open = 1
 
                 # Decay parameter
-                lambda_ = 0.05
+                lambda_ = 0.005
 
                 # Average time to close an issue (in days)
                 # avg_days_to_close_issue = 7
@@ -422,6 +422,8 @@ class GithubWidgets():
 
             # Fetch all documents that start with 'contributors' in their name
             all_docs = doc_base.list_documents()
+
+            
             for doc in all_docs:
                 if 'contributors' in doc.id:
                     # Get 'data' field from each 'contributors' document and extend the all_contributors list
@@ -438,19 +440,14 @@ class GithubWidgets():
                 # Aggregate average additions, deletions, and commits from all contributors
                 additions, deletions, commits, commit_weeks = [], [], [], []
                 for contributor in data:
-                    weeks = np.array([week['w']
-                                     for week in contributor['weeks']])
+                    weeks = np.array([week['w'] for week in contributor['weeks']])
                     num_weeks = len(weeks)
                     # Now giving higher weight to recent weeks
-                    decay_weights = np.array(
-                        [i/num_weeks for i in range(1, num_weeks+1)])
+                    decay_weights = np.array([i/num_weeks for i in range(1, num_weeks+1)])
 
-                    weighted_additions = np.array(
-                        [week['a'] for week in contributor['weeks']]) * decay_weights
-                    weighted_deletions = np.array(
-                        [week['d'] for week in contributor['weeks']]) * decay_weights
-                    weighted_commits = np.array(
-                        [week['c'] for week in contributor['weeks']]) * decay_weights
+                    weighted_additions = np.array([week['a'] for week in contributor['weeks']]) * decay_weights
+                    weighted_deletions = np.array([week['d'] for week in contributor['weeks']]) * decay_weights
+                    weighted_commits = np.array([week['c'] for week in contributor['weeks']]) * decay_weights
 
                     additions.extend(weighted_additions)
                     deletions.extend(weighted_deletions)
@@ -459,70 +456,51 @@ class GithubWidgets():
 
                 # Normalize each score to be between 0 and 1
                 scaler = MinMaxScaler()
-                normalized_additions = scaler.fit_transform(
-                    np.array(additions).reshape(-1, 1))
-                normalized_deletions = scaler.fit_transform(
-                    np.array(deletions).reshape(-1, 1))
-                normalized_commits = scaler.fit_transform(
-                    np.array(commits).reshape(-1, 1))
+                normalized_additions = scaler.fit_transform(np.array(additions).reshape(-1, 1))
+                normalized_deletions = scaler.fit_transform(np.array(deletions).reshape(-1, 1))
+                normalized_commits = scaler.fit_transform(np.array(commits).reshape(-1, 1))
 
                 # Calculate commit trend
-                EMA_commits = calculate_EMA(
-                    normalized_commits.flatten(), alpha=0.1)  # calculate EMA
+                EMA_commits = calculate_EMA(normalized_commits.flatten(), alpha=0.1)  # calculate EMA
                 # the trend can be the difference between the last and the first EMA
                 commit_trend = EMA_commits[-1] - EMA_commits[0]
                 commit_trend = (commit_trend + 1) / 2
 
                 # Compute the new metric
-                additions_deletions_ratio = np.divide(normalized_additions, normalized_deletions, out=np.zeros_like(
-                    normalized_additions), where=normalized_deletions != 0)
+                additions_deletions_ratio = np.divide(normalized_additions, normalized_deletions, out=np.zeros_like(normalized_additions), where=normalized_deletions!=0)
                 new_metric = additions_deletions_ratio * normalized_commits
                 new_metric_average = np.mean(new_metric)
 
-                # Calculate commit trend
-                # model = LinearRegression().fit(np.array(commit_weeks).reshape(-1,1), normalized_commits)
-                # commit_trend = model.coef_[0][0]
-                # # Calculate Gini coefficient for contributor diversity
-
-                # sort by ascending order
-                contributors = np.array([contributor['total']
-                                        for contributor in data])
+                # Calculate Gini coefficient for contributor equality
+                contributors = np.array([contributor['total'] for contributor in data])
                 contributors.sort()
 
                 if len(contributors) == 1:
                     contributor_gini_coefficient = 1
                 else:
-                    contributor_gini_coefficient = (np.sum((2 * np.arange(contributors.size) - contributors.size - 1) * contributors) / (
-                        contributors.size * np.sum(contributors)))/contributors.size
+                    n = len(contributors)
+                    contributor_gini_coefficient = (2 * np.sum((np.arange(1, n+1) * np.sort(contributors)))) / (n * np.sum(contributors)) - (n + 1) / n
 
-                # assuming both metrics are already normalized to the range [0, 1]
-                transformed_contributor_gini_coefficient = 1 - contributor_gini_coefficient
-
-                # def log_sigmoid_transform(x, base=np.e, scale_factor=1):
-                #     log_transformed = np.log(scale_factor * x + 1) / np.log(base)  # Apply log transformation
-                #     return 1 / (1 + np.exp(-log_transformed))  # Then apply sigmoid transformation
-
-                # transformed_commit_trend = log_sigmoid_transform(commit_trend)
-
-                # # Calculate aggregated score
-                # # Assign weights based on the importance of each metric
-                # weights = np.array([20 * 10, 15 * 10, 25 * 10, 20 * 100000, 10 * 10, 10 * 10])
-                # metrics = np.array([np.mean(normalized_additions), np.mean(normalized_deletions), np.mean(normalized_commits), commit_trend, contributor_gini_coefficient, code_churn])
-                # aggregated_score = np.dot(weights, metrics)
+                MAX_CONTRIBUTORS = 100
+                contributor_count = len(data) / MAX_CONTRIBUTORS
 
                 # Define the weights
-                weight_commit_trend = 0.4  # assign 40% importance to commit trend
-                # assign 30% importance to contributor gini coefficient
-                weight_contributor_gini_coefficient = 0.3
-                weight_new_metric_average = 0.3  # assign 30% importance to new metric average
+                weight_commit_trend = 0.20  # assign 25% importance to commit trend
+                weight_contributor_gini_coefficient = 0.30  # assign 25% importance to contributor gini coefficient
+                weight_new_metric_average = 0.20  # assign 25% importance to new metric average
+                weight_contributor_count = 0.30  # assign 25% importance to contributor count
+
+                print('repo: {}, commit_trend: {}, contributor_gini_coefficient: {}, new_metric_average: {}, contributor_count: {}'.format(
+                    repo, commit_trend, contributor_gini_coefficient, new_metric_average, contributor_count))
 
                 # Calculate weighted sum
                 liveness_score = (weight_commit_trend * commit_trend +
-                                  # Invert this as lower gini coefficient (more equality) is better
-                                  weight_contributor_gini_coefficient * (1-contributor_gini_coefficient) +
-                                  weight_new_metric_average * new_metric_average)
+                                weight_contributor_gini_coefficient * (1-contributor_gini_coefficient) +
+                                weight_new_metric_average * new_metric_average +
+                                weight_contributor_count * contributor_count)
+                return liveness_score
 
-        return liveness_score
+        return 0
 
     def health_score(self, owner, repo, **kwargs):
         """
@@ -820,6 +798,9 @@ class GithubWidgets():
         for interval in ['week', 'month', 'year']:
             # Process data
             issues_df = pd.DataFrame(issues)
+            # check if empty
+            if issues_df.empty:
+                continue
 
             # Convert createdAt and closedAt to datetime format
             issues_df['createdAt'] = pd.to_datetime(issues_df['createdAt'])
@@ -837,8 +818,15 @@ class GithubWidgets():
 
             # Group by date and count new and closed issues separately
             new_issues = issues_df.resample(pd_interval, on='createdAt').size()
-            closed_issues = issues_df[issues_df['closed']].resample(
-                pd_interval, on='closedAt').size()
+            # closed_issues = issues_df[issues_df['closed']].resample(
+            #     pd_interval, on='closedAt').size()
+
+            # Check if there are any closed pull requests
+            if any(issues_df['closed']):
+                closed_issues = issues_df[issues_df['closed']].resample(
+                    pd_interval, on='closedAt').size()
+            else:
+                closed_issues = pd.Series(index=new_issues.index, data=0)
 
             # Ensure new_issues and closed_issues have the same index
             all_dates = new_issues.index.union(closed_issues.index)
@@ -966,6 +954,8 @@ class GithubWidgets():
         # interval_chart
         for interval in ['week', 'month', 'year']:
             pull_requests_df = pd.DataFrame(pull_requests)
+            if pull_requests_df.empty:
+                continue
 
             # Convert createdAt and closedAt to datetime format
             pull_requests_df['createdAt'] = pd.to_datetime(
@@ -986,8 +976,13 @@ class GithubWidgets():
             # Group by date and count new and closed issues separately
             new_pull_requests = pull_requests_df.resample(
                 pd_interval, on='createdAt').size()
-            closed_pull_requests = pull_requests_df[pull_requests_df['closed']].resample(
-                pd_interval, on='closedAt').size()
+            # Check if there are any closed pull requests
+            if any(pull_requests_df['closed']):
+                closed_pull_requests = pull_requests_df[pull_requests_df['closed']].resample(
+                    pd_interval, on='closedAt').size()
+            else:
+                closed_pull_requests = pd.Series(
+                    index=new_pull_requests.index, data=0)
 
             # Ensure new_issues and closed_issues have the same index
             all_dates = new_pull_requests.index.union(

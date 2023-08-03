@@ -13,6 +13,8 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 from scipy.stats import norm
 from sklearn.preprocessing import RobustScaler, quantile_transform
+from sklearn.preprocessing import RobustScaler, StandardScaler
+from scipy.special import ndtr
 
 
 logger = logging.getLogger(__name__)
@@ -37,7 +39,6 @@ class GithubCumulative():
         return True
 
     def cumulative_stats(self, **kwargs):
-        docs = self.collection_refs['widgets'].stream()
         cum_disk_usage = 0
         cum_commit_comment_count = 0
         cum_default_branch_commit_count = 0
@@ -49,26 +50,29 @@ class GithubCumulative():
         cum_stargazers_count = 0
         cum_watcher_count = 0
 
-        for doc in docs:
-            repo_info = doc.to_dict().get('repository_info')
-            if repo_info is None:
-                continue
-            cum_disk_usage += repo_info.get('disk_usage', 0)
-            cum_commit_comment_count += repo_info.get(
-                'commit_comment_count', 0)
+        repo_doc = self.collection_refs['widgets'].document('repositories')
+        for subcollection in repo_doc.collections():
+            doc_val = subcollection.document(
+                'repository_info').get()
 
-            branch_commit_count = repo_info.get(
-                'default_branch_commit_count', 0)
+            if not doc_val.exists:
+                continue
+
+            data = doc_val.to_dict().get('data', None)
+            cum_disk_usage += data.get('disk_usage', 0)
+            cum_commit_comment_count += data.get('commit_comment_count', 0)
+
+            branch_commit_count = data.get('default_branch_commit_count', 0)
 
             cum_default_branch_commit_count += branch_commit_count if branch_commit_count is not None else 0
 
-            cum_environment_count += repo_info.get('environment_count', 0)
-            cum_fork_count += repo_info.get('fork_count', 0)
-            cum_pull_request_count += repo_info.get('pull_request_count', 0)
-            cum_issue_count += repo_info.get('issue_count', 0)
-            cum_release_count += repo_info.get('release_count', 0)
-            cum_stargazers_count += repo_info.get('stargazers_count', 0)
-            cum_watcher_count += repo_info.get('watcher_count', 0)
+            cum_environment_count += data.get('environment_count', 0)
+            cum_fork_count += data.get('fork_count', 0)
+            cum_pull_request_count += data.get('pull_request_count', 0)
+            cum_issue_count += data.get('issue_count', 0)
+            cum_release_count += data.get('release_count', 0)
+            cum_stargazers_count += data.get('stargazers_count', 0)
+            cum_watcher_count += data.get('watcher_count', 0)
 
         self.collection_refs['cumulative'].document('cumulative_info').set({'data': {
             'disk_usage': cum_disk_usage,
@@ -83,13 +87,20 @@ class GithubCumulative():
             'watcher_count': cum_watcher_count
         }})
 
+
     def cumulative_commit_activity(self, **kwargs):
 
-        docs = self.collection_refs['widgets'].stream()
-
         d1 = None
-        for doc in docs:
-            d2 = doc.to_dict().get('commit_activity')
+        repo_doc = self.collection_refs['widgets'].document('repositories')
+        for subcollection in repo_doc.collections():
+            doc_val = subcollection.document(
+                'commit_activity').get()
+
+            if not doc_val.exists:
+                continue
+
+            d2 = doc_val.to_dict().get('data', None)
+
             if d2 is None:
                 continue
             if d1 is None:
@@ -106,7 +117,14 @@ class GithubCumulative():
 
     def normalize_health_score(self, **kwargs):
 
-        # Fetching sub-collections
+        weight_dict = {
+            'commit_activity': 0.28,
+            'issue_activity': 0.16,
+            'pull_request_activity': 0.16,
+            'release_activity': 0.08,
+            'contribution_activity': 0.32
+        }
+
         collection_docs = self.collection_refs['widgets'].document(
             'repositories').collections()
 
@@ -127,18 +145,22 @@ class GithubCumulative():
                     raw_scores[key] = []
                 raw_scores[key].append((doc_name, value))
 
-        # New dictionary to store normalized scores
+        robust_scaler = RobustScaler()
+        standard_scaler = StandardScaler()
         new_scores = {}
 
         for key, values in raw_scores.items():
             names, scores = zip(*values)  # Unpack repo names and scores
-
-            total_score = sum(scores)
-            proportional_scores = [(name, score / total_score * 100)
-                                   for name, score in zip(names, scores)]
+            scores_array = np.array(scores).reshape(-1, 1)
+            robust_values = robust_scaler.fit_transform(scores_array)
+            normalized_values = standard_scaler.fit_transform(
+                robust_values).flatten()
+            # Convert Z-scores to percentiles
+            percentiles = ndtr(normalized_values) * 100
+            normalized_scores = list(zip(names, percentiles.tolist()))
 
             # Add each score to the new_scores dictionary
-            for name, score in proportional_scores:
+            for name, score in normalized_scores:
                 if name not in new_scores:
                     new_scores[name] = {}
                 new_scores[name][key] = score
@@ -148,18 +170,68 @@ class GithubCumulative():
                 if isinstance(value, float):
                     scores[key] = round(value, 2)
 
-            scores['total'] = sum(scores.values()) / len(scores.values())
+            scores['total'] = sum(scores[key] * weight_dict.get(key, 0)
+                                  for key in scores.keys())
+
+            if scores['total'] > 91:
+                scores['grade'] = 'S+'
+
+            elif scores['total'] > 84:
+                scores['grade'] = 'S'
+
+            elif scores['total'] > 77:
+                scores['grade'] = 'A+'
+
+            elif scores['total'] > 70:
+                scores['grade'] = 'A'
+
+            elif scores['total'] > 63:
+                scores['grade'] = 'B+'
+
+            elif scores['total'] > 56:
+                scores['grade'] = 'B'
+
+            elif scores['total'] > 49:
+                scores['grade'] = 'C+'
+
+            elif scores['total'] > 42:
+                scores['grade'] = 'C'
+
+            elif scores['total'] > 35:
+                scores['grade'] = 'D+'
+
+            elif scores['total'] > 28:
+                scores['grade'] = 'D'
+
+            elif scores['total'] > 21:
+                scores['grade'] = 'E+'
+
+            elif scores['total'] > 14:
+                scores['grade'] = 'E'
+
+            else:
+                scores['grade'] = 'F'
 
             self.collection_refs['widgets'].document('repositories').collection(
                 doc_name).document('health_score').set({'data': scores})
 
+            self.collection_refs['projects'].document(
+                doc_name).set({'health_score': scores}, merge=True)
+
     def cumulative_participation(self, **kwargs):
 
-        docs = self.collection_refs['widgets'].stream()
-
         d1 = None
-        for doc in docs:
-            d2 = doc.to_dict().get('participation')
+        repo_doc = self.collection_refs['widgets'].document('repositories')
+        for subcollection in repo_doc.collections():
+            doc_val = subcollection.document(
+                'participation').get()
+
+            if not doc_val.exists:
+                continue
+
+            d2 = doc_val.to_dict().get('data', None)
+
+
             if d2 is None:
                 continue
             if d1 is None:
@@ -206,49 +278,64 @@ class GithubCumulative():
 
         docs = self.collection_refs['widgets'].stream()
 
-        data1 = None
-        for doc in docs:
-            data2 = doc.to_dict().get('code_frequency')
-            if data2 is None:
+        d1 = None
+        repo_doc = self.collection_refs['widgets'].document('repositories')
+        for subcollection in repo_doc.collections():
+            doc_val = subcollection.document(
+                'code_frequency').get()
+
+            if not doc_val.exists:
                 continue
-            if data1 is None:
-                data1 = data2
+
+            d2 = doc_val.to_dict().get('data', None)
+            if d2 is None:
+                continue
+            if d1 is None:
+                d1 = d2
             else:
-                data1 = aggregate_sum(data1, data2)
+                d1 = aggregate_sum(d1, d2)
 
         self.collection_refs['cumulative'].document(
-            'cumulative_code_frequency').set({'data': data1})
+            'cumulative_code_frequency').set({'data': d1})
 
     def cumulative_punch_card(self, **kwargs):
 
-        docs = self.collection_refs['widgets'].stream()
+        d1 = None
+        repo_doc = self.collection_refs['widgets'].document('repositories')
+        for subcollection in repo_doc.collections():
+            doc_val = subcollection.document(
+                'punch_card').get()
 
-        data1 = None
-        for doc in docs:
-            data2 = doc.to_dict().get('punch_card')
-            if data2 is None:
+            if not doc_val.exists:
                 continue
-            if data1 is None:
-                data1 = data2
+
+            d2 = doc_val.to_dict().get('data', None)
+            if d2 is None:
+                continue
+            if d1 is None:
+                d1 = d2
             else:
-                for i in range(len(data1)):
-                    data1[i]['commits'] = data1[i]['commits'] + \
-                        data2[i]['commits']
+                for i in range(len(d1)):
+                    d1[i]['commits'] = d1[i]['commits'] + \
+                        d2[i]['commits']
 
         self.collection_refs['cumulative'].document(
-            'cumulative_punch_card').set({'data': data1})
+            'cumulative_punch_card').set({'data': d1})
 
     def cumulative_issue_count(self, **kwargs):
-
-        docs = self.collection_refs['widgets'].stream()
 
         cumulative_open_sum = 0
         cumulative_closed_sum = 0
 
-        for doc in docs:
-            data = doc.to_dict().get('issue_count')
-            if data is None:
+        repo_doc = self.collection_refs['widgets'].document('repositories')
+        for subcollection in repo_doc.collections():
+            doc_val = subcollection.document(
+                'issue_count').get()
+
+            if not doc_val.exists:
                 continue
+
+            data = doc_val.to_dict().get('data', None)
 
             cumulative_open_sum += data['open']
             cumulative_closed_sum += data['closed']
@@ -259,36 +346,40 @@ class GithubCumulative():
         }})
 
     def cumulative_most_active_issues(self, **kwargs):
-        docs = self.collection_refs['widgets'].stream()
         dayly = []
         weekly = []
         monthly = []
         yearly = []
 
-        for doc in docs:
-            data = doc.to_dict().get('most_active_issues')
-            if data is None:
+        repo_doc = self.collection_refs['widgets'].document('repositories')
+        for subcollection in repo_doc.collections():
+            doc_val = subcollection.document(
+                'most_active_issues').get()
+
+            if not doc_val.exists:
                 continue
 
-        if data['day']:
-            dayly.extend(data['day'])
-            dayly = sorted(
-                dayly, key=lambda x: x['comments_count'], reverse=True)[:10]
+            data = doc_val.to_dict().get('data', None)
 
-        if data['week']:
-            weekly.extend(data['week'])
-            weekly = sorted(
-                weekly, key=lambda x: x['comments_count'], reverse=True)[:10]
+            if data.get('day', None):
+                dayly.extend(data['day'])
+                dayly = sorted(
+                    dayly, key=lambda x: x['comments_count'], reverse=True)[:10]
 
-        if data['month']:
-            monthly.extend(data['month'])
-            monthly = sorted(
-                monthly, key=lambda x: x['comments_count'], reverse=True)[:10]
+            if data.get('week', None):
+                weekly.extend(data['week'])
+                weekly = sorted(
+                    weekly, key=lambda x: x['comments_count'], reverse=True)[:10]
 
-        if data['year']:
-            yearly.extend(data['year'])
-            yearly = sorted(
-                yearly, key=lambda x: x['comments_count'], reverse=True)[:10]
+            if data.get('month', None):
+                monthly.extend(data['month'])
+                monthly = sorted(
+                    monthly, key=lambda x: x['comments_count'], reverse=True)[:10]
+
+            if data.get('year', None):
+                yearly.extend(data['year'])
+                yearly = sorted(
+                    yearly, key=lambda x: x['comments_count'], reverse=True)[:10]
 
         self.collection_refs['cumulative'].document('cumulative_most_active_issues').set({'data': {
             'day': dayly,
@@ -299,15 +390,19 @@ class GithubCumulative():
 
     def cumulative_pull_request_count(self, **kwargs):
 
-        docs = self.collection_refs['widgets'].stream()
 
         cumulative_open_sum = 0
         cumulative_closed_sum = 0
 
-        for doc in docs:
-            data = doc.to_dict().get('pull_request_count')
-            if data is None:
+        repo_doc = self.collection_refs['widgets'].document('repositories')
+        for subcollection in repo_doc.collections():
+            doc_val = subcollection.document(
+                'pull_request_count').get()
+
+            if not doc_val.exists:
                 continue
+
+            data = doc_val.to_dict().get('data', None)
 
             cumulative_open_sum += data['open']
             cumulative_closed_sum += data['closed']
@@ -319,14 +414,18 @@ class GithubCumulative():
 
     def cumulative_language_breakdown(self, **kwargs):
 
-        docs = self.collection_refs['widgets'].stream()
 
         cumulative_data = {}
 
-        for doc in docs:
-            data = doc.to_dict().get('language_breakdown')
-            if data is None:
+        repo_doc = self.collection_refs['widgets'].document('repositories')
+        for subcollection in repo_doc.collections():
+            doc_val = subcollection.document(
+                'language_breakdown').get()
+
+            if not doc_val.exists:
                 continue
+
+            data = doc_val.to_dict().get('data', None)
 
             for language in data:
                 if language['name'] in cumulative_data:
@@ -355,11 +454,10 @@ class GithubCumulative():
         UPDATED_AT = 'UPDATED_AT'
 
     def cumulative_recent_issues(self, **kwargs):
-        docs = self.collection_refs['widgets'].stream()
 
         order_by = kwargs.get(
             'order_by', self.CumulativeRecentIssuesOrder.CREATED_AT)
-        
+
         if order_by == self.CumulativeRecentIssuesOrder.CREATED_AT:
             field_name = 'recent_created_issues'
 
@@ -367,14 +465,18 @@ class GithubCumulative():
             field_name = 'recent_updated_issues'
 
         cumulative_recent_issues = []
-        for doc in docs:
-            data = doc.to_dict().get(field_name)
-            if data is None:
+        repo_doc = self.collection_refs['widgets'].document('repositories')
+        for subcollection in repo_doc.collections():
+            doc_val = subcollection.document(
+                field_name).get()
+
+            if not doc_val.exists:
                 continue
 
+            data = doc_val.to_dict().get('data', None)
             cumulative_recent_issues.extend(data)
             cumulative_recent_issues = sorted(
-                data, key=lambda x: x[order_by], reverse=True)[:10]
+                cumulative_recent_issues, key=lambda x: x[order_by.value.lower()], reverse=True)[:10]
 
         self.collection_refs['cumulative'].document(
             f'cumulative_{field_name}').set({'data': cumulative_recent_issues})
@@ -384,58 +486,69 @@ class GithubCumulative():
         UPDATED_AT = 'UPDATED_AT'
 
     def cumulative_recent_pull_requests(self, **kwargs):
-        docs = self.collection_refs['widgets'].stream()
 
         order_by = kwargs.get(
-            'order_by', self.CumulativeRecentIssuesOrder.CREATED_AT)
+            'order_by', self.CumulativeRecentPullRequestsOrder.CREATED_AT)
 
-        if order_by == self.CumulativeRecentIssuesOrder.CREATED_AT:
+        if order_by == self.CumulativeRecentPullRequestsOrder.CREATED_AT:
             field_name = 'recent_created_pull_requests'
 
-        elif order_by == self.CumulativeRecentIssuesOrder.UPDATED_AT:
+        elif order_by == self.CumulativeRecentPullRequestsOrder.UPDATED_AT:
             field_name = 'recent_updated_pull_requests'
 
         cumulative_recent_issues = []
-        for doc in docs:
-            data = doc.to_dict().get(field_name)
-            if data is None:
+        repo_doc = self.collection_refs['widgets'].document('repositories')
+        for subcollection in repo_doc.collections():
+            doc_val = subcollection.document(
+                field_name).get()
+
+            if not doc_val.exists:
                 continue
+
+            data = doc_val.to_dict().get('data', None)
 
             cumulative_recent_issues.extend(data)
             cumulative_recent_issues = sorted(
-                data, key=lambda x: x[order_by], reverse=True)[:10]
+                cumulative_recent_issues, key=lambda x: x[order_by.value.lower()], reverse=True)[:10]
 
         self.collection_refs['cumulative'].document(
             f'cumulative_{field_name}').set({'data': cumulative_recent_issues})
 
     def cumulative_recent_commits(self, **kwargs):
-        docs = self.collection_refs['widgets'].stream()
 
         cumulative_recent_commits = []
-        for doc in docs:
-            data = doc.to_dict().get('recent_commits')
-            if data is None:
+        repo_doc = self.collection_refs['widgets'].document('repositories')
+        for subcollection in repo_doc.collections():
+            doc_val = subcollection.document(
+                'recent_commits').get()
+
+            if not doc_val.exists:
                 continue
+
+            data = doc_val.to_dict().get('data', None)
 
             cumulative_recent_commits.extend(data)
             cumulative_recent_commits = sorted(
-                data, key=lambda x: x['committed_date'], reverse=True)[:10]
+                cumulative_recent_commits, key=lambda x: x['committed_date'], reverse=True)[:10]
 
         self.collection_refs['cumulative'].document(
             f'cumulative_recent_commits').set({'data': cumulative_recent_commits})
 
     def cumulative_recent_releases(self, **kwargs):
-        docs = self.collection_refs['widgets'].stream()
 
         cumulative_recent_releases = []
-        for doc in docs:
-            data = doc.to_dict().get('recent_releases')
-            if data is None:
+        repo_doc = self.collection_refs['widgets'].document('repositories')
+        for subcollection in repo_doc.collections():
+            doc_val = subcollection.document(
+                'recent_releases').get()
+
+            if not doc_val.exists:
                 continue
 
+            data = doc_val.to_dict().get('data', None)
             cumulative_recent_releases.extend(data)
             cumulative_recent_releases = sorted(
-                data, key=lambda x: x['published_at'], reverse=True)[:10]
+                cumulative_recent_releases, key=lambda x: x['published_at'], reverse=True)[:10]
 
         self.collection_refs['cumulative'].document(
             f'cumulative_recent_releases').set({'data': cumulative_recent_releases})

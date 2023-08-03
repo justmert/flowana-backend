@@ -54,13 +54,13 @@ class Crawler:
                             "owner": owner,
                             "repo": repo_name,
                             "description": data['description'],
-                            "topics": data['topics'],
+                            "categories.lvl0": data['topics'],
                             "url": data['html_url'],
                             "stars": data['stargazers_count'],
                             "avatar_url": data['owner']['avatar_url'],
                             "created_at": data['created_at'],
                             "updated_at": data['updated_at'],
-                        }
+                        }, merge=True
                     )
                     logger.info(
                         f"[+] Added {owner}/{repo_name} to {protocol_name}-projects")
@@ -69,3 +69,4 @@ class Crawler:
 
 if __name__ == '__main__':
     pass
+ 

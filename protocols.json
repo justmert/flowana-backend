@@ -1,11 +1,19 @@
-[{
-    "name":"polkadot",
+[
+  {
+    "name": "polkadot",
     "update": true,
     "crawl": false,
-    "crawler_tomls": [
-        "polkadot"
-    ],
+    "crawler_tomls": ["polkadot"],
     "forum": "https://forum.onflow.org",
-    "developers": "flow"
-}
+    "developers": "flow",
+    "governance": {
+      "slug": "compound",
+      "organization_id": 1,
+      "chain_id": "eip155:1",
+      "governance_id": "eip155:1:0xc0Da02939E1441F497fd74F78cE7Decb17B66529"
+    },
+    "messari": {
+      "asset": "comp"
+    }
+  }
 ]
