@@ -14,7 +14,7 @@ router = APIRouter()
 
 
 @router.get(
-    "/protocols/{protocol_name}/full-time",
+    "/{protocol_name}/full-time",
     tags=["Developers - Ecosystem"],
     # dependencies=[Depends(get_current_user)],
     responses={
@@ -70,7 +70,7 @@ def full_time(
 
 
 @router.get(
-    "/protocols/{protocol_name}/monthly-active-devs",
+    "/{protocol_name}/monthly-active-devs",
     tags=["Developers - Ecosystem"],
     # dependencies=[Depends(get_current_user)],
     responses={
@@ -131,7 +131,7 @@ def developers_monthly_active_devs(
 
 
 @router.get(
-    "/protocols/{protocol_name}/total-repos",
+    "/{protocol_name}/total-repos",
     tags=["Developers - Ecosystem"],
     # dependencies=[Depends(get_current_user)],
     responses={
@@ -187,7 +187,7 @@ def developers_total_repos(
 
 
 @router.get(
-    "/protocols/{protocol_name}/total-commits",
+    "/{protocol_name}/total-commits",
     tags=["Developers - Ecosystem"],
     # dependencies=[Depends(get_current_user)],
     responses={
@@ -245,7 +245,7 @@ def developers_total_commits(
 
 
 @router.get(
-    "/protocols/{protocol_name}/monthly-active-dev-chart",
+    "/{protocol_name}/monthly-active-dev-chart",
     tags=["Developers - Ecosystem"],
     # dependencies=[Depends(get_current_user)],
     responses={
@@ -319,7 +319,7 @@ def developers_monthly_active_dev_chart(
 
 
 @router.get(
-    "/protocols/{protocol_name}/total-monthly-active-dev-chart",
+    "/{protocol_name}/total-monthly-active-dev-chart",
     tags=["Developers - Ecosystem"],
     # dependencies=[Depends(get_current_user)],
     responses={
@@ -385,7 +385,7 @@ def developers_total_monthly_active_dev_chart(
 
 
 @router.get(
-    "/protocols/{protocol_name}/dev-type-table",
+    "/{protocol_name}/dev-type-table",
     tags=["Developers - Ecosystem"],
     # dependencies=[Depends(get_current_user)],
     responses={
@@ -463,7 +463,7 @@ def developers_dev_type_table(
 
 
 @router.get(
-    "/protocols/{protocol_name}/monthly-commits-by-dev-type-chart",
+    "/{protocol_name}/monthly-commits-by-dev-type-chart",
     tags=["Developers - Ecosystem"],
     # dependencies=[Depends(get_current_user)],
     responses={
@@ -537,7 +537,7 @@ def developers_monthly_commits_by_dev_type_chart(
 
 
 @router.get(
-    "/protocols/{protocol_name}/monthly-commits-chart",
+    "/{protocol_name}/monthly-commits-chart",
     tags=["Developers - Ecosystem"],
     # dependencies=[Depends(get_current_user)],
     responses={

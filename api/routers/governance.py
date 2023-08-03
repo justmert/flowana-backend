@@ -50,7 +50,7 @@ class VotingPowerInterval(Enum):
 
 
 @router.get(
-    "/protocols/{protocol_name}/voting-power-chart",
+    "/{protocol_name}/voting-power-chart",
     tags=["Governance - Ecosystem"],
     dependencies=[Depends(get_current_user)],
     responses={
@@ -142,7 +142,7 @@ class DelegateSortField(Enum):
 
 
 @router.get(
-    "/protocols/{protocol_name}/delegates",
+    "/{protocol_name}/delegates",
     tags=["Governance - Ecosystem"],
     dependencies=[Depends(get_current_user)],
     responses={
@@ -235,7 +235,7 @@ def delegates(
 
 
 @router.get(
-    "/protocols/{protocol_name}/proposals",
+    "/{protocol_name}/proposals",
     tags=["Governance - Ecosystem"],
     dependencies=[Depends(get_current_user)],
     responses={
@@ -429,7 +429,7 @@ def proposals(
 
 
 @router.get(
-    "/protocols/{protocol_name}/info",
+    "/{protocol_name}/info",
     tags=["Governance - Ecosystem"],
     dependencies=[Depends(get_current_user)],
     responses={
@@ -544,7 +544,7 @@ def info(
 
 
 @router.get(
-    "/protocols/{protocol_name}/safes",
+    "/{protocol_name}/safes",
     tags=["Governance - Ecosystem"],
     dependencies=[Depends(get_current_user)],
     responses={

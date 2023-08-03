@@ -51,7 +51,7 @@ class TopicActivityInterval(str, Enum):
 
 
 @router.get(
-    "/protocols/{protocol_name}/discourse-topic-activity",
+    "/{protocol_name}/topic-activity",
     tags=["Discourse - Ecosystem"],
     dependencies=[Depends(get_current_user)],
     responses={
@@ -155,7 +155,7 @@ def discourse_topic_activity(
 
 
 @router.get(
-    "/protocols/{protocol_name}/discourse-topic-metrics",
+    "/{protocol_name}/topic-metrics",
     tags=["Discourse - Ecosystem"],
     dependencies=[Depends(get_current_user)],
     responses={
@@ -217,7 +217,7 @@ def discourse_topic_metrics(
 
 
 @router.get(
-    "/protocols/{protocol_name}/discourse-user-metrics",
+    "/{protocol_name}/user-metrics",
     tags=["Discourse - Ecosystem"],
     dependencies=[Depends(get_current_user)],
     responses={
@@ -285,7 +285,7 @@ def discourse_user_metrics(
 
 
 @router.get(
-    "/protocols/{protocol_name}/discourse-categories",
+    "/{protocol_name}/categories",
     tags=["Discourse - Ecosystem"],
     dependencies=[Depends(get_current_user)],
     responses={
@@ -356,7 +356,7 @@ def discourse_categories(
 
 
 @router.get(
-    "/protocols/{protocol_name}/discourse-tags",
+    "/{protocol_name}/tags",
     tags=["Discourse - Ecosystem"],
     dependencies=[Depends(get_current_user)],
     responses={
@@ -425,7 +425,7 @@ class DiscourseTopTopicsInterval(str, Enum):
 
 
 @router.get(
-    "/protocols/{protocol_name}/discourse-top-topics",
+    "/{protocol_name}/top-topics",
     tags=["Discourse - Ecosystem"],
     dependencies=[Depends(get_current_user)],
     responses={
@@ -524,7 +524,7 @@ class LatestTopicsOrder(str, Enum):
 
 
 @router.get(
-    "/protocols/{protocol_name}/discourse-latest-topics",
+    "/{protocol_name}/latest-topics",
     tags=["Discourse - Ecosystem"],
     dependencies=[Depends(get_current_user)],
     responses={
@@ -616,7 +616,7 @@ def discourse_latest_topics(
 
 
 @router.get(
-    "/protocols/{protocol_name}/discourse-latest-posts",
+    "/{protocol_name}/latest-posts",
     tags=["Discourse - Ecosystem"],
     dependencies=[Depends(get_current_user)],
     responses={
@@ -706,7 +706,7 @@ class TopUsersOrder(str, Enum):
 
 
 @router.get(
-    "/protocols/{protocol_name}/discourse-top-users",
+    "/{protocol_name}/top-users",
     tags=["Discourse - Ecosystem"],
     dependencies=[Depends(get_current_user)],
     responses={

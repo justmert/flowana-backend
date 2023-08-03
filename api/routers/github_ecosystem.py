@@ -45,7 +45,7 @@ router = APIRouter()
 
 
 @router.get(
-    "/protocols/{protocol_name}/stats",
+    "/{protocol_name}/stats",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Ecosystem"],
     responses={
@@ -115,7 +115,7 @@ def stats(
 
 
 @router.get(
-    "/protocols/{protocol_name}/commit-activity",
+    "/{protocol_name}/commit-activity",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Ecosystem"],
     responses={
@@ -178,7 +178,7 @@ def commit_activity(
 
 
 @router.get(
-    "/protocols/{protocol_name}/participation",
+    "/{protocol_name}/participation",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Ecosystem"],
     responses={
@@ -257,7 +257,7 @@ def participation(
 
 
 @router.get(
-    "/protocols/{protocol_name}/code-frequency",
+    "/{protocol_name}/code-frequency",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Ecosystem"],
     responses={
@@ -336,7 +336,7 @@ def code_frequency(
 
 
 @router.get(
-    "/protocols/{protocol_name}/punch-card",
+    "/{protocol_name}/punch-card",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Ecosystem"],
     responses={
@@ -396,7 +396,7 @@ def punch_card(
 
 
 @router.get(
-    "/protocols/{protocol_name}/language-breakdown",
+    "/{protocol_name}/language-breakdown",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Ecosystem"],
     responses={
@@ -449,7 +449,7 @@ def language_breakdown(
 
 
 @router.get(
-    "/protocols/{protocol_name}/issue-count",
+    "/{protocol_name}/issue-count",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Ecosystem"],
     responses={
@@ -509,7 +509,7 @@ class CumulativeMostActiveIssuesInterval(str, Enum):
 
 
 @router.get(
-    "/protocols/{protocol_name}/most-active-issues",
+    "/{protocol_name}/most-active-issues",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Ecosystem"],
     responses={
@@ -591,7 +591,7 @@ def most_active_issues(
 
 
 @router.get(
-    "/protocols/{protocol_name}/pull-request-count",
+    "/{protocol_name}/pull-request-count",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Ecosystem"],
     responses={
@@ -649,7 +649,7 @@ class CumulativeRecentIssuesOrder(str, Enum):
 
 
 @router.get(
-    "/protocols/{protocol_name}/recent-issues",
+    "/{protocol_name}/recent-issues",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Ecosystem"],
     responses={
@@ -729,7 +729,7 @@ def recent_issues(
 
 
 @router.get(
-    "/protocols/{protocol_name}/recent-pull-requests",
+    "/{protocol_name}/recent-pull-requests",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Ecosystem"],
     responses={
@@ -809,7 +809,7 @@ def recent_pull_requests(
 
 
 @router.get(
-    "/protocols/{protocol_name}/recent-commits",
+    "/{protocol_name}/recent-commits",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Ecosystem"],
     responses={
@@ -876,7 +876,7 @@ def recent_commits(
 
 
 @router.get(
-    "/protocols/{protocol_name}/recent-releases",
+    "/{protocol_name}/recent-releases",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Ecosystem"],
     responses={

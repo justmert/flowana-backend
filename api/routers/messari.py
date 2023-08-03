@@ -45,7 +45,7 @@ router = APIRouter()
 
 
 @router.get(
-    "/protocols/{protocol_name}/asset",
+    "/{protocol_name}/asset",
     tags=["Messari - Ecosystem"],
     dependencies=[Depends(get_current_user)],
     responses={
@@ -148,7 +148,7 @@ def asset(
 
 
 @router.get(
-    "/protocols/{protocol_name}/asset-profile",
+    "/{protocol_name}/asset-profile",
     tags=["Messari - Ecosystem"],
     dependencies=[Depends(get_current_user)],
     responses={
@@ -410,7 +410,7 @@ def asset_profile(
 
 
 @router.get(
-    "/protocols/{protocol_name}/metrics",
+    "/{protocol_name}/metrics",
     tags=["Messari - Ecosystem"],
     dependencies=[Depends(get_current_user)],
     responses={
@@ -890,7 +890,7 @@ def asset_metrics(
 
 
 @router.get(
-    "/protocols/{protocol_name}/indexed-timeseries-list",
+    "/{protocol_name}/indexed-timeseries-list",
     tags=["Messari - Ecosystem"],
     dependencies=[Depends(get_current_user)],
     responses={
@@ -953,7 +953,7 @@ def indexed_timeseries_list(
 
 
 @router.get(
-    "/protocols/{protocol_name}/timeseries",
+    "/{protocol_name}/timeseries",
     tags=["Messari - Ecosystem"],
     dependencies=[Depends(get_current_user)],
     responses={

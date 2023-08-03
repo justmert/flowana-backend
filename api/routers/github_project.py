@@ -44,7 +44,7 @@ router = APIRouter()
 
 
 @router.get(
-    "/protocols/{protocol_name}/repository-info",
+    "/{protocol_name}/repository-info",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Project"],
     responses={
@@ -151,7 +151,7 @@ def repository_info(
 
 
 @router.get(
-    "/protocols/{protocol_name}/health-score",
+    "/{protocol_name}/health-score",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Project"],
     responses={
@@ -228,7 +228,7 @@ def health_score(
 
 
 @router.get(
-    "/protocols/{protocol_name}/commit-activity",
+    "/{protocol_name}/commit-activity",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Project"],
     responses={
@@ -297,7 +297,7 @@ def commit_activity(
 
 
 @router.get(
-    "/protocols/{protocol_name}/participation",
+    "/{protocol_name}/participation",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Project"],
     responses={
@@ -381,7 +381,7 @@ def participation(
 
 
 @router.get(
-    "/protocols/{protocol_name}/participation_count",
+    "/{protocol_name}/participation_count",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Project"],
     responses={
@@ -446,7 +446,7 @@ def participation_count(
 
 
 @router.get(
-    "/protocols/{protocol_name}/code-frequency",
+    "/{protocol_name}/code-frequency",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Project"],
     responses={
@@ -524,7 +524,7 @@ def code_frequency(
 
 
 @router.get(
-    "/protocols/{protocol_name}/punch-card",
+    "/{protocol_name}/punch-card",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Project"],
     responses={
@@ -597,7 +597,7 @@ def punch_card(
 
 
 @router.get(
-    "/protocols/{protocol_name}/contributors",
+    "/{protocol_name}/contributors",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Project"],
     responses={
@@ -698,7 +698,7 @@ def contributors(
 
 
 @router.get(
-    "/protocols/{protocol_name}/community-profile",
+    "/{protocol_name}/community-profile",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Project"],
     responses={
@@ -809,7 +809,7 @@ def community_profile(
 
 
 @router.get(
-    "/protocols/{protocol_name}/language-breakdown",
+    "/{protocol_name}/language-breakdown",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Project"],
     responses={
@@ -867,7 +867,7 @@ def language_breakdown(
 
 
 @router.get(
-    "/protocols/{protocol_name}/issue-count",
+    "/{protocol_name}/issue-count",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Project"],
     responses={
@@ -956,7 +956,7 @@ class MostActiveIssuesInterval(str, Enum):
 
 
 @router.get(
-    "/protocols/{protocol_name}/most-active-issues",
+    "/{protocol_name}/most-active-issues",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Project"],
     responses={
@@ -1043,7 +1043,7 @@ def most_active_issues(
 
 
 @router.get(
-    "/protocols/{protocol_name}/pull-request-count",
+    "/{protocol_name}/pull-request-count",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Project"],
     responses={
@@ -1130,7 +1130,7 @@ class RecentIssuesOrder(str, Enum):
 
 
 @router.get(
-    "/protocols/{protocol_name}/recent-issues",
+    "/{protocol_name}/recent-issues",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Project"],
     responses={
@@ -1223,7 +1223,7 @@ class RecentPullRequestOrder(str, Enum):
 
 
 @router.get(
-    "/protocols/{protocol_name}/recent-pull-requests",
+    "/{protocol_name}/recent-pull-requests",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Project"],
     responses={
@@ -1307,7 +1307,7 @@ def recent_pull_requests(
 
 
 @router.get(
-    "/protocols/{protocol_name}/recent-stargazing-activity",
+    "/{protocol_name}/recent-stargazing-activity",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Project"],
     responses={
@@ -1391,7 +1391,7 @@ class IssueActivityInterval(str, Enum):
 
 
 @router.get(
-    "/protocols/{protocol_name}/issue-activity",
+    "/{protocol_name}/issue-activity",
     tags=["Github - Project"],
     dependencies=[Depends(get_current_user)],
     responses={
@@ -1535,7 +1535,7 @@ class PullRequestActivityInterval(str, Enum):
 
 
 @router.get(
-    "/protocols/{protocol_name}/pull-request-activity",
+    "/{protocol_name}/pull-request-activity",
     tags=["Github - Project"],
     dependencies=[Depends(get_current_user)],
     responses={
@@ -1678,7 +1678,7 @@ def pull_request_activity(
 
 
 @router.get(
-    "/protocols/{protocol_name}/recent-commits",
+    "/{protocol_name}/recent-commits",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Project"],
     responses={
@@ -1750,7 +1750,7 @@ def recent_commits(
 
 
 @router.get(
-    "/protocols/{protocol_name}/recent-releases",
+    "/{protocol_name}/recent-releases",
     dependencies=[Depends(get_current_user)],
     tags=["Github - Project"],
     responses={
