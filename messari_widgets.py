@@ -121,12 +121,12 @@ class MessariWidgets:
                         f"asset_timeseries_{metric_id}_{interval}"
                     ).set({"data": data})
 
-        indexed_timeseries = []
+        indexed_timeseries_list = []
         ref = self.collection_refs["messari"].stream()
         for doc in ref:
             if str(doc.id).startswith("asset_timeseries"):
-                indexed_timeseries.append(doc.id)
+                indexed_timeseries_list.append(doc.id)
 
         self.collection_refs["messari"].document("indexed_timeseries_list").set(
-            {"data": indexed_timeseries}
+            {"data": indexed_timeseries_list}
         )
