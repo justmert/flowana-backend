@@ -1,6 +1,6 @@
-from messari_actor import MessariActor
+from .messari_actor import MessariActor
 import logging
-import log_config
+import tools.log_config as log_config
 import json
 from datetime import datetime
 from enum import Enum
@@ -30,9 +30,7 @@ class MessariWidgets:
         return True
 
     def asset(self, **kwargs):
-        data = self.actor.messari_rest_make_request(
-            url=f"/v1/assets/{self.asset_key}", max_page_fetch=1
-        )
+        data = self.actor.messari_rest_make_request(url=f"/v1/assets/{self.asset_key}", max_page_fetch=1)
 
         if not self.is_valid(data):
             logger.info(f" [!] Invalid response from the API")
@@ -41,48 +39,34 @@ class MessariWidgets:
         self.collection_refs["messari"].document("asset").set({"data": data})
 
     def asset_profile(self, **kwargs):
-        data = self.actor.messari_rest_make_request(
-            url=f"/v2/assets/{self.asset_key}/profile", max_page_fetch=1
-        )
+        data = self.actor.messari_rest_make_request(url=f"/v2/assets/{self.asset_key}/profile", max_page_fetch=1)
 
         if not self.is_valid(data):
             logger.info(f" [!] Invalid response from the API")
             return
 
-        self.collection_refs["messari"].document("asset_profile").set(
-            {"data": data}
-        )
+        self.collection_refs["messari"].document("asset_profile").set({"data": data})
 
     def asset_metrics(self, **kwargs):
-        data = self.actor.messari_rest_make_request(
-            url=f"/v1/assets/{self.asset_key}/metrics", max_page_fetch=1
-        )
+        data = self.actor.messari_rest_make_request(url=f"/v1/assets/{self.asset_key}/metrics", max_page_fetch=1)
 
         if not self.is_valid(data):
             logger.info(f" [!] Invalid response from the API")
             return
 
-        self.collection_refs["messari"].document("asset_metrics").set(
-            {"data": data}
-        )
+        self.collection_refs["messari"].document("asset_metrics").set({"data": data})
 
     def asset_metrics(self, **kwargs):
-        data = self.actor.messari_rest_make_request(
-            url=f"/v1/assets/{self.asset_key}/metrics", max_page_fetch=1
-        )
+        data = self.actor.messari_rest_make_request(url=f"/v1/assets/{self.asset_key}/metrics", max_page_fetch=1)
 
         if not self.is_valid(data):
             logger.info(f" [!] Invalid response from the API")
             return
 
-        self.collection_refs["messari"].document("asset_metrics").set(
-            {"data": data}
-        )
+        self.collection_refs["messari"].document("asset_metrics").set({"data": data})
 
     def asset_timeseries(self, **kwargs):
-        data = self.actor.messari_rest_make_request(
-            url=f"/v1/assets/metrics", max_page_fetch=1
-        )
+        data = self.actor.messari_rest_make_request(url=f"/v1/assets/metrics", max_page_fetch=1)
 
         if not self.is_valid(data):
             logger.info(f" [!] Invalid response from the API")
@@ -94,9 +78,7 @@ class MessariWidgets:
                     metric_id = metric["metric_id"]
                     metric_name = metric["name"]
 
-                    logger.info(
-                        f"[asset_timeseries] [{metric_id}-{interval}] {metric_name}"
-                    )
+                    logger.info(f"[asset_timeseries] [{metric_id}-{interval}] {metric_name}")
                     query_params = {
                         "interval": interval,
                         "timestamp-format": "rfc3339",
@@ -107,19 +89,16 @@ class MessariWidgets:
                         variables=query_params,
                     )
 
-                    if not self.is_valid(data) or not data["data"].get(
-                        "values", None
-                    ):
+                    if not self.is_valid(data) or not data["data"].get("values", None):
                         logger.info(f" [!] Invalid response from the API")
                         continue
 
                     data["data"]["values"] = [
-                        dict(zip(data["data"]["parameters"]["columns"], v))
-                        for v in data["data"]["values"]
+                        dict(zip(data["data"]["parameters"]["columns"], v)) for v in data["data"]["values"]
                     ]
-                    self.collection_refs["messari"].document(
-                        f"asset_timeseries_{metric_id}_{interval}"
-                    ).set({"data": data})
+                    self.collection_refs["messari"].document(f"asset_timeseries_{metric_id}_{interval}").set(
+                        {"data": data}
+                    )
 
         indexed_timeseries_list = []
         ref = self.collection_refs["messari"].stream()
@@ -127,6 +106,4 @@ class MessariWidgets:
             if str(doc.id).startswith("asset_timeseries"):
                 indexed_timeseries_list.append(doc.id)
 
-        self.collection_refs["messari"].document("indexed_timeseries_list").set(
-            {"data": indexed_timeseries_list}
-        )
+        self.collection_refs["messari"].document("indexed_timeseries_list").set({"data": indexed_timeseries_list})

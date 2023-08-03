@@ -1,12 +1,11 @@
-from discourse_actor import DiscourseActor
 import logging
-import log_config
+import tools.log_config as log_config
 import json
 from datetime import datetime
 from enum import Enum
 import pandas as pd
 from datetime import timedelta
-from governance_actor import GovernanceActor
+from .governance_actor import GovernanceActor
 
 logger = logging.getLogger(__name__)
 
@@ -91,9 +90,7 @@ class GovernanceWidgets:
                 "weightChangesPagination": {"limit": 1000, "offset": 0},
             }
 
-            result = self.actor.governance_graphql_make_query(
-                query, variables=variables
-            )
+            result = self.actor.governance_graphql_make_query(query, variables=variables)
 
             if not self.is_valid(result):
                 logger.info(f" [!] Invalid response from the API")
@@ -138,9 +135,9 @@ class GovernanceWidgets:
 
             # all_intervals[interval.value] = chart_data
 
-            self.collection_refs["governance"].document(
-                f"voting_power_chart_{interval.value.lower()}"
-            ).set({"data": chart_data})
+            self.collection_refs["governance"].document(f"voting_power_chart_{interval.value.lower()}").set(
+                {"data": chart_data}
+            )
 
     class DelegateSortField(Enum):
         CREATED = "CREATED"
@@ -214,9 +211,7 @@ class GovernanceWidgets:
                 "sort": {"field": order_by.value, "order": "DESC"},
             }
 
-            result = self.actor.governance_graphql_make_query(
-                query, variables=variables
-            )
+            result = self.actor.governance_graphql_make_query(query, variables=variables)
 
             if not self.is_valid(result):
                 logger.info(f" [!] Invalid response from the API")
@@ -227,39 +222,27 @@ class GovernanceWidgets:
             flatted_delegates = []
 
             for delegate in delegates:
-                delegate["participation"]["stats"][
-                    "tokenBalance"
-                ] = self._scale_down(
+                delegate["participation"]["stats"]["tokenBalance"] = self._scale_down(
                     delegate["participation"]["stats"]["tokenBalance"]
                 )
 
-                delegate["participation"]["stats"]["weight"][
-                    "total"
-                ] = self._scale_down(
+                delegate["participation"]["stats"]["weight"]["total"] = self._scale_down(
                     delegate["participation"]["stats"]["weight"]["total"]
                 )
 
-                delegate["participation"]["stats"]["weight"][
-                    "owned"
-                ] = self._scale_down(
+                delegate["participation"]["stats"]["weight"]["owned"] = self._scale_down(
                     delegate["participation"]["stats"]["weight"]["owned"]
                 )
 
-                delegate["participation"]["stats"]["votingPower"][
-                    "in"
-                ] = self._scale_down(
+                delegate["participation"]["stats"]["votingPower"]["in"] = self._scale_down(
                     delegate["participation"]["stats"]["votingPower"]["in"]
                 )
 
-                delegate["participation"]["stats"]["votingPower"][
-                    "net"
-                ] = self._scale_down(
+                delegate["participation"]["stats"]["votingPower"]["net"] = self._scale_down(
                     delegate["participation"]["stats"]["votingPower"]["net"]
                 )
 
-                delegate["participation"]["stats"]["votingPower"][
-                    "out"
-                ] = self._scale_down(
+                delegate["participation"]["stats"]["votingPower"]["out"] = self._scale_down(
                     delegate["participation"]["stats"]["votingPower"]["out"]
                 )
 
@@ -269,9 +252,9 @@ class GovernanceWidgets:
 
                 flatted_delegates.append(delegate)
 
-            self.collection_refs["governance"].document(
-                f"delegates_{order_by.value.lower()}"
-            ).set({"data": flatted_delegates})
+            self.collection_refs["governance"].document(f"delegates_{order_by.value.lower()}").set(
+                {"data": flatted_delegates}
+            )
 
     def proposals(self, **kwargs):
         query = """
@@ -376,9 +359,7 @@ class GovernanceWidgets:
             "votersPagination": {"limit": 10, "offset": 0},
         }
 
-        result = self.actor.governance_graphql_make_query(
-            query, variables=variables
-        )
+        result = self.actor.governance_graphql_make_query(query, variables=variables)
 
         if not self.is_valid(result):
             logger.info(f" [!] Invalid response from the API")
@@ -391,9 +372,7 @@ class GovernanceWidgets:
             # scale down all values
 
             proposal["id"] = int(proposal["id"])
-            proposal[
-                "tally_url"
-            ] = f"https://www.tally.xyz/gov/{self.slug}/proposal/{proposal['id']}"
+            proposal["tally_url"] = f"https://www.tally.xyz/gov/{self.slug}/proposal/{proposal['id']}"
             for vote_stat in proposal["voteStats"]:
                 vote_stat["weight"] = self._scale_down(vote_stat["weight"])
 
@@ -409,9 +388,7 @@ class GovernanceWidgets:
 
             flattened_proposals.append(proposal)
 
-        self.collection_refs["governance"].document("proposals").set(
-            {"data": flattened_proposals}
-        )
+        self.collection_refs["governance"].document("proposals").set({"data": flattened_proposals})
 
     def governance_info(self, **kwargs):
         query = """
@@ -482,9 +459,7 @@ class GovernanceWidgets:
 
         variables = {"governanceId": self.governance_id}
 
-        result = self.actor.governance_graphql_make_query(
-            query, variables=variables
-        )
+        result = self.actor.governance_graphql_make_query(query, variables=variables)
 
         if not self.is_valid(result):
             logger.info(f" [!] Invalid response from the API")
@@ -492,38 +467,24 @@ class GovernanceWidgets:
 
         governance_info = result["data"]["governance"]
 
-        governance_info["proposalThreshold"] = self._scale_down(
-            governance_info["proposalThreshold"]
-        )
+        governance_info["proposalThreshold"] = self._scale_down(governance_info["proposalThreshold"])
 
         governance_info["contracts"]["timelock"] = {}
-        governance_info["contracts"]["timelock"]["address"] = governance_info[
-            "timelockId"
-        ].split(":")[-1]
+        governance_info["contracts"]["timelock"]["address"] = governance_info["timelockId"].split(":")[-1]
 
-        governance_info["stats"]["tokens"]["supply"] = self._scale_down(
-            governance_info["stats"]["tokens"]["supply"]
-        )
+        governance_info["stats"]["tokens"]["supply"] = self._scale_down(governance_info["stats"]["tokens"]["supply"])
 
-        governance_info["stats"]["tokens"][
-            "delegatedVotingPower"
-        ] = self._scale_down(
+        governance_info["stats"]["tokens"]["delegatedVotingPower"] = self._scale_down(
             governance_info["stats"]["tokens"]["delegatedVotingPower"]
         )
 
-        governance_info["organization"]["votingParameters"][
-            "quorum"
-        ] = self._scale_down(
+        governance_info["organization"]["votingParameters"]["quorum"] = self._scale_down(
             governance_info["organization"]["votingParameters"]["quorum"]
         )
 
-        governance_info["organization"][
-            "tally_url"
-        ] = f"https://www.tally.xyz/gov/{self.slug}"
+        governance_info["organization"]["tally_url"] = f"https://www.tally.xyz/gov/{self.slug}"
 
-        self.collection_refs["governance"].document("governance_info").set(
-            {"data": governance_info}
-        )
+        self.collection_refs["governance"].document("governance_info").set({"data": governance_info})
 
     def safes(self, **kwargs):
         data = self.actor.governance_rest_make_request(

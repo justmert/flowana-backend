@@ -5,8 +5,8 @@ import argparse
 import toml
 import requests
 import logging
-import log_config
-from github_actor import GithubActor
+import tools.log_config as log_config
+from github.github_actor import GithubActor
 
 logger = logging.getLogger(__name__)
 
@@ -22,10 +22,7 @@ class Crawler:
         with self.actor.get_session.cache_disabled():
             for crawler_toml in crawler_tomls:
                 logger.info(f"Parsing {crawler_toml}")
-                toml_url = (
-                    self.base_url
-                    + f"{crawler_toml[0:1].lower()}/{crawler_toml.lower()}.toml"
-                )
+                toml_url = self.base_url + f"{crawler_toml[0:1].lower()}/{crawler_toml.lower()}.toml"
 
                 # Download the file from the URL
                 response = requests.get(toml_url)
@@ -41,22 +38,14 @@ class Crawler:
                     owner = url_parts[-2]
                     repo_name = url_parts[-1]
 
-                    repo_accessible = self.actor.check_repo_validity(
-                        owner, repo_name
-                    )
+                    repo_accessible = self.actor.check_repo_validity(owner, repo_name)
                     if repo_accessible is False:
-                        logger.info(
-                            f"[-] {owner}/{repo_name} is not accessible. Skipping..."
-                        )
+                        logger.info(f"[-] {owner}/{repo_name} is not accessible. Skipping...")
                         continue
 
-                    data = self.actor.github_rest_make_request(
-                        f"/repos/{owner}/{repo_name}", max_page_fetch=1
-                    )
+                    data = self.actor.github_rest_make_request(f"/repos/{owner}/{repo_name}", max_page_fetch=1)
 
-                    self.db.collection(f"{protocol_name}-projects").document(
-                        f"{owner}#{repo_name}"
-                    ).set(
+                    self.db.collection(f"{protocol_name}-projects").document(f"{owner}#{repo_name}").set(
                         {
                             "owner": owner,
                             "repo": repo_name,
@@ -70,9 +59,7 @@ class Crawler:
                         },
                         merge=True,
                     )
-                    logger.info(
-                        f"[+] Added {owner}/{repo_name} to {protocol_name}-projects"
-                    )
+                    logger.info(f"[+] Added {owner}/{repo_name} to {protocol_name}-projects")
                 logger.info(f"Finished parsing {crawler_toml}")
 
 

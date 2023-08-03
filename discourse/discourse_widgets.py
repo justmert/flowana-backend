@@ -1,6 +1,6 @@
-from discourse_actor import DiscourseActor
+from .discourse_actor import DiscourseActor
 import logging
-import log_config
+import tools.log_config as log_config
 import json
 from datetime import datetime
 from enum import Enum
@@ -39,24 +39,16 @@ class DiscourseWidgets:
         data = True
         date_and_count = {}
         while data:
-            data = self.actor.discourse_rest_make_request(
-                f"/latest.json", variables={"page": page}
-            )
+            data = self.actor.discourse_rest_make_request(f"/latest.json", variables={"page": page})
 
             topics = data["topic_list"]["topics"]
             if not self.is_valid(data) or not topics:
-                logger.info(
-                    f"[#invalid] No topics left in page {page} for protocol"
-                )
+                logger.info(f"[#invalid] No topics left in page {page} for protocol")
                 break
 
             for topic in topics:
-                created_date = datetime.strptime(
-                    topic["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ"
-                ).date()
-                created_date = created_date.strftime(
-                    "%Y-%m-%d"
-                )  # format it to 'yyyy-mm-dd'
+                created_date = datetime.strptime(topic["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ").date()
+                created_date = created_date.strftime("%Y-%m-%d")  # format it to 'yyyy-mm-dd'
                 if created_date in date_and_count:
                     date_and_count[created_date] += 1
 
@@ -80,9 +72,7 @@ class DiscourseWidgets:
             logger.info(f"[#invalid] No topics for protocol ")
             return
 
-        self.collection_refs["discourse"].document("topic_activity").set(
-            {"data": date_and_count}
-        )
+        self.collection_refs["discourse"].document("topic_activity").set({"data": date_and_count})
 
         data = {
             "total_topics": total_topics,
@@ -100,9 +90,7 @@ class DiscourseWidgets:
             if isinstance(v, float):
                 data[k] = round(v, 2)
 
-        self.collection_refs["discourse"].document("topic_metrics").set(
-            {"data": data}
-        )
+        self.collection_refs["discourse"].document("topic_metrics").set({"data": data})
 
     def users(self, **kwargs):
         # Please note that the /directory_items endpoint may not return all users if some of them have very low activity levels. Depending on the Discourse setup, users might need to reach a certain level of activity before they are included in the directory.
@@ -138,16 +126,12 @@ class DiscourseWidgets:
             )
 
             if not self.is_valid(data):
-                logger.info(
-                    f"[#invalid] No users are fetched for page {page} for protocol"
-                )
+                logger.info(f"[#invalid] No users are fetched for page {page} for protocol")
                 continue
 
             users = data["directory_items"]
             if not users:
-                logger.info(
-                    f"[#invalid] No users left in page {page} for protocol"
-                )
+                logger.info(f"[#invalid] No users left in page {page} for protocol")
                 break
 
             for user in users:
@@ -191,9 +175,7 @@ class DiscourseWidgets:
             if isinstance(v, float):
                 data[k] = round(v, 2)
 
-        self.collection_refs["discourse"].document(f"user_metrics").set(
-            {"data": data}
-        )
+        self.collection_refs["discourse"].document(f"user_metrics").set({"data": data})
 
     def categories(self, **kwargs):
         # formatting will be in frontend
@@ -223,13 +205,9 @@ class DiscourseWidgets:
             }
 
             for sub_c_id in category["subcategory_ids"]:
-                sub_data = self.actor.discourse_rest_make_request(
-                    f"/c/{sub_c_id}/show.json"
-                )
+                sub_data = self.actor.discourse_rest_make_request(f"/c/{sub_c_id}/show.json")
                 if not self.is_valid(sub_data):
-                    logger.info(
-                        f'[#invalid] No sub category for the category {category["name"]}'
-                    )
+                    logger.info(f'[#invalid] No sub category for the category {category["name"]}')
                     continue
                 sub_data = sub_data["category"]
                 sub_category_data = {
@@ -244,9 +222,7 @@ class DiscourseWidgets:
                 category_data["subcategories"].append(sub_category_data)
             categories.append(category_data)
 
-        self.collection_refs["discourse"].document("categories").set(
-            {"data": categories}
-        )
+        self.collection_refs["discourse"].document("categories").set({"data": categories})
 
     def tags(self, **kwargs):
         # formatting will be in frontend
@@ -266,9 +242,7 @@ class DiscourseWidgets:
             tags.append(tag_data)
 
         sorted_tags = sorted(tags, key=lambda k: k["count"], reverse=True)
-        self.collection_refs["discourse"].document("tags").set(
-            {"data": sorted_tags}
-        )
+        self.collection_refs["discourse"].document("tags").set({"data": sorted_tags})
 
     def top_topics(self, **kwargs):
         topics = {}
@@ -283,9 +257,7 @@ class DiscourseWidgets:
             topics[interval] = []
 
             # formatting will be in frontend
-            data = self.actor.discourse_rest_make_request(
-                f"/top/{interval}.json"
-            )
+            data = self.actor.discourse_rest_make_request(f"/top/{interval}.json")
 
             if not self.is_valid(data):
                 logger.info(f"[#invalid] No top topics for protocol ")
@@ -309,9 +281,7 @@ class DiscourseWidgets:
                 if len(topics[interval]) == 10:
                     break
 
-        self.collection_refs["discourse"].document("top_topics").set(
-            {"data": topics}
-        )
+        self.collection_refs["discourse"].document("top_topics").set({"data": topics})
 
     def latest_topics(self, **kwargs):
         latest_topics = {}
@@ -327,9 +297,7 @@ class DiscourseWidgets:
             latest_topics[order] = []
 
             # formatting will be in frontend
-            data = self.actor.discourse_rest_make_request(
-                f"/latest.json", variables={"order": order}
-            )
+            data = self.actor.discourse_rest_make_request(f"/latest.json", variables={"order": order})
 
             if not self.is_valid(data):
                 logger.info(f"[#invalid] No latest topics for protocol ")
@@ -353,9 +321,7 @@ class DiscourseWidgets:
                 if len(latest_topics[order]) == 10:
                     break
 
-        self.collection_refs["discourse"].document("latest_topics").set(
-            {"data": latest_topics}
-        )
+        self.collection_refs["discourse"].document("latest_topics").set({"data": latest_topics})
 
     def latest_posts(self, **kwargs):
         latest_posts = []
@@ -389,9 +355,7 @@ class DiscourseWidgets:
             if len(latest_posts) == 10:
                 break
 
-        self.collection_refs["discourse"].document("latest_posts").set(
-            {"data": latest_posts}
-        )
+        self.collection_refs["discourse"].document("latest_posts").set({"data": latest_posts})
 
     def top_users(self, **kwargs):
         top_users = {}
@@ -426,9 +390,7 @@ class DiscourseWidgets:
                 )
 
                 if not self.is_valid(data):
-                    logger.info(
-                        f"[#invalid] No top users for {interval}-{order}"
-                    )
+                    logger.info(f"[#invalid] No top users for {interval}-{order}")
                     continue
 
                 for user in data["directory_items"]:
@@ -450,6 +412,4 @@ class DiscourseWidgets:
                     if len(top_users[interval][order]) == 10:
                         break
 
-        self.collection_refs["discourse"].document(f"top_users").set(
-            {"data": top_users}
-        )
+        self.collection_refs["discourse"].document(f"top_users").set({"data": top_users})

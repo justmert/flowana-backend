@@ -1,6 +1,6 @@
-from developers_actor import DevelopersActor
+from .developers_actor import DevelopersActor
 import logging
-import log_config
+import tools.log_config as log_config
 import json
 from datetime import datetime
 from enum import Enum
@@ -11,9 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class DevelopersWidget:
-    def __init__(
-        self, actor: DevelopersActor, collection_refs, developer_ecosystem
-    ):
+    def __init__(self, actor: DevelopersActor, collection_refs, developer_ecosystem):
         self.actor = actor
         self.collection_refs = collection_refs
         self.developer_ecosystem = developer_ecosystem
@@ -45,14 +43,10 @@ class DevelopersWidget:
             "count": int(data["title"].replace(",", "")),
             "subtitle": data["footnote"],
         }
-        self.collection_refs["developers"].document("full_time").set(
-            {"data": formatted_data}
-        )
+        self.collection_refs["developers"].document("full_time").set({"data": formatted_data})
 
     def monthly_active_devs(self, **kwargs):
-        data = self.actor.developer_rest_make_request(
-            url=f"/api/stats/mau/{self.developer_ecosystem}", variables={}
-        )
+        data = self.actor.developer_rest_make_request(url=f"/api/stats/mau/{self.developer_ecosystem}", variables={})
 
         if not self.is_valid(data):
             logger.info(f"[-] No data found for monthly active devs.")
@@ -63,9 +57,7 @@ class DevelopersWidget:
             "count": int(data["title"].replace(",", "")),
             "subtitle": data["footnote"],
         }
-        self.collection_refs["developers"].document("monthly_active_devs").set(
-            {"data": formatted_data}
-        )
+        self.collection_refs["developers"].document("monthly_active_devs").set({"data": formatted_data})
 
     def total_repos(self, **kwargs):
         data = self.actor.developer_rest_make_request(
@@ -82,9 +74,7 @@ class DevelopersWidget:
             "count": int(data["title"].replace(",", "")),
             "subtitle": data["footnote"],
         }
-        self.collection_refs["developers"].document("total_repos").set(
-            {"data": formatted_data}
-        )
+        self.collection_refs["developers"].document("total_repos").set({"data": formatted_data})
 
     def total_commits(self, **kwargs):
         data = self.actor.developer_rest_make_request(
@@ -101,9 +91,7 @@ class DevelopersWidget:
             "count": int(data["title"].replace(",", "")),
             "subtitle": data["footnote"],
         }
-        self.collection_refs["developers"].document("total_commits").set(
-            {"data": formatted_data}
-        )
+        self.collection_refs["developers"].document("total_commits").set({"data": formatted_data})
 
     def monthly_active_dev_chart(self, **kwargs):
         data = self.actor.developer_rest_make_request(
@@ -116,18 +104,14 @@ class DevelopersWidget:
             return
 
         for series in data["series"]:
-            series["data"] = [
-                {"date": x[0], "value": x[1]} for x in series["data"]
-            ]
+            series["data"] = [{"date": x[0], "value": x[1]} for x in series["data"]]
 
         formatted_data = {
             "xAxis": {"type": data["xAxis"]["type"]},
             "yAxis": {},
             "series": data["series"],
         }
-        self.collection_refs["developers"].document(
-            "monthly_active_dev_chart"
-        ).set({"data": formatted_data})
+        self.collection_refs["developers"].document("monthly_active_dev_chart").set({"data": formatted_data})
 
     def total_monthly_active_dev_chart(self, **kwargs):
         data = self.actor.developer_rest_make_request(
@@ -139,18 +123,14 @@ class DevelopersWidget:
             return
 
         for series in data["series"]:
-            series["data"] = [
-                {"date": x[0], "value": x[1]} for x in series["data"]
-            ]
+            series["data"] = [{"date": x[0], "value": x[1]} for x in series["data"]]
 
         formatted_data = {
             "xAxis": {"type": data["xAxis"]["type"]},
             "yAxis": {},
             "series": data["series"],
         }
-        self.collection_refs["developers"].document(
-            "total_monthly_active_dev_chart"
-        ).set({"data": formatted_data})
+        self.collection_refs["developers"].document("total_monthly_active_dev_chart").set({"data": formatted_data})
 
     def dev_type_table(self, **kwargs):
         data = self.actor.developer_rest_make_request(
@@ -163,17 +143,12 @@ class DevelopersWidget:
             return
 
         # Extract headers
-        header = [
-            {"title": column["title"], "index": column["dataIndex"]}
-            for column in data["columns"]
-        ]
+        header = [{"title": column["title"], "index": column["dataIndex"]} for column in data["columns"]]
         data = {
             "header": header,
             "rows": data["dataSource"],
         }
-        self.collection_refs["developers"].document("dev_type_table").set(
-            {"data": data}
-        )
+        self.collection_refs["developers"].document("dev_type_table").set({"data": data})
 
     def monthly_commits_by_dev_type_chart(self, **kwargs):
         data = self.actor.developer_rest_make_request(
@@ -182,24 +157,18 @@ class DevelopersWidget:
         )
 
         if not self.is_valid(data):
-            logger.info(
-                f"[-] No data found for monthly commits by dev type chart."
-            )
+            logger.info(f"[-] No data found for monthly commits by dev type chart.")
             return
 
         for series in data["series"]:
-            series["data"] = [
-                {"date": x[0], "value": x[1]} for x in series["data"]
-            ]
+            series["data"] = [{"date": x[0], "value": x[1]} for x in series["data"]]
 
         formatted_data = {
             "xAxis": {"type": data["xAxis"]["type"]},
             "yAxis": {},
             "series": data["series"],
         }
-        self.collection_refs["developers"].document(
-            "monthly_commits_by_dev_type_chart"
-        ).set({"data": formatted_data})
+        self.collection_refs["developers"].document("monthly_commits_by_dev_type_chart").set({"data": formatted_data})
 
     def monthly_commits_chart(self, **kwargs):
         data = self.actor.developer_rest_make_request(
@@ -212,15 +181,11 @@ class DevelopersWidget:
             return
 
         for series in data["series"]:
-            series["data"] = [
-                {"date": x[0], "value": x[1]} for x in series["data"]
-            ]
+            series["data"] = [{"date": x[0], "value": x[1]} for x in series["data"]]
 
         formatted_data = {
             "xAxis": {"type": data["xAxis"]["type"]},
             "yAxis": {},
             "series": data["series"],
         }
-        self.collection_refs["developers"].document(
-            "monthly_commits_chart"
-        ).set({"data": formatted_data})
+        self.collection_refs["developers"].document("monthly_commits_chart").set({"data": formatted_data})

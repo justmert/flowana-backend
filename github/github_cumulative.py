@@ -1,6 +1,6 @@
-from github_actor import GithubActor
+from .github_actor import GithubActor
 import logging
-import log_config
+import tools.log_config as log_config
 import json
 from datetime import datetime
 from enum import Enum
@@ -62,9 +62,7 @@ class GithubCumulative:
 
             branch_commit_count = data.get("default_branch_commit_count", 0)
 
-            cum_default_branch_commit_count += (
-                branch_commit_count if branch_commit_count is not None else 0
-            )
+            cum_default_branch_commit_count += branch_commit_count if branch_commit_count is not None else 0
 
             cum_environment_count += data.get("environment_count", 0)
             cum_fork_count += data.get("fork_count", 0)
@@ -116,9 +114,7 @@ class GithubCumulative:
                     for d1, d2 in zip(d1, d2)
                 ]
 
-        self.collection_refs["cumulative"].document(
-            "cumulative_commit_activity"
-        ).set({"data": d1})
+        self.collection_refs["cumulative"].document("cumulative_commit_activity").set({"data": d1})
 
     def normalize_health_score(self, **kwargs):
         weight_dict = {
@@ -129,18 +125,12 @@ class GithubCumulative:
             "contribution_activity": 0.32,
         }
 
-        collection_docs = (
-            self.collection_refs["widgets"]
-            .document("repositories")
-            .collections()
-        )
+        collection_docs = self.collection_refs["widgets"].document("repositories").collections()
 
         raw_scores = {}
         for sub_collection in collection_docs:
             doc_name = sub_collection.id
-            raw_health_score_doc = sub_collection.document(
-                "raw_health_score"
-            ).get()
+            raw_health_score_doc = sub_collection.document("raw_health_score").get()
 
             if not raw_health_score_doc.exists:
                 continue
@@ -161,9 +151,7 @@ class GithubCumulative:
             names, scores = zip(*values)  # Unpack repo names and scores
             scores_array = np.array(scores).reshape(-1, 1)
             robust_values = robust_scaler.fit_transform(scores_array)
-            normalized_values = standard_scaler.fit_transform(
-                robust_values
-            ).flatten()
+            normalized_values = standard_scaler.fit_transform(robust_values).flatten()
             # Convert Z-scores to percentiles
             percentiles = ndtr(normalized_values) * 100
             normalized_scores = list(zip(names, percentiles.tolist()))
@@ -179,9 +167,7 @@ class GithubCumulative:
                 if isinstance(value, float):
                     scores[key] = round(value, 2)
 
-            scores["total"] = sum(
-                scores[key] * weight_dict.get(key, 0) for key in scores.keys()
-            )
+            scores["total"] = sum(scores[key] * weight_dict.get(key, 0) for key in scores.keys())
 
             if scores["total"] > 91:
                 scores["grade"] = "S+"
@@ -222,13 +208,11 @@ class GithubCumulative:
             else:
                 scores["grade"] = "F"
 
-            self.collection_refs["widgets"].document("repositories").collection(
-                doc_name
-            ).document("health_score").set({"data": scores})
-
-            self.collection_refs["projects"].document(doc_name).set(
-                {"health_score": scores}, merge=True
+            self.collection_refs["widgets"].document("repositories").collection(doc_name).document("health_score").set(
+                {"data": scores}
             )
+
+            self.collection_refs["projects"].document(doc_name).set({"health_score": scores}, merge=True)
 
     def cumulative_participation(self, **kwargs):
         d1 = None
@@ -252,18 +236,14 @@ class GithubCumulative:
                     "series": [
                         {
                             "name": s1["name"],
-                            "data": [
-                                x + y for x, y in zip(s1["data"], s2["data"])
-                            ],
+                            "data": [x + y for x, y in zip(s1["data"], s2["data"])],
                             "type": "line",
                         }
                         for s1, s2 in zip(d1["series"], d2["series"])
                     ],
                 }
 
-        self.collection_refs["cumulative"].document(
-            "cumulative_participation"
-        ).set({"data": d1})
+        self.collection_refs["cumulative"].document("cumulative_participation").set({"data": d1})
 
     def cumulative_code_frequency(self, **kwargs):
         def aggregate_sum(data1, data2):
@@ -280,10 +260,7 @@ class GithubCumulative:
             final_data = {
                 "xAxis": {"data": []},
                 "yAxis": {},
-                "series": [
-                    {"data": [], "type": "line", "stack": "x"}
-                    for _ in range(len(data1["series"]))
-                ],
+                "series": [{"data": [], "type": "line", "stack": "x"} for _ in range(len(data1["series"]))],
             }
 
             for date, series_dict in sorted(result.items()):
@@ -311,9 +288,7 @@ class GithubCumulative:
             else:
                 d1 = aggregate_sum(d1, d2)
 
-        self.collection_refs["cumulative"].document(
-            "cumulative_code_frequency"
-        ).set({"data": d1})
+        self.collection_refs["cumulative"].document("cumulative_code_frequency").set({"data": d1})
 
     def cumulative_punch_card(self, **kwargs):
         d1 = None
@@ -333,9 +308,7 @@ class GithubCumulative:
                 for i in range(len(d1)):
                     d1[i]["commits"] = d1[i]["commits"] + d2[i]["commits"]
 
-        self.collection_refs["cumulative"].document(
-            "cumulative_punch_card"
-        ).set({"data": d1})
+        self.collection_refs["cumulative"].document("cumulative_punch_card").set({"data": d1})
 
     def cumulative_issue_count(self, **kwargs):
         cumulative_open_sum = 0
@@ -353,9 +326,7 @@ class GithubCumulative:
             cumulative_open_sum += data["open"]
             cumulative_closed_sum += data["closed"]
 
-        self.collection_refs["cumulative"].document(
-            "cumulative_issue_count"
-        ).set(
+        self.collection_refs["cumulative"].document("cumulative_issue_count").set(
             {
                 "data": {
                     "open": cumulative_open_sum,
@@ -381,31 +352,21 @@ class GithubCumulative:
 
             if data.get("day", None):
                 dayly.extend(data["day"])
-                dayly = sorted(
-                    dayly, key=lambda x: x["comments_count"], reverse=True
-                )[:10]
+                dayly = sorted(dayly, key=lambda x: x["comments_count"], reverse=True)[:10]
 
             if data.get("week", None):
                 weekly.extend(data["week"])
-                weekly = sorted(
-                    weekly, key=lambda x: x["comments_count"], reverse=True
-                )[:10]
+                weekly = sorted(weekly, key=lambda x: x["comments_count"], reverse=True)[:10]
 
             if data.get("month", None):
                 monthly.extend(data["month"])
-                monthly = sorted(
-                    monthly, key=lambda x: x["comments_count"], reverse=True
-                )[:10]
+                monthly = sorted(monthly, key=lambda x: x["comments_count"], reverse=True)[:10]
 
             if data.get("year", None):
                 yearly.extend(data["year"])
-                yearly = sorted(
-                    yearly, key=lambda x: x["comments_count"], reverse=True
-                )[:10]
+                yearly = sorted(yearly, key=lambda x: x["comments_count"], reverse=True)[:10]
 
-        self.collection_refs["cumulative"].document(
-            "cumulative_most_active_issues"
-        ).set(
+        self.collection_refs["cumulative"].document("cumulative_most_active_issues").set(
             {
                 "data": {
                     "day": dayly,
@@ -432,9 +393,7 @@ class GithubCumulative:
             cumulative_open_sum += data["open"]
             cumulative_closed_sum += data["closed"]
 
-        self.collection_refs["cumulative"].document(
-            "cumulative_pull_request_count"
-        ).set(
+        self.collection_refs["cumulative"].document("cumulative_pull_request_count").set(
             {
                 "data": {
                     "open": cumulative_open_sum,
@@ -476,18 +435,14 @@ class GithubCumulative:
             }
             cumulative_flatten.append(flattened_language)
 
-        self.collection_refs["cumulative"].document(
-            "cumulative_language_breakdown"
-        ).set({"data": cumulative_flatten})
+        self.collection_refs["cumulative"].document("cumulative_language_breakdown").set({"data": cumulative_flatten})
 
     class CumulativeRecentIssuesOrder(Enum):
         CREATED_AT = "CREATED_AT"
         UPDATED_AT = "UPDATED_AT"
 
     def cumulative_recent_issues(self, **kwargs):
-        order_by = kwargs.get(
-            "order_by", self.CumulativeRecentIssuesOrder.CREATED_AT
-        )
+        order_by = kwargs.get("order_by", self.CumulativeRecentIssuesOrder.CREATED_AT)
 
         if order_by == self.CumulativeRecentIssuesOrder.CREATED_AT:
             field_name = "recent_created_issues"
@@ -511,18 +466,14 @@ class GithubCumulative:
                 reverse=True,
             )[:10]
 
-        self.collection_refs["cumulative"].document(
-            f"cumulative_{field_name}"
-        ).set({"data": cumulative_recent_issues})
+        self.collection_refs["cumulative"].document(f"cumulative_{field_name}").set({"data": cumulative_recent_issues})
 
     class CumulativeRecentPullRequestsOrder(Enum):
         CREATED_AT = "CREATED_AT"
         UPDATED_AT = "UPDATED_AT"
 
     def cumulative_recent_pull_requests(self, **kwargs):
-        order_by = kwargs.get(
-            "order_by", self.CumulativeRecentPullRequestsOrder.CREATED_AT
-        )
+        order_by = kwargs.get("order_by", self.CumulativeRecentPullRequestsOrder.CREATED_AT)
 
         if order_by == self.CumulativeRecentPullRequestsOrder.CREATED_AT:
             field_name = "recent_created_pull_requests"
@@ -547,9 +498,7 @@ class GithubCumulative:
                 reverse=True,
             )[:10]
 
-        self.collection_refs["cumulative"].document(
-            f"cumulative_{field_name}"
-        ).set({"data": cumulative_recent_issues})
+        self.collection_refs["cumulative"].document(f"cumulative_{field_name}").set({"data": cumulative_recent_issues})
 
     def cumulative_recent_commits(self, **kwargs):
         cumulative_recent_commits = []
@@ -569,9 +518,9 @@ class GithubCumulative:
                 reverse=True,
             )[:10]
 
-        self.collection_refs["cumulative"].document(
-            f"cumulative_recent_commits"
-        ).set({"data": cumulative_recent_commits})
+        self.collection_refs["cumulative"].document(f"cumulative_recent_commits").set(
+            {"data": cumulative_recent_commits}
+        )
 
     def cumulative_recent_releases(self, **kwargs):
         cumulative_recent_releases = []
@@ -590,6 +539,6 @@ class GithubCumulative:
                 reverse=True,
             )[:10]
 
-        self.collection_refs["cumulative"].document(
-            f"cumulative_recent_releases"
-        ).set({"data": cumulative_recent_releases})
+        self.collection_refs["cumulative"].document(f"cumulative_recent_releases").set(
+            {"data": cumulative_recent_releases}
+        )

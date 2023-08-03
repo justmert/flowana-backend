@@ -5,7 +5,7 @@ import time
 import time
 import datetime
 import logging
-import log_config
+import tools.log_config as log_config
 
 logger = logging.getLogger(__name__)
 
@@ -17,9 +17,7 @@ class GovernanceActor:
 
     def __init__(self, session=None):
         self.governance_graphql_endpoint = "https://api.tally.xyz/query"
-        self.governance_graphql_headers = {
-            "Api-Key": os.environ["TALLY_API_KEY"]
-        }
+        self.governance_graphql_headers = {"Api-Key": os.environ["TALLY_API_KEY"]}
 
         self.governance_rest_endpoint = "https://www.tally.xyz/api"
         self.governance_rest_headers = {
@@ -31,18 +29,14 @@ class GovernanceActor:
         if not self.session:
             self.session = requests.Session()
 
-    def governance_rest_make_request(
-        self, url, variables=None, max_page_fetch=float("inf")
-    ):
+    def governance_rest_make_request(self, url, variables=None, max_page_fetch=float("inf")):
         url = f"{self.governance_rest_endpoint}{url}"
         result = []
 
         current_fetch_count = 0
         logger.info(f"[GET] fetching data from the url {url}")
         while url and (current_fetch_count < max_page_fetch):
-            logger.info(
-                f" [.] Fetching page {current_fetch_count + 1} of {max_page_fetch}"
-            )
+            logger.info(f" [.] Fetching page {current_fetch_count + 1} of {max_page_fetch}")
             self.session.headers.update(self.governance_rest_headers)
             response = self.session.get(url, params=variables)
             if response.status_code == 202:
@@ -59,9 +53,7 @@ class GovernanceActor:
                 return json_response
 
             else:
-                logger.error(
-                    f" [-] Failed to retrieve from API. Status code: {response.status_code}"
-                )
+                logger.error(f" [-] Failed to retrieve from API. Status code: {response.status_code}")
                 break
         return result
 
@@ -80,9 +72,7 @@ class GovernanceActor:
             )
 
         if response.status_code != 200:
-            logger.error(
-                f" [-] Failed to retrieve from API. Status code: {response.status_code}"
-            )
+            logger.error(f" [-] Failed to retrieve from API. Status code: {response.status_code}")
             return None
 
         elif response.status_code == 403:

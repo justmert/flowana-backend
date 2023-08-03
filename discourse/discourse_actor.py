@@ -5,7 +5,7 @@ import time
 from time import sleep
 import datetime
 import logging
-import log_config
+import tools.log_config as log_config
 
 logger = logging.getLogger(__name__)
 
@@ -31,18 +31,14 @@ class DiscourseActor:
         if not self.session:
             self.session = requests.Session()
 
-    def discourse_rest_make_request(
-        self, url, variables=None, max_page_fetch=float("inf")
-    ):
+    def discourse_rest_make_request(self, url, variables=None, max_page_fetch=float("inf")):
         url = f"{self.discourse_api_endpoint}{url}"
         result = []
 
         current_fetch_count = 0
         logger.info(f"[GET] fetching data from the url {url}")
         while url and (current_fetch_count < max_page_fetch):
-            logger.info(
-                f" [.] Fetching page {current_fetch_count + 1} of {max_page_fetch}"
-            )
+            logger.info(f" [.] Fetching page {current_fetch_count + 1} of {max_page_fetch}")
             self.session.headers.update(self.github_rest_headers)
             response = self.session.get(url, params=variables)
             if response.status_code == 202:
@@ -59,8 +55,6 @@ class DiscourseActor:
                 return json_response
 
             else:
-                logger.error(
-                    f" [-] Failed to retrieve from API. Status code: {response.status_code}"
-                )
+                logger.error(f" [-] Failed to retrieve from API. Status code: {response.status_code}")
                 break
         return result

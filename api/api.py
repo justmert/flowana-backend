@@ -74,13 +74,9 @@ if not os.path.exists(admin_sdk_path):
     raise Exception(f"Admin SDK file not found in path {admin_sdk_path}")
 
 cred = credentials.Certificate(os.environ["FIREBASE_ADMIN_SDK_PATH"])
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.environ[
-    "FIREBASE_ADMIN_SDK_PATH"
-]
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.environ["FIREBASE_ADMIN_SDK_PATH"]
 
-app = firebase_admin.initialize_app(
-    cred, {"projectId": os.environ["FIREBASE_PROJECT_ID"]}, name="flowana_api"
-)
+app = firebase_admin.initialize_app(cred, {"projectId": os.environ["FIREBASE_PROJECT_ID"]}, name="flowana_api")
 
 db = firestore.Client()
 with open("protocols.json") as f:
@@ -126,9 +122,7 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(
-            token.credentials, SECRET_KEY, algorithms=[ALGORITHM]
-        )
+        payload = jwt.decode(token.credentials, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
@@ -211,9 +205,7 @@ class UserOut(BaseModel):
 
 
 @app.post("/admin-create-user/", response_model=UserOut, tags=["Auth"])
-async def admin_create_user(
-    user_in: UserIn, admin_in: AdminIn = Depends(verify_admin_credentials)
-):
+async def admin_create_user(user_in: UserIn, admin_in: AdminIn = Depends(verify_admin_credentials)):
     """
     Create a new user with admin credentials.
     """
@@ -234,9 +226,7 @@ async def admin_create_user(
         }
     )
 
-    return UserOut(
-        username=user_in.username, message="User successfully created"
-    )
+    return UserOut(username=user_in.username, message="User successfully created")
 
 
 @app.post("/get-token/", response_model=UserToken, tags=["Auth"])
@@ -244,9 +234,7 @@ async def login_for_access_token(user_in: UserIn):
     user = db.collection("users").document(user_in.username).get().to_dict()
     if user:
         if verify_password(user_in.password, user.get("password")):
-            access_token_expires = datetime.timedelta(
-                days=ACCESS_TOKEN_EXPIRE_DAYS
-            )
+            access_token_expires = datetime.timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
             access_token = create_access_token(
                 data={"sub": user_in.username},
                 expires_delta=access_token_expires,
@@ -330,9 +318,7 @@ async def test_auth():
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -367,9 +353,7 @@ def repository_info(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -404,9 +388,7 @@ def repository_info(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -449,9 +431,7 @@ def health_score(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -485,9 +465,7 @@ def health_score(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -522,9 +500,7 @@ def commit_activity(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -571,9 +547,7 @@ def commit_activity(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -610,9 +584,7 @@ def participation(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -643,9 +615,7 @@ def participation(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -679,9 +649,7 @@ def participation_count(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -700,9 +668,7 @@ def participation_count(
             "content": {
                 "application/json": {
                     "example": {
-                        "xAxis": {
-                            "data": ["2022-08-28", "2022-09-04", "2022-09-11"]
-                        },
+                        "xAxis": {"data": ["2022-08-28", "2022-09-04", "2022-09-11"]},
                         "yAxis": {},
                         "series": [
                             {
@@ -726,9 +692,7 @@ def participation_count(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -763,9 +727,7 @@ def code_frequency(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -796,9 +758,7 @@ def code_frequency(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -840,9 +800,7 @@ def punch_card(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -895,9 +853,7 @@ def punch_card(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -925,11 +881,7 @@ def contributors(
         # if ref is None:
         #     raise exceptions.NotFound('Collection or document not found')
 
-        doc_base = (
-            db.collection(f"{protocol_name}-widgets")
-            .document("repositories")
-            .collection(f"{owner}#{repo}")
-        )
+        doc_base = db.collection(f"{protocol_name}-widgets").document("repositories").collection(f"{owner}#{repo}")
 
         # Initialize an empty list to hold all contributors
         data = []
@@ -949,9 +901,7 @@ def contributors(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     # data = ref.get('data', None)
     if not data:
@@ -1021,9 +971,7 @@ def contributors(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -1064,9 +1012,7 @@ def community_profile(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -1082,13 +1028,7 @@ def community_profile(
     responses={
         200: {
             "description": "Language breakdown",
-            "content": {
-                "application/json": {
-                    "example": [
-                        {"name": "JavaScript", "percentage": 100, "size": 55852}
-                    ]
-                }
-            },
+            "content": {"application/json": {"example": [{"name": "JavaScript", "percentage": 100, "size": 55852}]}},
         },
         204: {
             "description": "No content found",
@@ -1096,9 +1036,7 @@ def community_profile(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -1132,9 +1070,7 @@ def language_breakdown(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -1166,9 +1102,7 @@ def language_breakdown(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -1215,9 +1149,7 @@ def issue_count(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -1270,9 +1202,7 @@ class MostActiveIssuesInterval(str, Enum):
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -1312,9 +1242,7 @@ def most_active_issues(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -1322,9 +1250,7 @@ def most_active_issues(
 
     interval_data = data.get(interval.value, [])
     if not interval_data:
-        raise HTTPException(
-            status_code=204, detail="Content is empty for the given interval."
-        )
+        raise HTTPException(status_code=204, detail="Content is empty for the given interval.")
 
     return interval_data
 
@@ -1352,9 +1278,7 @@ def most_active_issues(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -1401,9 +1325,7 @@ def pull_request_count(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -1453,9 +1375,7 @@ class RecentIssuesOrder(str, Enum):
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -1463,9 +1383,7 @@ def recent_issues(
     protocol_name: str = Path(..., description="Protocol name"),
     owner: str = Query(..., description="Project owner name"),
     repo: str = Query(..., description="Project repository name"),
-    order_by: RecentIssuesOrder = Query(
-        RecentIssuesOrder.created_at, description="Order by field"
-    ),
+    order_by: RecentIssuesOrder = Query(RecentIssuesOrder.created_at, description="Order by field"),
 ):
     """
     Returns the recent issues for the repository ordered by 'created_at' or 'updated_at'.
@@ -1494,9 +1412,7 @@ def recent_issues(
         )
 
         if collection_ref is None:
-            raise HTTPException(
-                status_code=404, detail="Collection or document not found."
-            )
+            raise HTTPException(status_code=404, detail="Collection or document not found.")
 
     except exceptions.NotFound as ex:
         # Handle case where document or collection does not exist
@@ -1504,9 +1420,7 @@ def recent_issues(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
     data = collection_ref.get("data", None)
 
@@ -1554,9 +1468,7 @@ class RecentPullRequestOrder(str, Enum):
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -1597,9 +1509,7 @@ def recent_pull_requests(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = collection_ref.get("data", None)
 
@@ -1644,9 +1554,7 @@ def recent_pull_requests(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -1680,9 +1588,7 @@ def recent_stargazing_activity(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if (not data) or (not data["series"][0]["data"]):
@@ -1722,9 +1628,7 @@ class IssueActivityInterval(str, Enum):
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -1776,9 +1680,7 @@ def issue_activity(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -1870,9 +1772,7 @@ class PullRequestActivityInterval(str, Enum):
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -1924,9 +1824,7 @@ def pull_request_activity(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -2021,9 +1919,7 @@ def pull_request_activity(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -2057,9 +1953,7 @@ def recent_commits(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -2096,9 +1990,7 @@ def recent_commits(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -2131,9 +2023,7 @@ def recent_releases(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -2174,9 +2064,7 @@ def recent_releases(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -2205,9 +2093,7 @@ def cumulative_stats(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -2241,9 +2127,7 @@ def cumulative_stats(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -2272,9 +2156,7 @@ def cumulative_commit_activity(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -2324,9 +2206,7 @@ def cumulative_commit_activity(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -2355,9 +2235,7 @@ def cumulative_participation(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -2407,9 +2285,7 @@ def cumulative_participation(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -2438,9 +2314,7 @@ def cumulative_code_frequency(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -2471,9 +2345,7 @@ def cumulative_code_frequency(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -2502,9 +2374,7 @@ def cumulative_punch_card(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -2520,13 +2390,7 @@ def cumulative_punch_card(
     responses={
         200: {
             "description": "Cumulative Language Breakdown",
-            "content": {
-                "application/json": {
-                    "example": [
-                        {"name": "JavaScript", "percentage": 100, "size": 55852}
-                    ]
-                }
-            },
+            "content": {"application/json": {"example": [{"name": "JavaScript", "percentage": 100, "size": 55852}]}},
         },
         204: {
             "description": "No content found.",
@@ -2534,9 +2398,7 @@ def cumulative_punch_card(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -2565,9 +2427,7 @@ def cumulative_language_breakdown(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -2583,9 +2443,7 @@ def cumulative_language_breakdown(
     responses={
         200: {
             "description": "Cumulative Issue Count",
-            "content": {
-                "application/json": {"example": {"closed": 12, "open": 2}}
-            },
+            "content": {"application/json": {"example": {"closed": 12, "open": 2}}},
         },
         204: {
             "description": "No content found.",
@@ -2593,9 +2451,7 @@ def cumulative_language_breakdown(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -2624,9 +2480,7 @@ def cumulative_issue_count(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -2676,9 +2530,7 @@ class CumulativeMostActiveIssuesInterval(str, Enum):
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -2713,9 +2565,7 @@ def cumulative_most_active_issues(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -2723,9 +2573,7 @@ def cumulative_most_active_issues(
 
     interval_data = data.get(interval, [])
     if not interval_data:
-        raise HTTPException(
-            status_code=204, detail="No data for the given interval."
-        )
+        raise HTTPException(status_code=204, detail="No data for the given interval.")
 
     return interval_data
 
@@ -2737,9 +2585,7 @@ def cumulative_most_active_issues(
     responses={
         200: {
             "description": "Cumulative Pull Request Count",
-            "content": {
-                "application/json": {"example": {"closed": 12, "open": 2}}
-            },
+            "content": {"application/json": {"example": {"closed": 12, "open": 2}}},
         },
         204: {
             "description": "No content found.",
@@ -2747,9 +2593,7 @@ def cumulative_most_active_issues(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -2778,9 +2622,7 @@ def cumulative_pull_request_count(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -2826,17 +2668,13 @@ class CumulativeRecentIssuesOrder(str, Enum):
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
 def cumulative_recent_issues(
     protocol_name: str = Path(..., description="Protocol name"),
-    order_by: CumulativeRecentIssuesOrder = Query(
-        ..., description="Order by field"
-    ),
+    order_by: CumulativeRecentIssuesOrder = Query(..., description="Order by field"),
 ):
     """
     Returns the cumulative recent issues for the protocol.
@@ -2869,9 +2707,7 @@ def cumulative_recent_issues(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -2912,9 +2748,7 @@ def cumulative_recent_issues(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -2953,9 +2787,7 @@ def cumulative_recent_pull_requests(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -2993,9 +2825,7 @@ def cumulative_recent_pull_requests(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -3024,9 +2854,7 @@ def cumulative_recent_commits(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -3063,9 +2891,7 @@ def cumulative_recent_commits(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -3094,9 +2920,7 @@ def cumulative_recent_releases(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -3132,9 +2956,7 @@ class TopicActivityInterval(str, Enum):
                             ],
                         },
                         "yAxis": {"type": "value"},
-                        "series": [
-                            {"data": [128, 535, 246, 100], "type": "line"}
-                        ],
+                        "series": [{"data": [128, 535, 246, 100], "type": "line"}],
                     }
                 }
             },
@@ -3145,9 +2967,7 @@ class TopicActivityInterval(str, Enum):
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -3162,10 +2982,7 @@ def discourse_topic_activity(
 
     try:
         ref = (
-            db.collection(f"{protocol_name}-discourse")
-            .document(f"topic_activity")
-            .get(field_paths=["data"])
-            .to_dict()
+            db.collection(f"{protocol_name}-discourse").document(f"topic_activity").get(field_paths=["data"]).to_dict()
         )
 
         if ref is None:
@@ -3177,9 +2994,7 @@ def discourse_topic_activity(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -3254,9 +3069,7 @@ def discourse_topic_activity(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -3269,12 +3082,7 @@ def discourse_topic_metrics(
     """
 
     try:
-        ref = (
-            db.collection(f"{protocol_name}-discourse")
-            .document(f"topic_metrics")
-            .get(field_paths=["data"])
-            .to_dict()
-        )
+        ref = db.collection(f"{protocol_name}-discourse").document(f"topic_metrics").get(field_paths=["data"]).to_dict()
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -3285,9 +3093,7 @@ def discourse_topic_metrics(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -3331,9 +3137,7 @@ def discourse_topic_metrics(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -3346,12 +3150,7 @@ def discourse_user_metrics(
     """
 
     try:
-        ref = (
-            db.collection(f"{protocol_name}-discourse")
-            .document(f"user_metrics")
-            .get(field_paths=["data"])
-            .to_dict()
-        )
+        ref = db.collection(f"{protocol_name}-discourse").document(f"user_metrics").get(field_paths=["data"]).to_dict()
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -3362,9 +3161,7 @@ def discourse_user_metrics(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -3411,9 +3208,7 @@ def discourse_user_metrics(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -3426,12 +3221,7 @@ def discourse_categories(
     """
 
     try:
-        ref = (
-            db.collection(f"{protocol_name}-discourse")
-            .document(f"categories")
-            .get(field_paths=["data"])
-            .to_dict()
-        )
+        ref = db.collection(f"{protocol_name}-discourse").document(f"categories").get(field_paths=["data"]).to_dict()
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -3442,9 +3232,7 @@ def discourse_categories(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -3480,9 +3268,7 @@ def discourse_categories(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -3495,12 +3281,7 @@ def discourse_tags(
     """
 
     try:
-        ref = (
-            db.collection(f"{protocol_name}-discourse")
-            .document(f"tags")
-            .get(field_paths=["data"])
-            .to_dict()
-        )
+        ref = db.collection(f"{protocol_name}-discourse").document(f"tags").get(field_paths=["data"]).to_dict()
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -3511,9 +3292,7 @@ def discourse_tags(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -3564,9 +3343,7 @@ class DiscourseTopTopicsInterval(str, Enum):
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -3580,12 +3357,7 @@ def discourse_top_topics(
     """
 
     try:
-        ref = (
-            db.collection(f"{protocol_name}-discourse")
-            .document(f"top_topics")
-            .get(field_paths=["data"])
-            .to_dict()
-        )
+        ref = db.collection(f"{protocol_name}-discourse").document(f"top_topics").get(field_paths=["data"]).to_dict()
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -3596,9 +3368,7 @@ def discourse_top_topics(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -3672,9 +3442,7 @@ class LatestTopicsOrder(str, Enum):
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -3688,12 +3456,7 @@ def discourse_latest_topics(
     """
 
     try:
-        ref = (
-            db.collection(f"{protocol_name}-discourse")
-            .document(f"latest_topics")
-            .get(field_paths=["data"])
-            .to_dict()
-        )
+        ref = db.collection(f"{protocol_name}-discourse").document(f"latest_topics").get(field_paths=["data"]).to_dict()
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -3704,9 +3467,7 @@ def discourse_latest_topics(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -3778,9 +3539,7 @@ def discourse_latest_topics(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -3793,12 +3552,7 @@ def discourse_latest_posts(
     """
 
     try:
-        ref = (
-            db.collection(f"{protocol_name}-discourse")
-            .document(f"latest_posts")
-            .get(field_paths=["data"])
-            .to_dict()
-        )
+        ref = db.collection(f"{protocol_name}-discourse").document(f"latest_posts").get(field_paths=["data"]).to_dict()
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -3809,9 +3563,7 @@ def discourse_latest_posts(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -3873,9 +3625,7 @@ class TopUsersOrder(str, Enum):
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -3892,12 +3642,7 @@ def discourse_top_users(
     """
 
     try:
-        ref = (
-            db.collection(f"{protocol_name}-discourse")
-            .document(f"top_users")
-            .get(field_paths=["data"])
-            .to_dict()
-        )
+        ref = db.collection(f"{protocol_name}-discourse").document(f"top_users").get(field_paths=["data"]).to_dict()
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -3908,9 +3653,7 @@ def discourse_top_users(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -3989,9 +3732,7 @@ def discourse_top_users(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -4004,12 +3745,7 @@ def developers_full_time(
     """
 
     try:
-        ref = (
-            db.collection(f"{protocol_name}-developers")
-            .document(f"full_time")
-            .get(field_paths=["data"])
-            .to_dict()
-        )
+        ref = db.collection(f"{protocol_name}-developers").document(f"full_time").get(field_paths=["data"]).to_dict()
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -4020,9 +3756,7 @@ def developers_full_time(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -4054,9 +3788,7 @@ def developers_full_time(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -4085,9 +3817,7 @@ def developers_monthly_active_devs(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -4119,9 +3849,7 @@ def developers_monthly_active_devs(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -4134,12 +3862,7 @@ def developers_total_repos(
     """
 
     try:
-        ref = (
-            db.collection(f"{protocol_name}-developers")
-            .document(f"total_repos")
-            .get(field_paths=["data"])
-            .to_dict()
-        )
+        ref = db.collection(f"{protocol_name}-developers").document(f"total_repos").get(field_paths=["data"]).to_dict()
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -4150,9 +3873,7 @@ def developers_total_repos(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -4184,9 +3905,7 @@ def developers_total_repos(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -4200,10 +3919,7 @@ def developers_total_commits(
 
     try:
         ref = (
-            db.collection(f"{protocol_name}-developers")
-            .document(f"total_commits")
-            .get(field_paths=["data"])
-            .to_dict()
+            db.collection(f"{protocol_name}-developers").document(f"total_commits").get(field_paths=["data"]).to_dict()
         )
 
         if ref is None:
@@ -4215,9 +3931,7 @@ def developers_total_commits(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -4241,21 +3955,15 @@ def developers_total_commits(
                         "series": [
                             {
                                 "name": "Full-Time Developers",
-                                "data": [
-                                    {"date": "1423440000000", "value": 32}
-                                ],
+                                "data": [{"date": "1423440000000", "value": 32}],
                             },
                             {
                                 "name": "Part-Time Developers",
-                                "data": [
-                                    {"date": "1423440000000", "value": 15}
-                                ],
+                                "data": [{"date": "1423440000000", "value": 15}],
                             },
                             {
                                 "name": "One-Time Developers",
-                                "data": [
-                                    {"date": "1423440000000", "value": 23}
-                                ],
+                                "data": [{"date": "1423440000000", "value": 23}],
                             },
                         ],
                     }
@@ -4268,9 +3976,7 @@ def developers_total_commits(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -4299,9 +4005,7 @@ def developers_monthly_active_dev_chart(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -4325,9 +4029,7 @@ def developers_monthly_active_dev_chart(
                         "series": [
                             {
                                 "name": "Total Monthly Active Developers",
-                                "data": [
-                                    {"date": "1423440000000", "value": 32}
-                                ],
+                                "data": [{"date": "1423440000000", "value": 32}],
                             }
                         ],
                     }
@@ -4340,9 +4042,7 @@ def developers_monthly_active_dev_chart(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -4371,9 +4071,7 @@ def developers_total_monthly_active_dev_chart(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -4425,9 +4123,7 @@ def developers_total_monthly_active_dev_chart(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -4441,10 +4137,7 @@ def developers_dev_type_table(
 
     try:
         ref = (
-            db.collection(f"{protocol_name}-developers")
-            .document(f"dev_type_table")
-            .get(field_paths=["data"])
-            .to_dict()
+            db.collection(f"{protocol_name}-developers").document(f"dev_type_table").get(field_paths=["data"]).to_dict()
         )
 
         if ref is None:
@@ -4456,9 +4149,7 @@ def developers_dev_type_table(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -4482,21 +4173,15 @@ def developers_dev_type_table(
                         "series": [
                             {
                                 "name": "Full-Time Developers",
-                                "data": [
-                                    {"date": "1423440000000", "value": 32}
-                                ],
+                                "data": [{"date": "1423440000000", "value": 32}],
                             },
                             {
                                 "name": "Part-Time Developers",
-                                "data": [
-                                    {"date": "1423440000000", "value": 15}
-                                ],
+                                "data": [{"date": "1423440000000", "value": 15}],
                             },
                             {
                                 "name": "One-Time Developers",
-                                "data": [
-                                    {"date": "1423440000000", "value": 23}
-                                ],
+                                "data": [{"date": "1423440000000", "value": 23}],
                             },
                         ],
                     }
@@ -4509,9 +4194,7 @@ def developers_dev_type_table(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -4540,9 +4223,7 @@ def developers_monthly_commits_by_dev_type_chart(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -4566,9 +4247,7 @@ def developers_monthly_commits_by_dev_type_chart(
                         "series": [
                             {
                                 "name": "Total",
-                                "data": [
-                                    {"date": "1423440000000", "value": 32}
-                                ],
+                                "data": [{"date": "1423440000000", "value": 32}],
                             }
                         ],
                     }
@@ -4581,9 +4260,7 @@ def developers_monthly_commits_by_dev_type_chart(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -4612,9 +4289,7 @@ def developers_monthly_commits_chart(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -4670,17 +4345,13 @@ class VotingPowerInterval(Enum):
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
 def governance_voting_power_chart(
     protocol_name: str = Path(..., description="Protocol name"),
-    interval: VotingPowerInterval = Query(
-        VotingPowerInterval.WEEK, description="Interval to group by"
-    ),
+    interval: VotingPowerInterval = Query(VotingPowerInterval.WEEK, description="Interval to group by"),
 ):
     """
     Returns the voting power chart.
@@ -4704,9 +4375,7 @@ def governance_voting_power_chart(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -4781,17 +4450,13 @@ class DelegateSortField(Enum):
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
 def governance_delegates(
     protocol_name: str = Path(..., description="Protocol name"),
-    sort_by: DelegateSortField = Query(
-        DelegateSortField.VOTING_WEIGHT, description="Sort by"
-    ),
+    sort_by: DelegateSortField = Query(DelegateSortField.VOTING_WEIGHT, description="Sort by"),
 ):
     """
     Returns the delegates sorted by the given field.
@@ -4815,9 +4480,7 @@ def governance_delegates(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -4987,9 +4650,7 @@ def governance_delegates(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -5002,12 +4663,7 @@ def governance_proposals(
     """
 
     try:
-        ref = (
-            db.collection(f"{protocol_name}-governance")
-            .document(f"proposals")
-            .get(field_paths=["data"])
-            .to_dict()
-        )
+        ref = db.collection(f"{protocol_name}-governance").document(f"proposals").get(field_paths=["data"]).to_dict()
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -5018,9 +4674,7 @@ def governance_proposals(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -5091,17 +4745,9 @@ def governance_proposals(
                         ],
                         "id": "eip155:1:0xc0Da02939E1441F497fd74F78cE7Decb17B66529",
                         "contracts": {
-                            "timelock": {
-                                "address": "0x6d903f6003cca6255D85CcA4D3B5E5146dC33925"
-                            },
-                            "tokens": [
-                                {
-                                    "address": "0xc00e94Cb662C3520282E6f5717214004A7f26888"
-                                }
-                            ],
-                            "governor": {
-                                "address": "0xc0Da02939E1441F497fd74F78cE7Decb17B66529"
-                            },
+                            "timelock": {"address": "0x6d903f6003cca6255D85CcA4D3B5E5146dC33925"},
+                            "tokens": [{"address": "0xc00e94Cb662C3520282E6f5717214004A7f26888"}],
+                            "governor": {"address": "0xc0Da02939E1441F497fd74F78cE7Decb17B66529"},
                         },
                         "proposalThreshold": 25,
                     }
@@ -5114,9 +4760,7 @@ def governance_proposals(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -5145,9 +4789,7 @@ def governance_info(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -5211,9 +4853,7 @@ def governance_info(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -5226,12 +4866,7 @@ def governance_safes(
     """
 
     try:
-        ref = (
-            db.collection(f"{protocol_name}-governance")
-            .document(f"safes")
-            .get(field_paths=["data"])
-            .to_dict()
-        )
+        ref = db.collection(f"{protocol_name}-governance").document(f"safes").get(field_paths=["data"]).to_dict()
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -5242,9 +4877,7 @@ def governance_safes(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -5323,9 +4956,7 @@ def governance_safes(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -5338,12 +4969,7 @@ def messari_asset(
     """
 
     try:
-        ref = (
-            db.collection(f"{protocol_name}-messari")
-            .document(f"asset")
-            .get(field_paths=["data"])
-            .to_dict()
-        )
+        ref = db.collection(f"{protocol_name}-messari").document(f"asset").get(field_paths=["data"]).to_dict()
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -5354,9 +4980,7 @@ def messari_asset(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -5490,9 +5114,7 @@ def messari_asset(
                                         "block_explorers": None,
                                     },
                                 },
-                                "metadata": {
-                                    "updated_at": "2021-07-24T08:23:17Z"
-                                },
+                                "metadata": {"updated_at": "2021-07-24T08:23:17Z"},
                                 "ecosystem": {
                                     "assets": [
                                         {
@@ -5596,9 +5218,7 @@ def messari_asset(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -5611,12 +5231,7 @@ def messari_asset_profile(
     """
 
     try:
-        ref = (
-            db.collection(f"{protocol_name}-messari")
-            .document(f"asset_profile")
-            .get(field_paths=["data"])
-            .to_dict()
-        )
+        ref = db.collection(f"{protocol_name}-messari").document(f"asset_profile").get(field_paths=["data"]).to_dict()
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -5627,9 +5242,7 @@ def messari_asset_profile(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -6085,9 +5698,7 @@ def messari_asset_profile(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -6100,12 +5711,7 @@ def messari_asset_metrics(
     """
 
     try:
-        ref = (
-            db.collection(f"{protocol_name}-messari")
-            .document(f"asset_metrics")
-            .get(field_paths=["data"])
-            .to_dict()
-        )
+        ref = db.collection(f"{protocol_name}-messari").document(f"asset_metrics").get(field_paths=["data"]).to_dict()
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -6116,9 +5722,7 @@ def messari_asset_metrics(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -6152,9 +5756,7 @@ def messari_asset_metrics(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -6183,9 +5785,7 @@ def messari_indexed_timeseries_list(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -6213,9 +5813,7 @@ def messari_indexed_timeseries_list(
         },
         404: {
             "description": "Not found",
-            "content": {
-                "application/json": {"example": {"error": "Error description"}}
-            },
+            "content": {"application/json": {"example": {"error": "Error description"}}},
         },
     },
 )
@@ -6229,12 +5827,7 @@ def messari_timeseries(
     """
 
     try:
-        ref = (
-            db.collection(f"{protocol_name}-messari")
-            .document(timeseries_name)
-            .get(field_paths=["data"])
-            .to_dict()
-        )
+        ref = db.collection(f"{protocol_name}-messari").document(timeseries_name).get(field_paths=["data"]).to_dict()
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -6245,9 +5838,7 @@ def messari_timeseries(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
