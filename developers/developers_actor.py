@@ -31,7 +31,7 @@ class DevelopersActor:
         result = []
 
         current_fetch_count = 0
-        logger.info(f". [=] Fetching data from Graphql API from {self.github_graphql_endpoint}")
+        logger.info(f". [=] Fetching data from Graphql API from {self.developer_api_endpoint}")
         while url and (current_fetch_count < max_page_fetch):
             logger.info(f". page {current_fetch_count + 1}/{max_page_fetch} of {url}")
             self.session.headers.update(self.developer_rest_headers)

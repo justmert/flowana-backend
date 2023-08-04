@@ -119,75 +119,77 @@ class Pipeline:
 
         self.project_pipeline_functions = [
             self.github_widgets.repository_info,
-            # self.github_widgets.commit_activity,
-            # self.github_widgets.code_frequency,
-            # self.github_widgets.participation,
-            # self.github_widgets.code_frequency,
-            # self.github_widgets.community_profile,
-            # self.github_widgets.punch_card,
-            # self.github_widgets.issue_count,
-            # (
-            #     self.github_widgets.recent_issues,
-            #     {"order_by": self.github_widgets.RecentIssuesOrder.CREATED_AT},
-            # ),
-            # (
-            #     self.github_widgets.recent_issues,
-            #     {"order_by": self.github_widgets.RecentIssuesOrder.UPDATED_AT},
-            # ),
-            # self.github_widgets.most_active_issues,
-            # self.github_widgets.pull_request_count,
-            # (
-            #     self.github_widgets.recent_pull_requests,
-            #     {"order_by": self.github_widgets.RecentPullRequestsOrder.CREATED_AT},
-            # ),
-            # (
-            #     self.github_widgets.recent_pull_requests,
-            #     {"order_by": self.github_widgets.RecentPullRequestsOrder.UPDATED_AT},
-            # ),
-            # self.github_widgets.language_breakdown,
-            # self.github_widgets.recent_stargazing_activity,
-            # self.github_widgets.recent_commits,
-            # self.github_widgets.recent_releases,
-            # self.github_widgets.contributors,  # paginated
-            # self.github_widgets.issue_activity,  # paginated
-            # self.github_widgets.pull_request_activity,  # paginated
+            self.github_widgets.commit_activity,
+            self.github_widgets.code_frequency,
+            self.github_widgets.participation,
+            self.github_widgets.code_frequency,
+            self.github_widgets.community_profile,
+            self.github_widgets.punch_card,
+            self.github_widgets.issue_count,
+            (
+                self.github_widgets.recent_issues,
+                {"order_by": self.github_widgets.RecentIssuesOrder.CREATED_AT},
+            ),
+            (
+                self.github_widgets.recent_issues,
+                {"order_by": self.github_widgets.RecentIssuesOrder.UPDATED_AT},
+            ),
+            self.github_widgets.most_active_issues,
+            self.github_widgets.pull_request_count,
+            (
+                self.github_widgets.recent_pull_requests,
+                {"order_by": self.github_widgets.RecentPullRequestsOrder.CREATED_AT},
+            ),
+            (
+                self.github_widgets.recent_pull_requests,
+                {"order_by": self.github_widgets.RecentPullRequestsOrder.UPDATED_AT},
+            ),
+            self.github_widgets.language_breakdown,
+            self.github_widgets.recent_stargazing_activity,
+            self.github_widgets.recent_commits,
+            self.github_widgets.recent_releases,
+            self.github_widgets.contributors,  # paginated
+            self.github_widgets.issue_activity,  # paginated
+            self.github_widgets.pull_request_activity,  # paginated
             self.github_widgets.health_score,
         ]
 
         self.protocol_github_functions = [
             self.github_cumulative.cumulative_stats,
-            # self.github_cumulative.cumulative_commit_activity,
-            # self.github_cumulative.cumulative_code_frequency,
-            # self.github_cumulative.cumulative_participation,
-            # self.github_cumulative.cumulative_punch_card,
-            # self.github_cumulative.cumulative_issue_count,
-            # (
-            #     self.github_cumulative.cumulative_recent_issues,
-            #     {"order_by": self.github_cumulative.CumulativeRecentIssuesOrder.CREATED_AT},
-            # ),
-            # (
-            #     self.github_cumulative.cumulative_recent_issues,
-            #     {"order_by": self.github_cumulative.CumulativeRecentIssuesOrder.UPDATED_AT},
-            # ),
-            # self.github_cumulative.cumulative_most_active_issues,
-            # self.github_cumulative.cumulative_pull_request_count,
-            # (
-            #     self.github_cumulative.cumulative_recent_pull_requests,
-            #     {"order_by": self.github_cumulative.CumulativeRecentPullRequestsOrder.CREATED_AT},
-            # ),
-            # (
-            #     self.github_cumulative.cumulative_recent_pull_requests,
-            #     {"order_by": self.github_cumulative.CumulativeRecentPullRequestsOrder.UPDATED_AT},
-            # ),
-            # self.github_cumulative.cumulative_language_breakdown,
-            # self.github_cumulative.cumulative_recent_commits,
-            # self.github_cumulative.cumulative_recent_releases,
-            # self.github_cumulative.normalize_health_score,
+            self.github_cumulative.cumulative_commit_activity,
+            self.github_cumulative.cumulative_code_frequency,
+            self.github_cumulative.cumulative_participation,
+            self.github_cumulative.cumulative_punch_card,
+            self.github_cumulative.cumulative_issue_count,
+            (
+                self.github_cumulative.cumulative_recent_issues,
+                {"order_by": self.github_cumulative.CumulativeRecentIssuesOrder.CREATED_AT},
+            ),
+            (
+                self.github_cumulative.cumulative_recent_issues,
+                {"order_by": self.github_cumulative.CumulativeRecentIssuesOrder.UPDATED_AT},
+            ),
+            self.github_cumulative.cumulative_most_active_issues,
+            self.github_cumulative.cumulative_pull_request_count,
+            (
+                self.github_cumulative.cumulative_recent_pull_requests,
+                {"order_by": self.github_cumulative.CumulativeRecentPullRequestsOrder.CREATED_AT},
+            ),
+            (
+                self.github_cumulative.cumulative_recent_pull_requests,
+                {"order_by": self.github_cumulative.CumulativeRecentPullRequestsOrder.UPDATED_AT},
+            ),
+            self.github_cumulative.cumulative_language_breakdown,
+            self.github_cumulative.cumulative_recent_commits,
+            self.github_cumulative.cumulative_recent_releases,
+            self.github_cumulative.normalize_health_score,
         ]
 
     def contruct_pipeline(self, protocol, collection_refs):
         self.protocol_name = protocol["name"]
         self.collection_refs = collection_refs
+
+        self.build_github_pipeline()
 
         self.build_discourse_pipeline(protocol)
 
@@ -197,12 +199,11 @@ class Pipeline:
 
         self.build_governance_pipeline(protocol)
 
-        self.build_github_pipeline()
-
         repositories_ref_stream = self.db.collection(f"{self.protocol_name}-projects").stream()
 
         # Print the data for each document
         for repository in repositories_ref_stream:
+            print(repository.id)
             self.repositories.append(repository.to_dict())
 
         logger.info(
@@ -210,8 +211,8 @@ class Pipeline:
         )
 
     def run_pipelines(self):
-        self.run_project_pipeline("Github Project", self.project_pipeline_functions)
-        self.run_protocol_pipeline("Github Cumulative", self.protocol_github_functions)
+        # self.run_project_pipeline("Github Project", self.project_pipeline_functions)
+        # self.run_protocol_pipeline("Github Cumulative", self.protocol_github_functions)
         self.run_protocol_pipeline("Discourse", self.protocol_discourse_functions)
         self.run_protocol_pipeline("Developers", self.protocol_developers_functions)
         self.run_protocol_pipeline("Governance", self.protocol_governance_functions)

@@ -93,7 +93,7 @@ class GovernanceWidgets:
             result = self.actor.governance_graphql_make_query(query, variables=variables)
 
             if not self.is_valid(result):
-                logger.info(f" [!] Invalid response from the API")
+                logger.warning("[!] Invalid or empty data returned")
                 continue
 
             delegates = result["data"]["governance"]["delegates"]
@@ -214,7 +214,7 @@ class GovernanceWidgets:
             result = self.actor.governance_graphql_make_query(query, variables=variables)
 
             if not self.is_valid(result):
-                logger.info(f" [!] Invalid response from the API")
+                logger.warning("[!] Invalid or empty data returned")
                 continue
 
             delegates = result["data"]["governance"]["delegates"]
@@ -362,7 +362,7 @@ class GovernanceWidgets:
         result = self.actor.governance_graphql_make_query(query, variables=variables)
 
         if not self.is_valid(result):
-            logger.info(f" [!] Invalid response from the API")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         proposals = result["data"]["proposals"]
@@ -462,7 +462,7 @@ class GovernanceWidgets:
         result = self.actor.governance_graphql_make_query(query, variables=variables)
 
         if not self.is_valid(result):
-            logger.info(f" [!] Invalid response from the API")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         governance_info = result["data"]["governance"]
@@ -493,7 +493,7 @@ class GovernanceWidgets:
         )
 
         if not self.is_valid(data):
-            logger.info(f" [!] Invalid response from the API")
+            logger.warning("[!] Invalid or empty data returned")
             return
         for safe in data["gnosisSafes"]:
             safe["tally_url"] = f"https://www.tally.xyz/safe/{safe['id']}"

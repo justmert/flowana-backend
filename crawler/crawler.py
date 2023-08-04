@@ -69,20 +69,24 @@ class Crawler:
         # Parse the TOML file
         data = toml.loads(content)
 
-        logger.info(f"Fetched {toml_name}.toml")
+        logger.info(f"Fetched {toml_name}")
         return data
 
-    def collect_repos(self, toml_name, repos, data=None):
-        if data is None:
-            logger.info(f"[*] Main toml file: {toml_name}.toml")
-            data = self.fetch_toml(toml_name)
+    def collect_repos(self, toml_name, include_sub_ecosystem, repos=None, data=None):
+        if repos is None:
+            repos = set()
 
-        for sub_ecosystem in data["sub_ecosystems"]:
+        if data is None:
+            logger.info(f"[*] Main toml file: {toml_name}")
+            data = self.fetch_toml(toml_name)
+            repos = repos.union(set([repo["url"] for repo in data["repo"]]))
+
+        for sub_ecosystem in data["sub_ecosystems"] and include_sub_ecosystem:
             logger.info(f"[*] Sub ecosystem: {sub_ecosystem}")
             toml_name = self._transform_ecosystem_name(sub_ecosystem)
             data = self.fetch_toml(toml_name)
             if data["sub_ecosystems"]:
-                self.collect_repos(toml_name, repos, data)
+                repos = self.collect_repos(toml_name, repos, data)
             else:
                 repos = repos.union(set([repo["url"] for repo in data["repo"]]))
         return repos
@@ -96,12 +100,7 @@ class Crawler:
 
         repos = set()
         for crawler_toml in crawler_tomls:
-            if include_sub_ecosystem:
-                logger.info(f"[!] Including sub ecosystems for protocol {protocol_name}")
-                repos = repos.union(self.collect_repos(crawler_toml, repos))
-            else:
-                logger.info(f"[!] NOT including sub ecosystems for protocol {protocol_name}")
-                repos = repos.union(set([repo["url"] for repo in self.fetch_toml(crawler_toml)["repo"]]))
+            repos = repos.union(self.collect_repos(crawler_toml, include_sub_ecosystem, repos=repos))
 
         logger.info(f"[*] Found {len(repos)} repos for {protocol_name} protocol")
 
@@ -134,13 +133,13 @@ class Crawler:
             for adapter in self.adapters:
                 adapter.run(repo_metadata)
 
-            self.repo_metadata_list.append(repo_metadata)
+            repo_metadata_list.append(repo_metadata)
 
             logger.info(f"[+] Added {owner}/{repo_name} to project metadata list.")
 
-        self.repo_metadata_list = sorted(self.repo_metadata_list, key=lambda x: x["stars"], reverse=True)
+        repo_metadata_list = sorted(repo_metadata_list, key=lambda x: x["stars"], reverse=True)
 
-        for repo_metadata in self.repo_metadata_list:
+        for repo_metadata in repo_metadata_list:
             self.db.collection(f"{protocol_name}-projects").document(
                 f"{repo_metadata['owner']}#{repo_metadata['repo']}"
             ).set(

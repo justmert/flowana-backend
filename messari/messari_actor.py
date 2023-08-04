@@ -29,10 +29,11 @@ class MessariActor:
         if not self.session:
             self.session = requests.Session()
 
-    def messari_rest_make_request(self, url, variables=None, max_page_fetch=float("inf")):
+    def messari_rest_make_request(self, url, variables=None, max_page_fetch=float("inf"), server_fail_max_try=3):
         url = f"{self.messari_api_endpoint}{url}"
         result = []
 
+        server_fail_current_try = 0
         current_fetch_count = 0
         logger.info(f". [=] Fetching data from REST API from {url}")
         while url and (current_fetch_count < max_page_fetch):
@@ -48,6 +49,14 @@ class MessariActor:
                 json_response = response.json()
                 return json_response
 
+            elif response.status_code == 500:
+                logger.info(". [!] Server error. Let's try again.")
+                server_fail_current_try += 1
+                if server_fail_current_try < server_fail_max_try:
+                    time.sleep(1.1)
+                    continue
+                else:
+                    logger.error(f" [-] Server error. Tried {server_fail_max_try} times. Giving up.")
             else:
                 logger.error(f" [-] Failed to retrieve from API. Status code: {response.status_code} - {response.text}")
                 logger.info(f" [#] Rest endpoint: {url}")

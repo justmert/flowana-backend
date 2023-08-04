@@ -33,7 +33,7 @@ class MessariWidgets:
         data = self.actor.messari_rest_make_request(url=f"/v1/assets/{self.asset_key}", max_page_fetch=1)
 
         if not self.is_valid(data):
-            logger.info(f" [!] Invalid response from the API")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         self.collection_refs["messari"].document("asset").set({"data": data})
@@ -42,7 +42,7 @@ class MessariWidgets:
         data = self.actor.messari_rest_make_request(url=f"/v2/assets/{self.asset_key}/profile", max_page_fetch=1)
 
         if not self.is_valid(data):
-            logger.info(f" [!] Invalid response from the API")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         self.collection_refs["messari"].document("asset_profile").set({"data": data})
@@ -51,7 +51,7 @@ class MessariWidgets:
         data = self.actor.messari_rest_make_request(url=f"/v1/assets/{self.asset_key}/metrics", max_page_fetch=1)
 
         if not self.is_valid(data):
-            logger.info(f" [!] Invalid response from the API")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         self.collection_refs["messari"].document("asset_metrics").set({"data": data})
@@ -60,7 +60,7 @@ class MessariWidgets:
         data = self.actor.messari_rest_make_request(url=f"/v1/assets/{self.asset_key}/metrics", max_page_fetch=1)
 
         if not self.is_valid(data):
-            logger.info(f" [!] Invalid response from the API")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         self.collection_refs["messari"].document("asset_metrics").set({"data": data})
@@ -69,7 +69,7 @@ class MessariWidgets:
         data = self.actor.messari_rest_make_request(url=f"/v1/assets/metrics", max_page_fetch=1)
 
         if not self.is_valid(data):
-            logger.info(f" [!] Invalid response from the API")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         for metric in data["data"]["metrics"]:
@@ -90,7 +90,7 @@ class MessariWidgets:
                     )
 
                     if not self.is_valid(data) or not data["data"].get("values", None):
-                        logger.info(f" [!] Invalid response from the API")
+                        logger.warning("[!] Invalid or empty data returned")
                         continue
 
                     data["data"]["values"] = [

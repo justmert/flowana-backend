@@ -1,7 +1,7 @@
 [
   {
     "name": "flow",
-    "update": true,
+    "update": false,
     "crawl": false,
     "crawler": {
       "include_sub_ecosystems": true,
@@ -33,7 +33,7 @@
   },
   {
     "name": "compound",
-    "update": false,
+    "update": true,
     "crawl": false,
     "crawler": {
       "include_sub_ecosystems": true,

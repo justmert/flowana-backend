@@ -43,7 +43,7 @@ class DiscourseWidgets:
 
             topics = data["topic_list"]["topics"]
             if not self.is_valid(data) or not topics:
-                logger.info(f"[#invalid] No topics left in page {page} for protocol")
+                logger.info(f"[!] Invalid or empty data returned")
                 break
 
             for topic in topics:
@@ -126,7 +126,7 @@ class DiscourseWidgets:
             )
 
             if not self.is_valid(data):
-                logger.info(f"[#invalid] No users are fetched for page {page} for protocol")
+                logger.warning("[!] Invalid or empty data returned")
                 continue
 
             users = data["directory_items"]
@@ -182,7 +182,7 @@ class DiscourseWidgets:
         data = self.actor.discourse_rest_make_request(f"/categories.json")
 
         if not self.is_valid(data):
-            logger.info(f"[#invalid] No categories for protocol ")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         categories = []
@@ -207,7 +207,7 @@ class DiscourseWidgets:
             for sub_c_id in category["subcategory_ids"]:
                 sub_data = self.actor.discourse_rest_make_request(f"/c/{sub_c_id}/show.json")
                 if not self.is_valid(sub_data):
-                    logger.info(f'[#invalid] No sub category for the category {category["name"]}')
+                    logger.info(f'"[!] Invalid or empty data returned"')
                     continue
                 sub_data = sub_data["category"]
                 sub_category_data = {
@@ -229,7 +229,7 @@ class DiscourseWidgets:
         data = self.actor.discourse_rest_make_request(f"/tags.json")
 
         if not self.is_valid(data):
-            logger.info(f"[#invalid] No tags for protocol ")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         tags = []
@@ -260,7 +260,7 @@ class DiscourseWidgets:
             data = self.actor.discourse_rest_make_request(f"/top/{interval}.json")
 
             if not self.is_valid(data):
-                logger.info(f"[#invalid] No top topics for protocol ")
+                logger.warning("[!] Invalid or empty data returned")
                 continue
 
             for topic in data["topic_list"]["topics"]:
@@ -300,8 +300,8 @@ class DiscourseWidgets:
             data = self.actor.discourse_rest_make_request(f"/latest.json", variables={"order": order})
 
             if not self.is_valid(data):
-                logger.info(f"[#invalid] No latest topics for protocol ")
-                return
+                logger.warning("[!] Invalid or empty data returned")
+                continue
 
             for topic in data["topic_list"]["topics"]:
                 topic_data = {
@@ -329,7 +329,7 @@ class DiscourseWidgets:
         data = self.actor.discourse_rest_make_request(f"/posts.json")
 
         if not self.is_valid(data):
-            logger.info(f"[#invalid] No latest posts for protocol ")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         for post in data["latest_posts"]:
@@ -390,7 +390,7 @@ class DiscourseWidgets:
                 )
 
                 if not self.is_valid(data):
-                    logger.info(f"[#invalid] No top users for {interval}-{order}")
+                    logger.warning("[!] Invalid or empty data returned")
                     continue
 
                 for user in data["directory_items"]:

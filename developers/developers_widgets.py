@@ -35,7 +35,7 @@ class DevelopersWidget:
         )
 
         if not self.is_valid(data):
-            logger.info(f"[-] No data found for full time developers.")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         formatted_data = {
@@ -49,7 +49,7 @@ class DevelopersWidget:
         data = self.actor.developer_rest_make_request(url=f"/api/stats/mau/{self.developer_ecosystem}", variables={})
 
         if not self.is_valid(data):
-            logger.info(f"[-] No data found for monthly active devs.")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         formatted_data = {
@@ -66,7 +66,7 @@ class DevelopersWidget:
         )
 
         if not self.is_valid(data):
-            logger.info(f"[-] No data found for total repos")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         formatted_data = {
@@ -83,7 +83,7 @@ class DevelopersWidget:
         )
 
         if not self.is_valid(data):
-            logger.info(f"[-] No data found for total commits.")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         formatted_data = {
@@ -100,7 +100,7 @@ class DevelopersWidget:
         )
 
         if not self.is_valid(data):
-            logger.info(f"[-] No data found for monthly active devs.")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         for series in data["series"]:
@@ -119,7 +119,7 @@ class DevelopersWidget:
         )
 
         if not self.is_valid(data):
-            logger.info(f"[-] No data found for total monthly active devs.")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         for series in data["series"]:
@@ -139,7 +139,7 @@ class DevelopersWidget:
         )
 
         if not self.is_valid(data):
-            logger.info(f"[-] No data found for dev type table.")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         # Extract headers
@@ -157,7 +157,7 @@ class DevelopersWidget:
         )
 
         if not self.is_valid(data):
-            logger.info(f"[-] No data found for monthly commits by dev type chart.")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         for series in data["series"]:
@@ -177,7 +177,7 @@ class DevelopersWidget:
         )
 
         if not self.is_valid(data):
-            logger.info(f"[-] No data found for monthly commits chart.")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         for series in data["series"]:

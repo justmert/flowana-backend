@@ -104,6 +104,7 @@ class GithubActor:
     def rate_limit_wait(self, rate_limit_reset):
         reset_time = int(rate_limit_reset)
         time_to_wait = reset_time - int(time.time())
+        logger.warning(f". [-] Waiting for {time_to_wait} seconds which is {round(time_to_wait / 60, 2)} minutes.")
         time.sleep(time_to_wait)
 
     def check_repo_validity(self, owner, repo, try_val=0):

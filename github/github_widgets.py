@@ -108,7 +108,7 @@ class GithubWidgets:
 
         result = self.actor.github_graphql_make_query(query, {"owner": owner, "name": repo})
         if not self.is_valid(result):
-            logger.info(f"[#invalid] No repository found for {owner}/{repo}")
+            logger.info(f"[!] Invalid or empty data returned")
             return
 
         # Flatten the response to a dictionary
@@ -486,7 +486,8 @@ class GithubWidgets:
 
                 # Define the weights
                 weight_commit_trend = 0.20  # assign 25% importance to commit trend
-                weight_contributor_gini_coefficient = 0.30  # assign 25% importance to contributor gini coefficient
+                # assign 25% importance to contributor gini coefficient
+                weight_contributor_gini_coefficient = 0.30
                 weight_new_metric_average = 0.20  # assign 25% importance to new metric average
                 weight_contributor_count = 0.30  # assign 25% importance to contributor count
 
@@ -535,7 +536,7 @@ class GithubWidgets:
         data = self.actor.github_rest_make_request(f"/repos/{owner}/{repo}/stats/commit_activity")
 
         if not self.is_valid(data):
-            logger.info(f"[#invalid] No commit activity for repository {owner}/{repo}")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         self.get_db_ref(owner, repo).document("commit_activity").set({"data": data})
@@ -545,7 +546,7 @@ class GithubWidgets:
         data = self.actor.github_rest_make_request(f"/repos/{owner}/{repo}/stats/contributors")
 
         if not self.is_valid(data):
-            logger.info(f"[#invalid] No contributors for repository {owner}/{repo}")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         # Chunk size
@@ -567,7 +568,7 @@ class GithubWidgets:
         data = self.actor.github_rest_make_request(f"/repos/{owner}/{repo}/stats/participation")
 
         if not self.is_valid(data):
-            logger.info(f"[#invalid] No participation for repository {owner}/{repo}")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         # Generate dates for last 52 weeks
@@ -603,7 +604,7 @@ class GithubWidgets:
         data = self.actor.github_rest_make_request(f"/repos/{owner}/{repo}/stats/code_frequency")
 
         if not self.is_valid(data):
-            logger.info(f"[#invalid] No code frequency for repository {owner}/{repo}")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         # Define the chart option
@@ -625,7 +626,7 @@ class GithubWidgets:
         data = self.actor.github_rest_make_request(f"/repos/{owner}/{repo}/community/profile")
 
         if not self.is_valid(data):
-            logger.info(f"[#invalid] No community profile for repository {owner}/{repo}")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         self.get_db_ref(owner, repo).document("community_profile").set({"data": data})
@@ -635,7 +636,7 @@ class GithubWidgets:
         data = self.actor.github_rest_make_request(f"/repos/{owner}/{repo}/stats/punch_card")
 
         if not self.is_valid(data):
-            logger.info(f"[#invalid] No punch card for repository {owner}/{repo}")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         for i in range(len(data)):
@@ -664,7 +665,7 @@ class GithubWidgets:
         data = self.actor.github_graphql_make_query(query, {"owner": owner, "name": repo})
 
         if not self.is_valid(data):
-            logger.info(f"[#invalid] No issue count for repository {owner}/{repo}")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         self.get_db_ref(owner, repo).document("issue_count").set(
@@ -720,8 +721,11 @@ class GithubWidgets:
             )
 
             if not self.is_valid(result):
-                logger.info(f"[#invalid] No issue activity for repository {owner}/{repo}")
-                return
+                logger.info(f"[!] Invalid or empty data returned")
+                if issues:
+                    break
+                else:
+                    return
 
             nodes = result["data"]["repository"]["issues"]["nodes"]
             end_cursor = result["data"]["repository"]["issues"]["pageInfo"]["endCursor"]
@@ -879,8 +883,11 @@ class GithubWidgets:
             )
 
             if not self.is_valid(result):
-                logger.info(f"[#invalid] No pull request activity for repository {owner}/{repo}")
-                return
+                logger.info(f"[!] Invalid or empty data returned")
+                if pull_requests:
+                    break
+                else:
+                    return
 
             nodes = result["data"]["repository"]["pullRequests"]["nodes"]
             end_cursor = result["data"]["repository"]["pullRequests"]["pageInfo"]["endCursor"]
@@ -1105,7 +1112,7 @@ class GithubWidgets:
         data = self.actor.github_graphql_make_query(query, {"owner": owner, "name": repo})
 
         if not self.is_valid(data):
-            logger.info(f"[#invalid] No pull request count for repository {owner}/{repo}")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         self.get_db_ref(owner, repo).document("pull_request_count").set(
@@ -1136,7 +1143,7 @@ class GithubWidgets:
         data = self.actor.github_graphql_make_query(query, {"owner": owner, "name": repo})
 
         if not self.is_valid(data):
-            logger.info(f"[#invalid] No language breakdown for repository {owner}/{repo}")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         flattened_data = []
@@ -1204,7 +1211,7 @@ class GithubWidgets:
         data = self.actor.github_graphql_make_query(query, {"owner": owner, "name": repo, "order_by": order_by.value})
 
         if not self.is_valid(data):
-            logger.info(f"[#invalid] No recent issues for repository {owner}/{repo}")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         flattened_data = []
@@ -1273,7 +1280,7 @@ class GithubWidgets:
         data = self.actor.github_graphql_make_query(query, {"owner": owner, "name": repo, "order_by": order_by.value})
 
         if not self.is_valid(data):
-            logger.info(f"[#invalid] No recent pull requests for repository {owner}/{repo}")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         flattened_data = []
@@ -1333,6 +1340,7 @@ class GithubWidgets:
             result = self.actor.github_graphql_make_query(query, {"owner": owner, "name": repo, "cursor": cursor})
 
             if not self.is_valid(result):
+                logger.warning("[!] Invalid or empty data returned")
                 break
 
             # Extract the stargazers from the response
@@ -1352,7 +1360,7 @@ class GithubWidgets:
             current_page += 1
 
         if len(star_dict) < 0:
-            logger.info(f"[#invalid] No recent stargazing activity for repository {owner}/{repo}")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         # Convert the dictionary to a Pandas DataFrame
@@ -1433,7 +1441,7 @@ class GithubWidgets:
         data = self.actor.github_graphql_make_query(query, {"owner": owner, "name": repo, "count": 10})
 
         if not self.is_valid(data):
-            logger.info(f"[#invalid] No recent commits for repository {owner}/{repo}")
+            logger.warning("[!] Invalid or empty data returned")
             return
 
         flattened_data = []
