@@ -34,13 +34,13 @@ class MessariActor:
         result = []
 
         current_fetch_count = 0
-        logger.info(f"[GET] fetching data from the url {url}")
+        logger.info(f". [=] Fetching data from REST API from {url}")
         while url and (current_fetch_count < max_page_fetch):
-            logger.info(f" [.] Fetching page {current_fetch_count + 1} of {max_page_fetch}")
+            logger.info(f". page {current_fetch_count + 1}/{max_page_fetch} of {url}")
             self.session.headers.update(self.github_rest_headers)
             response = self.session.get(url, params=variables)
             if response.status_code == 429:
-                logger.info(" [.] Rate limit exceeded. Waiting for 1 minute...")
+                logger.info(". [...] Rate limit exceeded. Waiting for 1 minute.")
                 time.sleep(1 * 60)
                 continue  # fetch again!
 
@@ -49,6 +49,8 @@ class MessariActor:
                 return json_response
 
             else:
-                logger.error(f" [-] Failed to retrieve from API. Status code: {response.status_code}")
+                logger.error(f" [-] Failed to retrieve from API. Status code: {response.status_code} - {response.text}")
+                logger.info(f" [#] Rest endpoint: {url}")
+                logger.info(f" [#] Variables: {variables}")
                 break
         return result

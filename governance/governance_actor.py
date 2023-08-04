@@ -34,14 +34,14 @@ class GovernanceActor:
         result = []
 
         current_fetch_count = 0
-        logger.info(f"[GET] fetching data from the url {url}")
+        logger.info(f". [=] Fetching data from REST API from {url}")
         while url and (current_fetch_count < max_page_fetch):
-            logger.info(f" [.] Fetching page {current_fetch_count + 1} of {max_page_fetch}")
+            logger.info(f". page {current_fetch_count + 1}/{max_page_fetch} of {url}")
             self.session.headers.update(self.governance_rest_headers)
             response = self.session.get(url, params=variables)
             if response.status_code == 202:
                 time.sleep(1.1)
-                logger.info(" [.] Waiting for the data to be ready...")
+                logger.info(". [...] Waiting for the data to be ready.")
                 continue  # fetch again!
 
             elif response.status_code == 403:
@@ -53,12 +53,14 @@ class GovernanceActor:
                 return json_response
 
             else:
-                logger.error(f" [-] Failed to retrieve from API. Status code: {response.status_code}")
+                logger.error(f" [-] Failed to retrieve from API. Status code: {response.status_code} - {response.text}")
+                logger.info(f" [#] Rest endpoint: {url}")
+                logger.info(f" [#] Variables: {variables}")
                 break
         return result
 
     def governance_graphql_make_query(self, _query, variables=None):
-        logger.info(f"[GET] fetching data from the graphql API.")
+        logger.info(f". [=] Fetching data from Graphql API from {self.github_graphql_endpoint}")
         self.session.headers.update(self.governance_graphql_headers)
         response = self.session.post(
             self.governance_graphql_endpoint,
@@ -72,10 +74,14 @@ class GovernanceActor:
             )
 
         if response.status_code != 200:
-            logger.error(f" [-] Failed to retrieve from API. Status code: {response.status_code}")
+            logger.error(f". [-] Failed to retrieve from API. Status code: {response.status_code} - {response.text}")
+            logger.info(f". [#] Graphql endpoint: {self.github_graphql_endpoint}")
+            logger.info(f". [#] Query: {_query}")
+            logger.info(f". [#] Variables: {variables}")
             return None
 
         elif response.status_code == 403:
+            logger.info(". [...] Too many request. Waiting for the data to be ready.")
             time.sleep(1.1)
             return self.governance_graphql_make_query(_query, variables)
 

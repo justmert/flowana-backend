@@ -31,14 +31,14 @@ class DevelopersActor:
         result = []
 
         current_fetch_count = 0
-        logger.info(f"[GET] fetching data from the url {url}")
+        logger.info(f". [=] Fetching data from Graphql API from {self.github_graphql_endpoint}")
         while url and (current_fetch_count < max_page_fetch):
-            logger.info(f" [.] Fetching page {current_fetch_count + 1} of {max_page_fetch}")
+            logger.info(f". page {current_fetch_count + 1}/{max_page_fetch} of {url}")
             self.session.headers.update(self.developer_rest_headers)
             response = self.session.get(url, params=variables)
             if response.status_code == 202:
-                time.sleep(1)
                 logger.info(" [.] Waiting for the data to be ready...")
+                time.sleep(1)
                 continue  # fetch again!
 
             elif response.status_code == 403:

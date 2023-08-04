@@ -1,11 +1,46 @@
 [
   {
-    "name": "polkadot",
+    "name": "flow",
     "update": true,
     "crawl": false,
-    "crawler_tomls": ["polkadot"],
+    "crawler": {
+      "include_sub_ecosystems": true,
+      "tomls": ["flow.toml"]
+    },
     "forum": "https://forum.onflow.org",
     "developers": "flow",
+    "governance": null,
+    "messari": {
+      "asset_key": "flow"
+    }
+  },
+
+  {
+    "name": "polkadot",
+    "update": false,
+    "crawl": false,
+    "crawler": {
+      "include_sub_ecosystems": false,
+      "tomls": ["polkadot.toml"]
+    },
+    "crawler_tomls": ["polkadot"],
+    "forum": "https://forum.polkadot.network/",
+    "developers": "polkadot",
+    "governance": null,
+    "messari": {
+      "asset_key": "dot"
+    }
+  },
+  {
+    "name": "compound",
+    "update": false,
+    "crawl": false,
+    "crawler": {
+      "include_sub_ecosystems": true,
+      "tomls": ["compound.toml"]
+    },
+    "forum": "https://www.comp.xyz/",
+    "developers": "compound",
     "governance": {
       "slug": "compound",
       "organization_id": 1,
@@ -14,6 +49,21 @@
     },
     "messari": {
       "asset_key": "comp"
+    }
+  },
+  {
+    "name": "lens",
+    "update": false,
+    "crawl": false,
+    "crawler": {
+      "include_sub_ecosystems": true,
+      "tomls": ["lens-protocol.toml"]
+    },
+    "forum": null,
+    "developers": null,
+    "governance": null,
+    "messari": {
+      "asset_key": "lens-protocol"
     }
   }
 ]

@@ -6,19 +6,17 @@ from firebase_admin import firestore, credentials
 import os
 import json
 import pyfiglet
-from requests_cache import CachedSession
-from github.github_actor import GithubActor
-from discourse.discourse_actor import DiscourseActor
-from tools.crawler import Crawler
+from crawler.crawler import Crawler
 import requests
 import api.api as api
 from datetime import timedelta
 from pipeline import Pipeline
 
+# import github actor
+from github.github_actor import GithubActor
+
 current_file_path = os.path.abspath(__file__)
 base_dir = os.path.dirname(current_file_path)
-
-
 logger = logging.getLogger(__name__)
 
 
@@ -31,14 +29,10 @@ class Flowana:
     def get_app(self):
         return self.app
 
-    @property
-    def get_actor(self):
-        return self.github_actor
-
     def __init__(self):
-        ascii_banner = pyfiglet.figlet_format("Flowana")
+        ascii_banner = pyfiglet.figlet_format("Flowana", font="big")
         print(ascii_banner)
-        logger.info("Initializing Flowana")
+        logger.info("[...] Initializing Flowana.")
 
         admin_sdk_path = os.path.join(base_dir, os.environ["FIREBASE_ADMIN_SDK_NAME"])
         if not os.path.exists(admin_sdk_path):
@@ -52,18 +46,17 @@ class Flowana:
             {"projectId": os.environ["FIREBASE_PROJECT_ID"]},
             name="flowana-backend",
         )
+        logger.info("[*] Firebase app initialized.")
 
         self.db = firestore.Client()
         with open("protocols.json") as f:
             self.protocols = json.load(f)
 
-        self.session = CachedSession("session", backend="sqlite", expire_after=timedelta(days=30))
-        # do not need caching actor for crawler
-        self.github_actor = GithubActor(self.session)
+        logger.info("[*] Loaded protocols. There are {} protocols.".format(len(self.protocols)))
 
+        self.github_actor = GithubActor()
         self.crawler = Crawler(self.app, self.db, self.github_actor)
         self.pipeline = Pipeline(self.app, self.db, self.github_actor)
-        logger.info(f"Loaded protocols {','.join([protocol['name'].upper() for protocol in self.protocols])}.")
 
     def check_collection(self, collection_ref):
         # Check if the collection exists
@@ -77,45 +70,49 @@ class Flowana:
         for doc in dummy_docs:
             doc.reference.delete()
 
+    def _create_dummies(self, collection_refs):
+        # Create the collections if they don't exist
+        [self.check_collection(collection_ref) for collection_ref in collection_refs.values()]
+        logger.info("[*] Created dummy documents.")
+
+    def _delete_dummies(self, collection_refs):
+        # Delete the dummy documents
+        [self.delete_dummy_docs(collection_ref) for collection_ref in collection_refs.values()]
+        logger.info("[*] Deleted dummy documents.")
+
     def run(self):
         for protocol in self.protocols:
+            protocol_name = protocol["name"]
             collection_refs = {
-                "projects": self.db.collection(f'{protocol["name"]}-projects'),
-                "cumulative": self.db.collection(f'{protocol["name"]}-cumulative'),
-                "discourse": self.db.collection(f'{protocol["name"]}-discourse'),
-                "developers": self.db.collection(f'{protocol["name"]}-developers'),
-                "governance": self.db.collection(f'{protocol["name"]}-governance'),
-                "messari": self.db.collection(f'{protocol["name"]}-messari'),
+                "projects": self.db.collection(f"{protocol_name}-projects"),
+                "cumulative": self.db.collection(f"{protocol_name}-cumulative"),
+                "discourse": self.db.collection(f"{protocol_name}-discourse"),
+                "developers": self.db.collection(f"{protocol_name}-developers"),
+                "governance": self.db.collection(f"{protocol_name}-governance"),
+                "messari": self.db.collection(f"{protocol_name}-messari"),
             }
 
-            # Create the collections if they don't exist
-            [self.check_collection(collection_ref) for collection_ref in collection_refs.values()]
-
-            if not self.db.collection(f'{protocol["name"]}-widgets').get():
-                self.db.collection(f'{protocol["name"]}-widgets').document("repositories").set({})
+            if not self.db.collection(f"{protocol_name}-widgets").get():
+                self.db.collection(f"{protocol_name}-widgets").document("repositories").set({})
 
             # widgets (collection) -> repositories (doc) -> PROJECT_HASH (sub-collection) -> DATA_NAME (doc) -> 'data': data (field)
-            collection_refs["widgets"] = self.db.collection(f'{protocol["name"]}-widgets')
+            collection_refs["widgets"] = self.db.collection(f"{protocol_name}-widgets")
+
+            logger.info("[*] Collection references are created.")
 
             if protocol["crawl"] == True:
-                self.run_crawler(protocol["name"], protocol["crawler_tomls"])
-                self.session.cache.clear()
+                self.run_crawler(protocol_name, protocol["crawler"])
 
             if protocol["update"] == True:
                 self.run_protocol_update(protocol, collection_refs)
 
-            self.session.cache.clear()
-            # Delete the dummy documents
-            [self.delete_dummy_docs(collection_ref) for collection_ref in collection_refs.values()]
-
-    def run_crawler(self, protocol_name, tomls):
-        logger.info(f"Crawling protocol {protocol_name} with [{','.join(tomls)}]] tomls.")
-        self.crawler.run(protocol_name, tomls)
+    def run_crawler(self, protocol_name, crawler_config):
+        self.crawler.run(protocol_name, crawler_config)
 
     def run_protocol_update(self, protocol, collection_refs):
         protocol_name = protocol["name"]
         logger.info(f"Updating protocol {protocol_name}")
-        ascii_banner = pyfiglet.figlet_format(protocol_name)
+        ascii_banner = pyfiglet.figlet_format(protocol_name, font="rectangles")
         print(ascii_banner)
 
         self.pipeline.contruct_pipeline(protocol, collection_refs)
