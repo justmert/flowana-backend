@@ -2,6 +2,7 @@ from .messari_actor import MessariActor
 import logging
 import tools.log_config as log_config
 import datetime
+
 logger = logging.getLogger(__name__)
 
 
@@ -101,10 +102,3 @@ class MessariWidgets:
                 indexed_timeseries_list.append(doc.id)
 
         self.collection_refs["messari"].document("indexed_timeseries_list").set({"data": indexed_timeseries_list})
-
-    def write_last_updated(self, **kwargs):
-        # datetime in rfc3339 format
-        rfc_format = datetime.now().isoformat() + "Z"
-        self.collection_refs["messari"].document(f"last_updated_at").set({"data": rfc_format})
-
-

@@ -535,9 +535,3 @@ class GithubCumulative:
         self.collection_refs["cumulative"].document(f"cumulative_recent_releases").set(
             {"data": cumulative_recent_releases}
         )
-
-    def write_last_updated(self, **kwargs):
-        # datetime in rfc3339 format
-        rfc_format = datetime.now().isoformat() + "Z"
-        self.collection_refs["cumulative"].document(f"last_updated_at").set({"data": rfc_format})
-

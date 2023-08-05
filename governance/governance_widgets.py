@@ -501,10 +501,3 @@ class GovernanceWidgets:
 
         self.collection_refs["governance"].document("safes").set({"data": data})
 
-
-    def write_last_updated(self, **kwargs):
-        # datetime in rfc3339 format
-        rfc_format = datetime.now().isoformat() + "Z"
-        self.collection_refs["governance"].document(f"last_updated_at").set({"data": rfc_format})
-
-

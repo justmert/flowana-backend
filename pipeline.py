@@ -12,9 +12,22 @@ from messari.messari_widgets import MessariWidgets
 from github.github_leaderboard import GithubLeaderboard
 import traceback
 import tools.log_config as log_config
+import tools.helpers as helpers
+from enum import Enum
+
 
 logger = logging.getLogger(__name__)
 
+
+
+class PipelineType(str, Enum):
+    GITHUB_CUMULATIVE = "cumulative"
+    GITHUB_PROJECTS = "projects"
+    GITHUB_LEADERBOARD = "leaderboard"
+    DISCOURSE = "discourse"
+    DEVELOPERS = "developers"
+    GOVERNANCE = "governance"
+    MESSARI = "messari"
 
 class Pipeline:
     def __init__(self, app, db, github_actor):
@@ -24,6 +37,7 @@ class Pipeline:
         self.project_pipeline_functions = []
         self.collection_refs = {}
         self.github_actor = github_actor
+
 
     def build_discourse_pipeline(self, protocol):
         if protocol.get("forum", None):
@@ -40,7 +54,7 @@ class Pipeline:
                 self.discourse_widgets.latest_topics,
                 self.discourse_widgets.latest_posts,
                 self.discourse_widgets.top_users,
-                self.discourse_widgets.write_last_updated
+                # self.discourse_widgets.write_last_updated,
             ]
 
     def build_governance_pipeline(self, protocol):
@@ -71,7 +85,7 @@ class Pipeline:
                 self.governance_widgets.proposals,
                 self.governance_widgets.governance_info,
                 self.governance_widgets.safes,
-                self.governance_widgets.write_last_updated
+                # self.governance_widgets.write_last_updated,
             ]
 
     def build_messari_pipeline(self, protocol):
@@ -90,7 +104,7 @@ class Pipeline:
                 self.messari_widgets.asset_profile,
                 self.messari_widgets.asset_metrics,
                 self.messari_widgets.asset_timeseries,
-                self.messari_widgets.write_last_updated
+                # self.messari_widgets.write_last_updated,
             ]
 
     def build_developer_pipeline(self, protocol):
@@ -110,7 +124,7 @@ class Pipeline:
                 self.developers_widget.dev_type_table,
                 self.developers_widget.monthly_commits_by_dev_type_chart,
                 self.developers_widget.monthly_commits_chart,
-                self.developers_widget.write_last_updated
+                # self.developers_widget.write_last_updated,
             ]
 
     def build_github_pipeline(self):
@@ -152,7 +166,7 @@ class Pipeline:
             self.github_widgets.issue_activity,  # paginated
             self.github_widgets.pull_request_activity,  # paginated
             self.github_widgets.health_score,
-            self.github_widgets.write_last_updated
+            # self.github_widgets.write_last_updated,
         ]
 
         self.protocol_github_functions = [
@@ -184,13 +198,13 @@ class Pipeline:
             self.github_cumulative.cumulative_recent_commits,
             self.github_cumulative.cumulative_recent_releases,
             self.github_cumulative.normalize_health_score,
-            self.github_cumulative.write_last_updated
+            # self.github_cumulative.write_last_updated,
         ]
 
         self.protocol_leaderboard_functions = [
             self.github_leaderboard.project_leaderboard,
             self.github_leaderboard.contributor_leaderboard,
-            self.github_leaderboard.write_last_updated
+            # self.github_leaderboard.write_last_updated,
         ]
 
     def contruct_pipeline(self, protocol, collection_refs):
@@ -218,13 +232,13 @@ class Pipeline:
         )
 
     def run_pipelines(self):
-        self.run_project_pipeline("Github Project", self.project_pipeline_functions)
-        self.run_protocol_pipeline("Github Cumulative", self.protocol_github_functions)
-        self.run_protocol_pipeline("Leaderboard", self.protocol_leaderboard_functions)
-        self.run_protocol_pipeline("Discourse", self.protocol_discourse_functions)
-        self.run_protocol_pipeline("Developers", self.protocol_developers_functions)
-        self.run_protocol_pipeline("Governance", self.protocol_governance_functions)
-        self.run_protocol_pipeline("Messari", self.protocol_messari_functions)
+        self.run_project_pipeline(PipelineType.GITHUB_PROJECTS, self.project_pipeline_functions)
+        self.run_protocol_pipeline(PipelineType.GITHUB_CUMULATIVE, self.protocol_github_functions)
+        self.run_protocol_pipeline(PipelineType.GITHUB_LEADERBOARD, self.protocol_leaderboard_functions)
+        self.run_protocol_pipeline(PipelineType.DISCOURSE, self.protocol_discourse_functions)
+        self.run_protocol_pipeline(PipelineType.DEVELOPERS, self.protocol_developers_functions)
+        self.run_protocol_pipeline(PipelineType.GOVERNANCE, self.protocol_governance_functions)
+        self.run_protocol_pipeline(PipelineType.MESSARI, self.protocol_messari_functions)
 
     def function_executer(self, f, *args, **kwargs):
         logging.info(f"[...] Running function: {f.__name__}")
@@ -249,9 +263,9 @@ class Pipeline:
         else:
             logging.info(f"[*] Completed running function: {f.__name__}")
 
-    def run_protocol_pipeline(self, pipeline_name, protocol_pipeline):
+    def run_protocol_pipeline(self, pipeline_type, protocol_pipeline):
         for i, item in enumerate(protocol_pipeline):
-            logger.info(f"[===] {self.protocol_name.upper()}/{pipeline_name} - [{i + 1}/{len(protocol_pipeline)}]")
+            logger.info(f"[===] {self.protocol_name.upper()}/{pipeline_type} - [{i + 1}/{len(protocol_pipeline)}]")
             if isinstance(item, tuple) or isinstance(item, list):
                 if len(item) == 1:
                     self.function_executer(item[0])
@@ -259,10 +273,11 @@ class Pipeline:
                     self.function_executer(item[0], **item[1])
             else:
                 self.function_executer(item)
+        helpers.write_last_updated(self.collection_refs[pipeline_type.value])
 
-    def run_project_pipeline(self, pipeline_name, project_pipeline):
+    def run_project_pipeline(self, pipeline_type, project_pipeline):
         # for repository in self.repositories:
-        for repository in [ # for testing purposes
+        for repository in [  # for testing purposes
             {
                 "owner": "lensterxyz",
                 "repo": "lenster",
@@ -295,7 +310,7 @@ class Pipeline:
             logger.info(f'Running pipeline for repository {repository["owner"]}/{repository["repo"]}')
 
             for i, item in enumerate(project_pipeline):
-                logger.info(f"[===] {self.protocol_name.upper()}/{pipeline_name} - [{i + 1}/{len(project_pipeline)}]")
+                logger.info(f"[===] {self.protocol_name.upper()}/{pipeline_type} - [{i + 1}/{len(project_pipeline)}]")
                 if isinstance(item, tuple) or isinstance(item, list):
                     if len(item) == 1:
                         self.function_executer(func, repository["owner"], repository["repo"])
@@ -306,3 +321,5 @@ class Pipeline:
                     self.function_executer(item, repository["owner"], repository["repo"])
 
             logger.info(f'Finished running pipeline for repository {repository["owner"]}/{repository["repo"]}')
+            
+        helpers.write_last_updated(self.collection_refs[pipeline_type.value])

@@ -131,7 +131,7 @@ class Crawler:
                 "is_archived": data["archived"],
                 "is_empty": data["size"] == 0,
                 "is_closed": False,
-                }
+            }
             if repo_metadata["is_empty"] or repo_metadata["is_archived"] or repo_metadata["is_fork"]:
                 repo_metadata["valid"] = False
 

@@ -106,14 +106,14 @@ class GithubWidgets:
         result = self.actor.check_repo_validity(owner, repo)
         if result is False:
             logger.warning(
-                    f"[-] {owner}/{repo} is not accessible. Will be added to project metadata list, but will not be included in statistics."
-                )
+                f"[-] {owner}/{repo} is not accessible. Will be added to project metadata list, but will not be included in statistics."
+            )
             flattened_data = {
-                    "owner": owner,
-                    "repo": repo,
-                    "is_closed": True,
-                    "valid": False,
-                }
+                "owner": owner,
+                "repo": repo,
+                "is_closed": True,
+                "valid": False,
+            }
 
         else:
             repository = result["data"]["repository"]
@@ -130,7 +130,9 @@ class GithubWidgets:
             flattened_data["commit_comment_count"] = repository["commitComments"]["totalCount"]
             flattened_data["issue_count"] = repository["issues"]["totalCount"]
             flattened_data["description"] = repository["description"]
-            flattened_data["categories.lvl0"] = [node["topic"]["name"] for node in repository["repositoryTopics"]["nodes"]]
+            flattened_data["categories.lvl0"] = [
+                node["topic"]["name"] for node in repository["repositoryTopics"]["nodes"]
+            ]
             flattened_data["watcher_count"] = repository["watchers"]["totalCount"]
             flattened_data["is_fork"] = repository["isFork"]
             flattened_data["is_archived"] = repository["isArchived"]
@@ -1551,10 +1553,4 @@ class GithubWidgets:
             cursor = data["data"]["repository"]["releases"]["pageInfo"]["endCursor"]
 
         self.get_db_ref(owner, repo).document("recent_releases").set({"data": flattened_data})
-
-
-    def write_last_updated(self, owner, repo, **kwargs):
-        # datetime in rfc3339 format
-        rfc_format = datetime.now().isoformat() + "Z"
-        self.collection_refs["cumulative"].document(f"last_updated_at").set({"data": rfc_format})
 

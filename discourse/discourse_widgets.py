@@ -409,9 +409,3 @@ class DiscourseWidgets:
 
         self.collection_refs["discourse"].document(f"top_users").set({"data": top_users})
 
-    def write_last_updated(self, **kwargs):
-        # datetime in rfc3339 format
-        rfc_format = datetime.now().isoformat() + "Z"
-        self.collection_refs["discourse"].document(f"last_updated_at").set({"data": rfc_format})
-
-

@@ -5,6 +5,7 @@ import tools.log_config as log_config
 logger = logging.getLogger(__name__)
 import datetime
 
+
 class GithubLeaderboard:
     def __init__(self, actor: GithubActor, collection_refs):
         self.actor = actor
@@ -107,11 +108,4 @@ class GithubLeaderboard:
 
         # Return the leaderboard
         return leaderboard
-
-
-    def write_last_updated(self, **kwargs):
-        # datetime in rfc3339 format
-        rfc_format = datetime.now().isoformat() + "Z"
-        self.collection_refs["leaderboard"].document(f"last_updated_at").set({"data": rfc_format})
-
 

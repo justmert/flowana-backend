@@ -84,4 +84,3 @@ class GovernanceActor:
             return self.governance_graphql_make_query(_query, variables)
 
         return response.json()
-
