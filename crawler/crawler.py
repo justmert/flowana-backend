@@ -115,28 +115,30 @@ class Crawler:
                     "repo": repo_name,
                     "is_closed": True,
                     "valid": False,
+                    "categories.lvl0": [],
+                    "url": f"https://github.com/{owner}/{repo_name}"
                 }
-
-            repo_metadata = {
-                "owner": owner,
-                "repo": repo_name,
-                "description": data["description"],
-                "categories.lvl0": [] if data["topics"] is None else data["topics"],
-                "url": data["html_url"],
-                "stars": data["stargazers_count"],
-                "avatar_url": data["owner"]["avatar_url"],
-                "created_at": data["created_at"],
-                "updated_at": data["updated_at"],
-                "is_fork": data["fork"],
-                "is_archived": data["archived"],
-                "is_empty": data["size"] == 0,
-                "is_closed": False,
-            }
-            if repo_metadata["is_empty"] or repo_metadata["is_archived"] or repo_metadata["is_fork"]:
-                repo_metadata["valid"] = False
-
             else:
-                repo_metadata["valid"] = True
+                repo_metadata = {
+                    "owner": owner,
+                    "repo": repo_name,
+                    "description": data["description"],
+                    "categories.lvl0": [] if data["topics"] is None else data["topics"],
+                    "url": data["html_url"],
+                    "stars": data["stargazers_count"],
+                    "avatar_url": data["owner"]["avatar_url"],
+                    "created_at": data["created_at"],
+                    "updated_at": data["updated_at"],
+                    "is_fork": data["fork"],
+                    "is_archived": data["archived"],
+                    "is_empty": data["size"] == 0,
+                    "is_closed": False,
+                }
+                if repo_metadata["is_empty"] or repo_metadata["is_archived"] or repo_metadata["is_fork"]:
+                    repo_metadata["valid"] = False
+
+                else:
+                    repo_metadata["valid"] = True
 
             for adapter in self.adapters:
                 adapter.run(repo_metadata)

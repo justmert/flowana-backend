@@ -1,40 +1,8 @@
 [
   {
-    "name": "flow",
-    "update": false,
-    "crawl": false,
-    "crawler": {
-      "include_sub_ecosystems": true,
-      "tomls": ["flow.toml"]
-    },
-    "forum": "https://forum.onflow.org",
-    "developers": "flow",
-    "governance": null,
-    "messari": {
-      "asset_key": "flow"
-    }
-  },
-
-  {
-    "name": "polkadot",
-    "update": true,
-    "crawl": false,
-    "crawler": {
-      "include_sub_ecosystems": false,
-      "tomls": ["polkadot.toml"]
-    },
-    "crawler_tomls": ["polkadot"],
-    "forum": "https://forum.polkadot.network/",
-    "developers": "polkadot",
-    "governance": null,
-    "messari": {
-      "asset_key": "dot"
-    }
-  },
-  {
     "name": "compound",
-    "update": false,
-    "crawl": false,
+    "update": true,
+    "crawl": true,
     "crawler": {
       "include_sub_ecosystems": true,
       "tomls": ["compound.toml"]
@@ -52,9 +20,24 @@
     }
   },
   {
+    "name": "flow",
+    "update": true,
+    "crawl": true,
+    "crawler": {
+      "include_sub_ecosystems": true,
+      "tomls": ["flow.toml"]
+    },
+    "forum": "https://forum.onflow.org",
+    "developers": "flow",
+    "governance": null,
+    "messari": {
+      "asset_key": "flow"
+    }
+  },
+  {
     "name": "lens",
-    "update": false,
-    "crawl": false,
+    "update": true,
+    "crawl": true,
     "crawler": {
       "include_sub_ecosystems": true,
       "tomls": ["lens-protocol.toml"]
@@ -64,6 +47,22 @@
     "governance": null,
     "messari": {
       "asset_key": "lens-protocol"
+    }
+  },
+  {
+    "name": "polkadot",
+    "update": true,
+    "crawl": true,
+    "crawler": {
+      "include_sub_ecosystems": false,
+      "tomls": ["polkadot.toml"]
+    },
+    "crawler_tomls": ["polkadot"],
+    "forum": "https://forum.polkadot.network/",
+    "developers": "polkadot",
+    "governance": null,
+    "messari": {
+      "asset_key": "dot"
     }
   }
 ]

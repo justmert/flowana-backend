@@ -276,13 +276,13 @@ class Pipeline:
         helpers.write_last_updated(self.collection_refs[pipeline_type.value])
 
     def run_project_pipeline(self, pipeline_type, project_pipeline):
-        # for repository in self.repositories:
-        for repository in [  # for testing purposes
-            {
-                "owner": "lensterxyz",
-                "repo": "lenster",
-            }
-        ]:
+        for repository in self.repositories:
+        # for repository in [  # for testing purposes
+        #     {
+        #         "owner": "lensterxyz",
+        #         "repo": "lenster",
+        #     }
+        # ]:
             if not repository:
                 continue
 

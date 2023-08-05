@@ -103,8 +103,9 @@ class GithubWidgets:
         # Flatten the response to a dictionary
         flattened_data = {}
 
-        result = self.actor.check_repo_validity(owner, repo)
-        if result is False:
+        result = self.actor.github_graphql_make_query(query, {"owner": owner, "name": repo})
+        repository = result["data"]["repository"]
+        if repository is None:
             logger.warning(
                 f"[-] {owner}/{repo} is not accessible. Will be added to project metadata list, but will not be included in statistics."
             )
@@ -116,7 +117,6 @@ class GithubWidgets:
             }
 
         else:
-            repository = result["data"]["repository"]
             flattened_data["default_branch_commit_count"] = (
                 repository["defaultBranchRef"]["target"]["history"]["totalCount"]
                 if repository["defaultBranchRef"] is not None
@@ -152,6 +152,8 @@ class GithubWidgets:
             flattened_data["is_closed"] = False
             if flattened_data["is_empty"] or flattened_data["is_archived"] or flattened_data["is_fork"]:
                 flattened_data["valid"] = False
+            else:
+                flattened_data["valid"] = True
 
         self.get_db_ref(owner, repo).document("repository_info").set({"data": flattened_data})
         return flattened_data
