@@ -1,16 +1,13 @@
 import os
 import logging
-import tools.log_config as log_config
 import firebase_admin
 from firebase_admin import firestore, credentials
 import os
 import json
 import pyfiglet
 from crawler.crawler import Crawler
-import requests
-import api.api as api
-from datetime import timedelta
 from pipeline import Pipeline
+import tools.log_config as log_config
 
 # import github actor
 from github.github_actor import GithubActor
@@ -86,6 +83,7 @@ class Flowana:
             collection_refs = {
                 "projects": self.db.collection(f"{protocol_name}-projects"),
                 "cumulative": self.db.collection(f"{protocol_name}-cumulative"),
+                "leaderboard": self.db.collection(f"{protocol_name}-leaderboard"),
                 "discourse": self.db.collection(f"{protocol_name}-discourse"),
                 "developers": self.db.collection(f"{protocol_name}-developers"),
                 "governance": self.db.collection(f"{protocol_name}-governance"),
@@ -98,7 +96,7 @@ class Flowana:
             # widgets (collection) -> repositories (doc) -> PROJECT_HASH (sub-collection) -> DATA_NAME (doc) -> 'data': data (field)
             collection_refs["widgets"] = self.db.collection(f"{protocol_name}-widgets")
 
-            logger.info("[*] Collection references are created.")
+            logger.info("[*] Collection references are created for protocol {}".format(protocol_name))
 
             if protocol["crawl"] == True:
                 self.run_crawler(protocol_name, protocol["crawler"])

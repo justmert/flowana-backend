@@ -1,8 +1,8 @@
-import json
 import os
 import firebase_admin
 from firebase_admin import firestore, credentials
 import os
+import tools.log_config as log_config
 
 # Get the current file's directory
 current_dir = os.path.dirname(os.path.realpath(__file__))

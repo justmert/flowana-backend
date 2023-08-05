@@ -1,12 +1,7 @@
 from .messari_actor import MessariActor
 import logging
 import tools.log_config as log_config
-import json
-from datetime import datetime
-from enum import Enum
-import pandas as pd
-from datetime import timedelta
-
+import datetime
 logger = logging.getLogger(__name__)
 
 
@@ -15,7 +10,6 @@ class MessariWidgets:
         self.actor = actor
         self.collection_refs = collection_refs
         self.asset_key = asset_key
-        pass
 
     def is_valid(self, response):
         if response is None:
@@ -107,3 +101,10 @@ class MessariWidgets:
                 indexed_timeseries_list.append(doc.id)
 
         self.collection_refs["messari"].document("indexed_timeseries_list").set({"data": indexed_timeseries_list})
+
+    def write_last_updated(self, **kwargs):
+        # datetime in rfc3339 format
+        rfc_format = datetime.now().isoformat() + "Z"
+        self.collection_refs["messari"].document(f"last_updated_at").set({"data": rfc_format})
+
+

@@ -1,15 +1,10 @@
-import firebase_admin
-from firebase_admin import firestore, credentials
-import os
-import argparse
 import toml
 import requests
 import logging
-import tools.log_config as log_config
 from github.github_actor import GithubActor
-from bs4 import BeautifulSoup
 from .flow_adapter import FlowAdapter
 import re
+import tools.log_config as log_config
 
 logger = logging.getLogger(__name__)
 
@@ -110,14 +105,18 @@ class Crawler:
             owner = url_parts[-2]
             repo_name = url_parts[-1]
 
-            repo_accessible = self.actor.check_repo_validity(owner, repo_name)
-            if repo_accessible is False:
+            data = self.actor.check_repo_validity(owner, repo_name)
+            if data is False:
                 logger.warning(
-                    f"[-] {owner}/{repo_name} is not accessible. Will not be added to project metadata list."
+                    f"[-] {owner}/{repo_name} is not accessible. Will be added to project metadata list, but will not be included in statistics."
                 )
-                continue
+                repo_metadata = {
+                    "owner": owner,
+                    "repo": repo_name,
+                    "is_closed": True,
+                    "valid": False,
+                }
 
-            data = self.actor.github_rest_make_request(f"/repos/{owner}/{repo_name}", max_page_fetch=1)
             repo_metadata = {
                 "owner": owner,
                 "repo": repo_name,
@@ -128,7 +127,16 @@ class Crawler:
                 "avatar_url": data["owner"]["avatar_url"],
                 "created_at": data["created_at"],
                 "updated_at": data["updated_at"],
-            }
+                "is_fork": data["fork"],
+                "is_archived": data["archived"],
+                "is_empty": data["size"] == 0,
+                "is_closed": False,
+                }
+            if repo_metadata["is_empty"] or repo_metadata["is_archived"] or repo_metadata["is_fork"]:
+                repo_metadata["valid"] = False
+
+            else:
+                repo_metadata["valid"] = True
 
             for adapter in self.adapters:
                 adapter.run(repo_metadata)

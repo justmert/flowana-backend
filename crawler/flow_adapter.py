@@ -1,14 +1,8 @@
-import firebase_admin
-from firebase_admin import firestore, credentials
-import os
-import argparse
-import toml
 import requests
 import logging
-import tools.log_config as log_config
-from github.github_actor import GithubActor
 from bs4 import BeautifulSoup
 import re
+import tools.log_config as log_config
 
 logger = logging.getLogger(__name__)
 

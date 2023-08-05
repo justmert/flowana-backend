@@ -1,9 +1,5 @@
 import requests
-
-import os
 import time
-from time import sleep
-import datetime
 import logging
 import tools.log_config as log_config
 

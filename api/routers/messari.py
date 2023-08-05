@@ -1,45 +1,10 @@
 from fastapi import APIRouter
-from pydantic import BaseModel
-
-from datetime import datetime
-import json
-from typing import Union
-from fastapi import FastAPI, Response
-import pandas as pd
-from fastapi import Depends, HTTPException, status
-from typing import Any
-import os
-import firebase_admin
-from firebase_admin import firestore, credentials
-from dotenv import load_dotenv
-from enum import Enum
-import pandas as pd
-from collections import defaultdict
+from fastapi import Depends, HTTPException
 from fastapi import HTTPException
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel
-from fastapi.openapi.models import Example
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel
-from fastapi import FastAPI, Query, Path, HTTPException
-from typing import Dict
-from pydantic import BaseModel
+from fastapi import Query, Path, HTTPException
 from google.cloud import exceptions
-from fastapi.middleware.cors import CORSMiddleware
-from datetime import datetime, timedelta
-from typing import Union
-from pydantic import Field
-from fastapi import Depends, FastAPI, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
-from fastapi.openapi.models import OAuthFlowPassword
-from fastapi.security.oauth2 import OAuth2
-from pydantic import BaseModel
-from jose import JWTError, jwt
-from passlib.context import CryptContext
-import datetime
-import pyfiglet
-from ..api import get_current_user, db, app
+from fastapi import Depends, HTTPException
+from ..api import get_current_user, db
 
 router = APIRouter()
 

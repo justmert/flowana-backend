@@ -1,7 +1,5 @@
 from .github_actor import GithubActor
 import logging
-import tools.log_config as log_config
-import json
 from datetime import datetime
 from enum import Enum
 import pandas as pd
@@ -12,11 +10,8 @@ from google.cloud import exceptions
 from datetime import timezone
 from dateutil import parser
 import numpy as np
-from sklearn.linear_model import LinearRegression
-from scipy import stats
-from sklearn.preprocessing import minmax_scale
 from sklearn.preprocessing import MinMaxScaler
-import time
+import tools.log_config as log_config
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +20,6 @@ class GithubWidgets:
     def __init__(self, actor: GithubActor, collection_refs):
         self.actor = actor
         self.collection_refs = collection_refs
-        pass
 
     def get_db_ref(self, owner, repo):
         return self.collection_refs["widgets"].document("repositories").collection(self.get_repo_hash(owner, repo))
@@ -106,46 +100,59 @@ class GithubWidgets:
             }
         """
 
-        result = self.actor.github_graphql_make_query(query, {"owner": owner, "name": repo})
-        if not self.is_valid(result):
-            logger.info(f"[!] Invalid or empty data returned")
-            return
-
         # Flatten the response to a dictionary
         flattened_data = {}
-        repository = result["data"]["repository"]
-        flattened_data["default_branch_commit_count"] = (
-            repository["defaultBranchRef"]["target"]["history"]["totalCount"]
-            if repository["defaultBranchRef"] is not None
-            else None
-        )
-        flattened_data["fork_count"] = repository["forkCount"]
-        flattened_data["stargazer_count"] = repository["stargazerCount"]
-        flattened_data["created_at"] = repository["createdAt"]
-        flattened_data["updated_at"] = repository["updatedAt"]
-        flattened_data["pull_request_count"] = repository["pullRequests"]["totalCount"]
-        flattened_data["commit_comment_count"] = repository["commitComments"]["totalCount"]
-        flattened_data["issue_count"] = repository["issues"]["totalCount"]
-        flattened_data["description"] = repository["description"]
-        flattened_data["categories.lvl0"] = [node["topic"]["name"] for node in repository["repositoryTopics"]["nodes"]]
-        flattened_data["watcher_count"] = repository["watchers"]["totalCount"]
-        flattened_data["is_fork"] = repository["isFork"]
-        flattened_data["is_archived"] = repository["isArchived"]
-        flattened_data["is_empty"] = repository["isEmpty"]
-        flattened_data["url"] = repository["url"]
-        flattened_data["owner_login"] = repository["owner"]["login"]
-        flattened_data["owner_avatar_url"] = repository["owner"]["avatarUrl"]
-        flattened_data["release_count"] = repository["releases"]["totalCount"]
-        flattened_data["primary_language_name"] = (
-            repository["primaryLanguage"]["name"] if repository["primaryLanguage"] is not None else None
-        )
-        flattened_data["primary_language_color"] = (
-            repository["primaryLanguage"]["color"] if repository["primaryLanguage"] is not None else None
-        )
-        flattened_data["environment_count"] = repository["environments"]["totalCount"]
-        flattened_data["disk_usage"] = repository["diskUsage"]
+
+        result = self.actor.check_repo_validity(owner, repo)
+        if result is False:
+            logger.warning(
+                    f"[-] {owner}/{repo} is not accessible. Will be added to project metadata list, but will not be included in statistics."
+                )
+            flattened_data = {
+                    "owner": owner,
+                    "repo": repo,
+                    "is_closed": True,
+                    "valid": False,
+                }
+
+        else:
+            repository = result["data"]["repository"]
+            flattened_data["default_branch_commit_count"] = (
+                repository["defaultBranchRef"]["target"]["history"]["totalCount"]
+                if repository["defaultBranchRef"] is not None
+                else None
+            )
+            flattened_data["fork_count"] = repository["forkCount"]
+            flattened_data["stargazer_count"] = repository["stargazerCount"]
+            flattened_data["created_at"] = repository["createdAt"]
+            flattened_data["updated_at"] = repository["updatedAt"]
+            flattened_data["pull_request_count"] = repository["pullRequests"]["totalCount"]
+            flattened_data["commit_comment_count"] = repository["commitComments"]["totalCount"]
+            flattened_data["issue_count"] = repository["issues"]["totalCount"]
+            flattened_data["description"] = repository["description"]
+            flattened_data["categories.lvl0"] = [node["topic"]["name"] for node in repository["repositoryTopics"]["nodes"]]
+            flattened_data["watcher_count"] = repository["watchers"]["totalCount"]
+            flattened_data["is_fork"] = repository["isFork"]
+            flattened_data["is_archived"] = repository["isArchived"]
+            flattened_data["is_empty"] = repository["isEmpty"]
+            flattened_data["url"] = repository["url"]
+            flattened_data["owner_login"] = repository["owner"]["login"]
+            flattened_data["owner_avatar_url"] = repository["owner"]["avatarUrl"]
+            flattened_data["release_count"] = repository["releases"]["totalCount"]
+            flattened_data["primary_language_name"] = (
+                repository["primaryLanguage"]["name"] if repository["primaryLanguage"] is not None else None
+            )
+            flattened_data["primary_language_color"] = (
+                repository["primaryLanguage"]["color"] if repository["primaryLanguage"] is not None else None
+            )
+            flattened_data["environment_count"] = repository["environments"]["totalCount"]
+            flattened_data["disk_usage"] = repository["diskUsage"]
+            flattened_data["is_closed"] = False
+            if flattened_data["is_empty"] or flattened_data["is_archived"] or flattened_data["is_fork"]:
+                flattened_data["valid"] = False
 
         self.get_db_ref(owner, repo).document("repository_info").set({"data": flattened_data})
+        return flattened_data
 
     def _score_commit_activity(self, owner, repo):
         try:
@@ -544,17 +551,17 @@ class GithubWidgets:
     def contributors(self, owner, repo, **kwargs):
         # formatting will be in frontend
         data = self.actor.github_rest_make_request(f"/repos/{owner}/{repo}/stats/contributors")
+        sorted_data = sorted(data, key=lambda x: x["total"], reverse=True)
 
         if not self.is_valid(data):
             logger.warning("[!] Invalid or empty data returned")
             return
 
         # Chunk size
-        chunk_size = 10
-
+        chunk_size = 20
         # Splitting the data into chunks of size `chunk_size`
-        for i in range(0, len(data), chunk_size):
-            chunk = data[i : i + chunk_size]
+        for i in range(0, len(sorted_data), chunk_size):
+            chunk = sorted_data[i : i + chunk_size]
 
             # Construct the document name ('contributors1', 'contributors2', ...)
             doc_name = f"contributors{i // chunk_size + 1}"
@@ -1544,3 +1551,10 @@ class GithubWidgets:
             cursor = data["data"]["repository"]["releases"]["pageInfo"]["endCursor"]
 
         self.get_db_ref(owner, repo).document("recent_releases").set({"data": flattened_data})
+
+
+    def write_last_updated(self, owner, repo, **kwargs):
+        # datetime in rfc3339 format
+        rfc_format = datetime.now().isoformat() + "Z"
+        self.collection_refs["cumulative"].document(f"last_updated_at").set({"data": rfc_format})
+

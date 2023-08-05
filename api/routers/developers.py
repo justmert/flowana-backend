@@ -1,14 +1,12 @@
 from fastapi import APIRouter
-import pandas as pd
 from fastapi import HTTPException
 
 from fastapi import Path, HTTPException
 
 from google.cloud import exceptions
-from fastapi import Depends, HTTPException
-from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
+from fastapi import HTTPException
 
-from ..api import get_current_user, db, app
+from ..api import db
 
 router = APIRouter()
 

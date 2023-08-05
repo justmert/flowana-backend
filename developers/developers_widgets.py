@@ -1,11 +1,7 @@
 from .developers_actor import DevelopersActor
 import logging
 import tools.log_config as log_config
-import json
-from datetime import datetime
-from enum import Enum
-import pandas as pd
-from datetime import timedelta
+import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -189,3 +185,12 @@ class DevelopersWidget:
             "series": data["series"],
         }
         self.collection_refs["developers"].document("monthly_commits_chart").set({"data": formatted_data})
+
+
+    def write_last_updated(self, **kwargs):
+        # datetime in rfc3339 format
+        rfc_format = datetime.now().isoformat() + "Z"
+        self.collection_refs["developers"].document(f"last_updated_at").set({"data": rfc_format})
+
+
+

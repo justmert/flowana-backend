@@ -1,9 +1,7 @@
 import requests
-from enum import Enum
 import os
 import time
 from time import sleep
-import datetime
 import logging
 import tools.log_config as log_config
 
@@ -114,11 +112,11 @@ class GithubActor:
         # Check if the response is successful or if the repository is inaccessible
         if response.status_code == 200:
             logger.info(f". [*] The repository {owner}/{repo} is safely accessible.")
-            return True
+            return response.json()
 
         elif response.status_code == 202:
             logger.info(f". [-] The request was successful and there is no response body. Trying again.")
-            sleep(1)  # Wait for 1 second
+            sleep(1.5)  # Wait for 1 second
             if try_val > 5:
                 logger.warning(f". [-] Too many tries. Aborting.")
                 return False
@@ -135,7 +133,7 @@ class GithubActor:
         elif response.status_code == 403:
             logger.warning(f". [-] The user has exceeded the rate limit and needs to wait before making more requests.")
             self.rate_limit_wait(response.headers["x-ratelimit-reset"])
-            return True
+            return self.check_repo_validity(owner, repo, try_val + 1)
 
         elif response.status_code == 404:
             logger.warning(f". [-] The repository {repo} does not exist.")
@@ -151,7 +149,11 @@ class GithubActor:
 
         elif response.status_code == 429:
             logger.warning(f". [-] The user has sent too many requests in a given amount of time.")
-            return False
+            sleep(1)  # Wait for 1 second
+            if try_val > 5:
+                logger.warning(f". [-] Too many tries. Aborting.")
+                return False
+            return self.check_repo_validity(owner, repo, try_val + 1)
 
         elif response.status_code == 500:
             logger.warning(f". [-] An error occurred on the server.")

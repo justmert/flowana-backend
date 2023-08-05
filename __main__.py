@@ -1,6 +1,5 @@
 from flowana import Flowana
 from dotenv import load_dotenv
-import pyfiglet
 
 load_dotenv()
 

@@ -1,9 +1,7 @@
 import requests
-
 import os
 import time
 import time
-import datetime
 import logging
 import tools.log_config as log_config
 
@@ -86,3 +84,4 @@ class GovernanceActor:
             return self.governance_graphql_make_query(_query, variables)
 
         return response.json()
+

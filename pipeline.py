@@ -1,11 +1,4 @@
 import logging
-import tools.log_config as log_config
-import json
-from datetime import datetime
-from enum import Enum
-import pandas as pd
-from datetime import timedelta
-from github.github_actor import GithubActor
 from github.github_widgets import GithubWidgets
 from github.github_cumulative import GithubCumulative
 from discourse.discourse_widgets import DiscourseWidgets
@@ -16,6 +9,9 @@ from governance.governance_actor import GovernanceActor
 from governance.governance_widgets import GovernanceWidgets
 from messari.messari_actor import MessariActor
 from messari.messari_widgets import MessariWidgets
+from github.github_leaderboard import GithubLeaderboard
+import traceback
+import tools.log_config as log_config
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +40,7 @@ class Pipeline:
                 self.discourse_widgets.latest_topics,
                 self.discourse_widgets.latest_posts,
                 self.discourse_widgets.top_users,
+                self.discourse_widgets.write_last_updated
             ]
 
     def build_governance_pipeline(self, protocol):
@@ -74,6 +71,7 @@ class Pipeline:
                 self.governance_widgets.proposals,
                 self.governance_widgets.governance_info,
                 self.governance_widgets.safes,
+                self.governance_widgets.write_last_updated
             ]
 
     def build_messari_pipeline(self, protocol):
@@ -92,6 +90,7 @@ class Pipeline:
                 self.messari_widgets.asset_profile,
                 self.messari_widgets.asset_metrics,
                 self.messari_widgets.asset_timeseries,
+                self.messari_widgets.write_last_updated
             ]
 
     def build_developer_pipeline(self, protocol):
@@ -111,14 +110,15 @@ class Pipeline:
                 self.developers_widget.dev_type_table,
                 self.developers_widget.monthly_commits_by_dev_type_chart,
                 self.developers_widget.monthly_commits_chart,
+                self.developers_widget.write_last_updated
             ]
 
     def build_github_pipeline(self):
         self.github_widgets = GithubWidgets(self.github_actor, self.collection_refs)
         self.github_cumulative = GithubCumulative(self.github_actor, self.collection_refs)
+        self.github_leaderboard = GithubLeaderboard(self.github_actor, self.collection_refs)
 
         self.project_pipeline_functions = [
-            self.github_widgets.repository_info,
             self.github_widgets.commit_activity,
             self.github_widgets.code_frequency,
             self.github_widgets.participation,
@@ -152,6 +152,7 @@ class Pipeline:
             self.github_widgets.issue_activity,  # paginated
             self.github_widgets.pull_request_activity,  # paginated
             self.github_widgets.health_score,
+            self.github_widgets.write_last_updated
         ]
 
         self.protocol_github_functions = [
@@ -183,6 +184,13 @@ class Pipeline:
             self.github_cumulative.cumulative_recent_commits,
             self.github_cumulative.cumulative_recent_releases,
             self.github_cumulative.normalize_health_score,
+            self.github_cumulative.write_last_updated
+        ]
+
+        self.protocol_leaderboard_functions = [
+            self.github_leaderboard.project_leaderboard,
+            self.github_leaderboard.contributor_leaderboard,
+            self.github_leaderboard.write_last_updated
         ]
 
     def contruct_pipeline(self, protocol, collection_refs):
@@ -203,7 +211,6 @@ class Pipeline:
 
         # Print the data for each document
         for repository in repositories_ref_stream:
-            print(repository.id)
             self.repositories.append(repository.to_dict())
 
         logger.info(
@@ -211,13 +218,13 @@ class Pipeline:
         )
 
     def run_pipelines(self):
-        # self.run_project_pipeline("Github Project", self.project_pipeline_functions)
-        # self.run_protocol_pipeline("Github Cumulative", self.protocol_github_functions)
+        self.run_project_pipeline("Github Project", self.project_pipeline_functions)
+        self.run_protocol_pipeline("Github Cumulative", self.protocol_github_functions)
+        self.run_protocol_pipeline("Leaderboard", self.protocol_leaderboard_functions)
         self.run_protocol_pipeline("Discourse", self.protocol_discourse_functions)
         self.run_protocol_pipeline("Developers", self.protocol_developers_functions)
         self.run_protocol_pipeline("Governance", self.protocol_governance_functions)
         self.run_protocol_pipeline("Messari", self.protocol_messari_functions)
-        pass
 
     def function_executer(self, f, *args, **kwargs):
         logging.info(f"[...] Running function: {f.__name__}")
@@ -236,6 +243,8 @@ class Pipeline:
 
         except Exception as e:
             logging.info(f"[#ERR] Error running function: {f.__name__} error: {e}")
+            # print traceback
+            traceback.print_exc()
 
         else:
             logging.info(f"[*] Completed running function: {f.__name__}")
@@ -252,13 +261,19 @@ class Pipeline:
                 self.function_executer(item)
 
     def run_project_pipeline(self, pipeline_name, project_pipeline):
-        for repository in self.repositories:
+        # for repository in self.repositories:
+        for repository in [ # for testing purposes
+            {
+                "owner": "lensterxyz",
+                "repo": "lenster",
+            }
+        ]:
             if not repository:
                 continue
 
-            is_valid = self.github_actor.check_repo_validity(repository["owner"], repository["repo"])
-            if not is_valid:
-                logger.warning(f'[!] Repository {repository["owner"]}/{repository["repo"]} is not valid.')
+            repo_data = self.github_widgets.repository_info(repository["owner"], repository["repo"])
+            if repo_data["valid"] is False:
+                logger.warning(f'Passing on invalid repository {repository["owner"]}/{repository["repo"]}')
                 continue
 
             docs = (

@@ -1,11 +1,7 @@
 from .discourse_actor import DiscourseActor
 import logging
-import tools.log_config as log_config
-import json
 from datetime import datetime
-from enum import Enum
-import pandas as pd
-from datetime import timedelta
+import tools.log_config as log_config
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +10,6 @@ class DiscourseWidgets:
     def __init__(self, actor: DiscourseActor, collection_refs):
         self.actor = actor
         self.collection_refs = collection_refs
-        pass
 
     def is_valid(self, response):
         if response is None:
@@ -413,3 +408,10 @@ class DiscourseWidgets:
                         break
 
         self.collection_refs["discourse"].document(f"top_users").set({"data": top_users})
+
+    def write_last_updated(self, **kwargs):
+        # datetime in rfc3339 format
+        rfc_format = datetime.now().isoformat() + "Z"
+        self.collection_refs["discourse"].document(f"last_updated_at").set({"data": rfc_format})
+
+

@@ -3,35 +3,19 @@ from dotenv import load_dotenv
 load_dotenv()
 from api.db import db, app
 
-import pyfiglet
 from passlib.context import CryptContext
 from jose import JWTError, jwt
-from fastapi.security.oauth2 import OAuth2
-from fastapi.openapi.models import OAuthFlowPassword
-from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, HTTPException, status
 from pydantic import Field
 from datetime import datetime, timedelta
 from fastapi.middleware.cors import CORSMiddleware
-from google.cloud import exceptions
-from typing import Dict
-from fastapi import FastAPI, Query, Path, HTTPException
-from fastapi.openapi.models import Example
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from fastapi.responses import JSONResponse
 from fastapi import HTTPException
-from collections import defaultdict
-from enum import Enum
-from firebase_admin import firestore, credentials
-import firebase_admin
 import os
-from typing import Any
 from fastapi import Depends, HTTPException, status
-import pandas as pd
-from fastapi import FastAPI, Response
-from typing import Union
-import json
+import tools.log_config as log_config
 
 SECRET_KEY = os.environ["API_SECRET_KEY"]
 ALGORITHM = "HS256"
@@ -98,6 +82,10 @@ tags_metadata = [
         "description": "Github related endpoints for ecosystem",
     },
     {
+        "name": "Github - Leaderboard",
+        "description": "Github related endpoints for leaderboard",
+    },
+    {
         "name": "Discourse - Ecosystem",
         "description": "Discourse (Forum) related endpoints for ecosystem",
     },
@@ -118,14 +106,15 @@ tags_metadata = [
 app = FastAPI(openapi_tags=tags_metadata)
 
 
-from api.routers import developers, discourse, github_ecosystem, github_project, governance, messari
+from api.routers import developers, discourse, github_ecosystem, github_project, github_leaderboard, governance, messari
 
 app.include_router(github_project.router, prefix="/github-project", tags=[tags_metadata[1]["name"]])
 app.include_router(github_ecosystem.router, prefix="/github-ecosystem", tags=[tags_metadata[2]["name"]])
-app.include_router(discourse.router, prefix="/discourse", tags=[tags_metadata[3]["name"]])
-app.include_router(developers.router, prefix="/developers", tags=[tags_metadata[4]["name"]])
-app.include_router(governance.router, prefix="/governance", tags=[tags_metadata[5]["name"]])
-app.include_router(messari.router, prefix="/messari", tags=[tags_metadata[6]["name"]])
+app.include_router(github_leaderboard.router, prefix="/github-leaderboard", tags=[tags_metadata[3]["name"]])
+app.include_router(discourse.router, prefix="/discourse", tags=[tags_metadata[4]["name"]])
+app.include_router(developers.router, prefix="/developers", tags=[tags_metadata[5]["name"]])
+app.include_router(governance.router, prefix="/governance", tags=[tags_metadata[6]["name"]])
+app.include_router(messari.router, prefix="/messari", tags=[tags_metadata[7]["name"]])
 
 
 origins = [

@@ -17,7 +17,7 @@
 
   {
     "name": "polkadot",
-    "update": false,
+    "update": true,
     "crawl": false,
     "crawler": {
       "include_sub_ecosystems": false,
@@ -33,7 +33,7 @@
   },
   {
     "name": "compound",
-    "update": true,
+    "update": false,
     "crawl": false,
     "crawler": {
       "include_sub_ecosystems": true,
