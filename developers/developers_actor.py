@@ -32,6 +32,7 @@ class DevelopersActor:
             logger.info(f". page {current_fetch_count + 1}/{max_page_fetch} of {url}")
             self.session.headers.update(self.developer_rest_headers)
             response = self.session.get(url, params=variables)
+            
             if response.status_code == 200:
                 json_response = response.json()
                 return json_response
