@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 from enum import Enum
 
 def write_last_updated(collection_ref, **kwargs):

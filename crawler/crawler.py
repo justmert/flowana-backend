@@ -116,7 +116,8 @@ class Crawler:
                     "is_closed": True,
                     "valid": False,
                     "categories.lvl0": [],
-                    "url": f"https://github.com/{owner}/{repo_name}"
+                    "url": f"https://github.com/{owner}/{repo_name}",
+                    "stars": 0
                 }
             else:
                 repo_metadata = {

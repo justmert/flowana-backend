@@ -34,9 +34,15 @@ class Pipeline:
         self.app = app
         self.db = db
         self.repositories = []
-        self.project_pipeline_functions = []
         self.collection_refs = {}
         self.github_actor = github_actor
+        self.project_pipeline_functions = []
+        self.protocol_discourse_functions = []
+        self.protocol_governance_functions = []
+        self.protocol_developers_functions = []
+        self.protocol_messari_functions = []
+        self.protocol_github_functions = []
+        self.protocol_leaderboard_functions = []
 
 
     def build_discourse_pipeline(self, protocol):
@@ -276,13 +282,13 @@ class Pipeline:
         helpers.write_last_updated(self.collection_refs[pipeline_type.value])
 
     def run_project_pipeline(self, pipeline_type, project_pipeline):
-        for repository in self.repositories:
-        # for repository in [  # for testing purposes
-        #     {
-        #         "owner": "lensterxyz",
-        #         "repo": "lenster",
-        #     }
-        # ]:
+        # for repository in self.repositories:
+        for repository in [  # for testing purposes
+            {
+                "owner": "lensterxyz",
+                "repo": "lenster",
+            }
+        ]:
             if not repository:
                 continue
 
