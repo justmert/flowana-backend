@@ -55,6 +55,7 @@ class MessariActor:
                     continue
                 else:
                     logger.error(f" [-] Server error. Tried {server_fail_max_try} times. Giving up.")
+
             else:
                 logger.error(f" [-] Failed to retrieve from API. Status code: {response.status_code} - {response.text}")
                 logger.info(f" [#] Rest endpoint: {url}")

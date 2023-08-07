@@ -37,18 +37,15 @@ class GovernanceActor:
             logger.info(f". page {current_fetch_count + 1}/{max_page_fetch} of {url}")
             self.session.headers.update(self.governance_rest_headers)
             response = self.session.get(url, params=variables)
-            if response.status_code == 202:
-                time.sleep(1.1)
-                logger.info(". [...] Waiting for the data to be ready.")
-                continue  # fetch again!
 
-            elif response.status_code == 403:
-                time.sleep(1.1)
-                continue
-
-            elif response.status_code == 200:
+            if response.status_code == 200:
                 json_response = response.json()
                 return json_response
+
+            elif response.status_code == 429:
+                logger.warning(". [!] Rate limit exceeded. Waiting for 10 seconds.")
+                time.sleep(10)
+                continue
 
             else:
                 logger.error(f" [-] Failed to retrieve from API. Status code: {response.status_code} - {response.text}")
@@ -78,9 +75,9 @@ class GovernanceActor:
             logger.info(f". [#] Variables: {variables}")
             return None
 
-        elif response.status_code == 403:
-            logger.info(". [...] Too many request. Waiting for the data to be ready.")
-            time.sleep(1.1)
+        elif response.status_code == 429:
+            logger.warning(". [!] Rate limit exceeded. Waiting for 10 seconds.")
+            time.sleep(10)
             return self.governance_graphql_make_query(_query, variables)
 
         return response.json()

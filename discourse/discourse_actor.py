@@ -38,22 +38,14 @@ class DiscourseActor:
             logger.info(f". page {current_fetch_count + 1}/{max_page_fetch} of {url}")
             self.session.headers.update(self.discourse_rest_headers)
             response = self.session.get(url, params=variables)
-            if response.status_code == 202:
-                logger.info(". [...] Waiting for the data to be ready.")
-                time.sleep(1)
-                continue  # fetch again!
-
-            elif response.status_code in [403, 429]:
-                logger.warning(". [...] Rate limit reached. Sleeping for 10 seconds.")
-                time.sleep(10.1)
-                continue
-
-            elif response.status_code == 200:
+            if response.status_code == 200:
                 json_response = response.json()
                 return json_response
-
+            
             elif response.status_code == 429:
-                logger.warnin
+                logger.warning(". [...] Rate limit reached. Sleeping for 10 seconds.")
+                time.sleep(10)
+                continue
 
             else:
                 logger.error(f" [-] Failed to retrieve from API. Status code: {response.status_code} - {response.text}")
