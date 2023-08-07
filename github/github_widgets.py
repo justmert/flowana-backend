@@ -203,7 +203,7 @@ class GithubWidgets:
                     # convert from seconds to weeks
                     weeks_ago = (now_timestamp - data["week"]) // (7 * 24 * 60 * 60)
                     commit_volume = data["total"]
-                    CAS += (commit_volume * math.exp(-lambda_ * weeks_ago),)
+                    CAS += commit_volume * math.exp(-lambda_ * weeks_ago)
 
                 # Apply the consistency weight to the final score
                 CAS *= consistency_weight
