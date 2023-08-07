@@ -40,6 +40,11 @@ class GithubActor:
             json_response = response.json()
             return json_response
 
+        elif response.status_code in [202, 429]:
+            logger.info(". [...] Waiting for the data to be ready.")
+            time.sleep(1)
+            return self.github_graphql_make_query(_query, variables)  # fetch again!
+
         elif response.status_code in (301, 302):
             response = self.session.post(
                 response.headers["location"],
@@ -57,7 +62,6 @@ class GithubActor:
             logger.info(f". [#] Variables: {variables}")
             return None
 
-
     def github_rest_make_request(self, url, variables=None, max_page_fetch=float("inf")):
         url = f"{self.github_rest_endpoint}{url}"
         logger.info(f". [=] Fetching data from REST API from {url}")
@@ -69,7 +73,7 @@ class GithubActor:
             self.session.headers.update(self.github_rest_headers)
             response = self.session.get(url, params=variables)
 
-            if response.status_code == 202:
+            if response.status_code in [202, 429]:
                 logger.info(". [...] Waiting for the data to be ready.")
                 time.sleep(1)
                 continue  # fetch again!

@@ -38,11 +38,11 @@ class DiscourseActor:
             logger.info(f". page {current_fetch_count + 1}/{max_page_fetch} of {url}")
             self.session.headers.update(self.discourse_rest_headers)
             response = self.session.get(url, params=variables)
-            
+
             if response.status_code == 200:
                 json_response = response.json()
                 return json_response
-            
+
             elif response.status_code == 429:
                 logger.warning(". [...] Rate limit reached. Sleeping for 10 seconds.")
                 time.sleep(10)

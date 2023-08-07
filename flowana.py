@@ -11,6 +11,8 @@ import tools.log_config as log_config
 
 # import github actor
 from github.github_actor import GithubActor
+import tools.helpers as helpers
+from tools.helpers import PipelineType
 
 current_file_path = os.path.abspath(__file__)
 base_dir = os.path.dirname(current_file_path)
@@ -88,6 +90,7 @@ class Flowana:
                 "developers": self.db.collection(f"{protocol_name}-developers"),
                 "governance": self.db.collection(f"{protocol_name}-governance"),
                 "messari": self.db.collection(f"{protocol_name}-messari"),
+                "last_updated": self.db.collection(f"{protocol_name}-last-updated"),
             }
 
             if not self.db.collection(f"{protocol_name}-widgets").get():
@@ -99,13 +102,14 @@ class Flowana:
             logger.info("[*] Collection references are created for protocol {}".format(protocol_name))
 
             if protocol["crawl"] == True:
-                self.run_crawler(protocol_name, protocol["crawler"])
+                self.run_crawler(protocol_name, collection_refs, protocol["crawler"])
 
             if protocol["update"] == True:
                 self.run_protocol_update(protocol, collection_refs)
 
-    def run_crawler(self, protocol_name, crawler_config):
+    def run_crawler(self, protocol_name, collection_refs, crawler_config):
         self.crawler.run(protocol_name, crawler_config)
+        helpers.write_last_updated(collection_refs["last_updated"], PipelineType.CRAWLER.value)
 
     def run_protocol_update(self, protocol, collection_refs):
         protocol_name = protocol["name"]

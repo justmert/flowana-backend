@@ -2,7 +2,18 @@ from datetime import datetime
 from enum import Enum
 
 
-def write_last_updated(collection_ref, **kwargs):
+class PipelineType(str, Enum):
+    GITHUB_CUMULATIVE = "cumulative"
+    GITHUB_PROJECTS = "projects"
+    GITHUB_LEADERBOARD = "leaderboard"
+    DISCOURSE = "discourse"
+    DEVELOPERS = "developers"
+    GOVERNANCE = "governance"
+    MESSARI = "messari"
+    CRAWLER = "crawler"
+
+
+def write_last_updated(collection_ref, pipeline_name, **kwargs):
     # datetime in rfc3339 format
     rfc_format = datetime.now().isoformat() + "Z"
-    collection_ref.document(f"last_updated_at").set({"data": rfc_format})
+    collection_ref.document(pipeline_name).set({"data": rfc_format})

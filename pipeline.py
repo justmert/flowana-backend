@@ -19,16 +19,6 @@ from enum import Enum
 logger = logging.getLogger(__name__)
 
 
-class PipelineType(str, Enum):
-    GITHUB_CUMULATIVE = "cumulative"
-    GITHUB_PROJECTS = "projects"
-    GITHUB_LEADERBOARD = "leaderboard"
-    DISCOURSE = "discourse"
-    DEVELOPERS = "developers"
-    GOVERNANCE = "governance"
-    MESSARI = "messari"
-
-
 class Pipeline:
     def __init__(self, app, db, github_actor):
         self.app = app
@@ -59,7 +49,6 @@ class Pipeline:
                 self.discourse_widgets.latest_topics,
                 self.discourse_widgets.latest_posts,
                 self.discourse_widgets.top_users,
-                # self.discourse_widgets.write_last_updated,
             ]
 
     def build_governance_pipeline(self, protocol):
@@ -90,7 +79,6 @@ class Pipeline:
                 self.governance_widgets.proposals,
                 self.governance_widgets.governance_info,
                 self.governance_widgets.safes,
-                # self.governance_widgets.write_last_updated,
             ]
 
     def build_messari_pipeline(self, protocol):
@@ -109,7 +97,6 @@ class Pipeline:
                 self.messari_widgets.asset_profile,
                 self.messari_widgets.asset_metrics,
                 self.messari_widgets.asset_timeseries,
-                # self.messari_widgets.write_last_updated,
             ]
 
     def build_developer_pipeline(self, protocol):
@@ -129,7 +116,6 @@ class Pipeline:
                 self.developers_widget.dev_type_table,
                 self.developers_widget.monthly_commits_by_dev_type_chart,
                 self.developers_widget.monthly_commits_chart,
-                # self.developers_widget.write_last_updated,
             ]
 
     def build_github_pipeline(self):
@@ -171,7 +157,6 @@ class Pipeline:
             self.github_widgets.issue_activity,  # paginated
             self.github_widgets.pull_request_activity,  # paginated
             self.github_widgets.health_score,
-            # self.github_widgets.write_last_updated,
         ]
 
         self.protocol_github_functions = [
@@ -203,13 +188,11 @@ class Pipeline:
             self.github_cumulative.cumulative_recent_commits,
             self.github_cumulative.cumulative_recent_releases,
             self.github_cumulative.normalize_health_score,
-            # self.github_cumulative.write_last_updated,
         ]
 
         self.protocol_leaderboard_functions = [
             self.github_leaderboard.project_leaderboard,
             self.github_leaderboard.contributor_leaderboard,
-            # self.github_leaderboard.write_last_updated,
         ]
 
     def contruct_pipeline(self, protocol, collection_refs):
@@ -237,13 +220,14 @@ class Pipeline:
         )
 
     def run_pipelines(self):
-        self.run_protocol_pipeline(PipelineType.GOVERNANCE, self.protocol_governance_functions)
-        self.run_protocol_pipeline(PipelineType.DISCOURSE, self.protocol_discourse_functions)
-        self.run_protocol_pipeline(PipelineType.DEVELOPERS, self.protocol_developers_functions)
+        self.protocol_governance_functions = []
+        self.run_protocol_pipeline(helpers.PipelineType.GOVERNANCE, self.protocol_governance_functions)
+        self.run_protocol_pipeline(helpers.PipelineType.DISCOURSE, self.protocol_discourse_functions)
+        self.run_protocol_pipeline(helpers.PipelineType.DEVELOPERS, self.protocol_developers_functions)
         # self.run_protocol_pipeline(PipelineType.MESSARI, self.protocol_messari_functions) # will implement later
-        self.run_project_pipeline(PipelineType.GITHUB_PROJECTS, self.project_pipeline_functions)
-        self.run_protocol_pipeline(PipelineType.GITHUB_CUMULATIVE, self.protocol_github_functions)
-        self.run_protocol_pipeline(PipelineType.GITHUB_LEADERBOARD, self.protocol_leaderboard_functions)
+        self.run_project_pipeline(helpers.PipelineType.GITHUB_PROJECTS, self.project_pipeline_functions)
+        self.run_protocol_pipeline(helpers.PipelineType.GITHUB_CUMULATIVE, self.protocol_github_functions)
+        self.run_protocol_pipeline(helpers.PipelineType.GITHUB_LEADERBOARD, self.protocol_leaderboard_functions)
 
     def function_executer(self, f, *args, **kwargs):
         logging.info(f"[...] Running function: {f.__name__}")
@@ -278,16 +262,10 @@ class Pipeline:
                     self.function_executer(item[0], **item[1])
             else:
                 self.function_executer(item)
-        helpers.write_last_updated(self.collection_refs[pipeline_type.value])
+        helpers.write_last_updated(self.collection_refs["last_updated"], pipeline_type.value)
 
     def run_project_pipeline(self, pipeline_type, project_pipeline):
-        for repository in self.repositories:
-            # for repository in [  # for testing purposes
-            #     {
-            #         "owner": "lensterxyz",
-            #         "repo": "lenster",
-            #     }
-            # ]:
+        for i, repository in enumerate(self.repositories):
             if not repository:
                 continue
 
@@ -315,7 +293,9 @@ class Pipeline:
             logger.info(f'Running pipeline for repository {repository["owner"]}/{repository["repo"]}')
 
             for i, item in enumerate(project_pipeline):
-                logger.info(f"[===] {self.protocol_name.upper()}/{pipeline_type} - [{i + 1}/{len(project_pipeline)}]")
+                logger.info(
+                    f"[===] {self.protocol_name.upper()}/{pipeline_type} - [{i+1}/{len(self.repositories)}] {repository['owner']}#{repository['repo']} - [{i + 1}/{len(project_pipeline)}]"
+                )
                 if isinstance(item, tuple) or isinstance(item, list):
                     if len(item) == 1:
                         self.function_executer(func, repository["owner"], repository["repo"])
@@ -327,4 +307,4 @@ class Pipeline:
 
             logger.info(f'Finished running pipeline for repository {repository["owner"]}/{repository["repo"]}')
 
-        helpers.write_last_updated(self.collection_refs[pipeline_type.value])
+        helpers.write_last_updated(self.collection_refs["last_updated"], pipeline_type.value)

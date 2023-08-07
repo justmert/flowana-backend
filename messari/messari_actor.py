@@ -38,14 +38,15 @@ class MessariActor:
             logger.info(f". page {current_fetch_count + 1}/{max_page_fetch} of {url}")
             self.session.headers.update(self.messari_rest_headers)
             response = self.session.get(url, params=variables)
-            if response.status_code == 429:
+
+            if response.status_code == 200:
+                json_response = response.json()
+                return json_response
+
+            elif response.status_code == 429:
                 logger.info(". [...] Rate limit exceeded. Waiting for 1 minute.")
                 time.sleep(1 * 60)
                 continue  # fetch again!
-
-            elif response.status_code == 200:
-                json_response = response.json()
-                return json_response
 
             elif response.status_code == 500:
                 logger.info(". [!] Server error. Let's try again.")

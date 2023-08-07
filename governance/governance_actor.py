@@ -68,10 +68,9 @@ class GovernanceActor:
                 json={"query": _query, "variables": variables},
             )
 
-
         if response.status_code == 200:
-                json_response = response.json()
-                return json_response
+            json_response = response.json()
+            return json_response
 
         elif response.status_code == 429:
             logger.warning(". [!] Rate limit exceeded. Waiting for 10 seconds.")

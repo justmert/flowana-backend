@@ -101,12 +101,22 @@ tags_metadata = [
         "name": "Messari - Ecosystem",
         "description": "Messari asset related endpoints for ecosystem",
     },
+    {"name": "Misc", "description": "Miscellaneous endpoints"},
 ]
 
 app = FastAPI(openapi_tags=tags_metadata)
 
 
-from api.routers import developers, discourse, github_ecosystem, github_project, github_leaderboard, governance, messari
+from api.routers import (
+    developers,
+    discourse,
+    github_ecosystem,
+    github_project,
+    github_leaderboard,
+    governance,
+    messari,
+    misc,
+)
 
 app.include_router(github_project.router, prefix="/github-project", tags=[tags_metadata[1]["name"]])
 app.include_router(github_ecosystem.router, prefix="/github-ecosystem", tags=[tags_metadata[2]["name"]])
@@ -115,7 +125,7 @@ app.include_router(discourse.router, prefix="/discourse", tags=[tags_metadata[4]
 app.include_router(developers.router, prefix="/developers", tags=[tags_metadata[5]["name"]])
 app.include_router(governance.router, prefix="/governance", tags=[tags_metadata[6]["name"]])
 app.include_router(messari.router, prefix="/messari", tags=[tags_metadata[7]["name"]])
-
+app.include_router(misc.router, prefix="/misc", tags=[tags_metadata[8]["name"]])
 
 origins = [
     "https://192.168.1.4:8000",
