@@ -184,7 +184,12 @@ class GithubWidgets:
                 std_dev_commit_count = np.std(commit_counts)
 
                 # Calculate the coefficient of variation (CV)
-                cv_commit_count = std_dev_commit_count / mean_commit_count
+                if np.isnan(std_dev_commit_count) or np.isnan(mean_commit_count):
+                    cv_commit_count = 0  # or any other default value
+                elif abs(mean_commit_count) < 1e-10:  # Close to zero
+                    cv_commit_count = 0  # or any other default value
+                else:
+                    cv_commit_count = std_dev_commit_count / mean_commit_count
 
                 # Apply a weight to the commit count consistency (you can adjust the factor as needed)
                 consistency_weight = math.exp(-10 * cv_commit_count)
@@ -198,7 +203,7 @@ class GithubWidgets:
                     # convert from seconds to weeks
                     weeks_ago = (now_timestamp - data["week"]) // (7 * 24 * 60 * 60)
                     commit_volume = data["total"]
-                    CAS += commit_volume * math.exp(-lambda_ * weeks_ago)
+                    CAS += commit_volume * math.exp(-lambda_ * weeks_ago),
 
                 # Apply the consistency weight to the final score
                 CAS *= consistency_weight

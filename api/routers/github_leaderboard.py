@@ -11,7 +11,7 @@ router = APIRouter()
 
 @router.get(
     "/{protocol_name}/projects",
-    dependencies=[Depends(get_current_user)],
+    # dependencies=[Depends(get_current_user)],
     tags=["Github - Leaderboard"],
     responses={
         200: {
@@ -20,20 +20,59 @@ router = APIRouter()
                 "application/json": {
                     "example": [
                         {
-                            "author": {
-                                "login": "bigint",
-                                "avatar_url": "https://avatars.githubusercontent.com/u/69431456?v=4",
-                                "html_url": "https://github.com/bigint",
+                            "repository_info": {
+                                "created_at": "2022-03-19T15:01:46Z",
+                                "description": "Lenster is a decentralized and permissionless social media app built with Lens Protocol 🌿",
+                                "release_count": 17,
+                                "owner_login": "lensterxyz",
+                                "is_empty": False,
+                                "stargazer_count": 20884,
+                                "categories.lvl0": [
+                                    "web3",
+                                    "blockchain",
+                                    "graphql",
+                                    "hacktoberfest",
+                                    "nextjs",
+                                    "react",
+                                    "social-media",
+                                    "typescript",
+                                    "arweave",
+                                    "ipfs",
+                                    "lens-protocol",
+                                    "polygon",
+                                    "turborepo",
+                                    "tailwindcss",
+                                    "wagmi",
+                                    "dapp",
+                                    "playwright"
+                                ],
+                                "watcher_count": 101,
+                                "url": "https://github.com/lensterxyz/lenster",
+                                "updated_at": "2023-08-07T09:06:06Z",
+                                "owner_avatar_url": "https://avatars.githubusercontent.com/u/103585522?v=4",
+                                "default_branch_commit_count": 6644,
+                                "disk_usage": 31762,
+                                "commit_comment_count": 5053,
+                                "pull_request_count": 2245,
+                                "environment_count": 8,
+                                "issue_count": 1190,
+                                "primary_language_color": "#3178c6",
+                                "valid": True,
+                                "is_archived": False,
+                                "is_closed": False,
+                                "fork_count": 1262,
+                                "is_fork": False,
+                                "primary_language_name": "TypeScript"
                             },
-                            "contributions": {
-                                "lensterxyz#lenster": {
-                                    "owner": "lensterxyz",
-                                    "repo": "lenster",
-                                    "html_url": "https://github.com/lensterxyz/lenster",
-                                    "commits": 4801,
-                                }
-                            },
-                            "total_commits": 4801,
+                            "health_score": {
+                                "total": 50,
+                                "pull_request_activity": 50,
+                                "commit_activity": 50,
+                                "contribution_activity": 50,
+                                "issue_activity": 50,
+                                "grade": "C+",
+                                "release_activity": 50
+                            }
                         }
                     ]
                 }
@@ -74,7 +113,8 @@ def project_leaderboard(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -89,7 +129,7 @@ def project_leaderboard(
     tags=["Github - Leaderboard"],
     responses={
         200: {
-            "description": "Project leaderboard",
+            "description": "Contributor Leaderboard",
             "content": {
                 "application/json": {
                     "example": [
@@ -148,7 +188,8 @@ def project_contributors(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:

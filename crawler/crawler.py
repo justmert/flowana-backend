@@ -75,15 +75,16 @@ class Crawler:
             logger.info(f"[*] Main toml file: {toml_name}")
             data = self.fetch_toml(toml_name)
             repos = repos.union(set([repo["url"] for repo in data["repo"]]))
-
-        for sub_ecosystem in data["sub_ecosystems"] and include_sub_ecosystem:
-            logger.info(f"[*] Sub ecosystem: {sub_ecosystem}")
-            toml_name = self._transform_ecosystem_name(sub_ecosystem)
-            data = self.fetch_toml(toml_name)
-            if data["sub_ecosystems"]:
-                repos = self.collect_repos(toml_name, repos, data)
-            else:
-                repos = repos.union(set([repo["url"] for repo in data["repo"]]))
+        
+        if include_sub_ecosystem:
+            for sub_ecosystem in data["sub_ecosystems"] :
+                logger.info(f"[*] Sub ecosystem: {sub_ecosystem}")
+                toml_name = self._transform_ecosystem_name(sub_ecosystem)
+                data = self.fetch_toml(toml_name)
+                if data["sub_ecosystems"]:
+                    repos = self.collect_repos(toml_name, repos, data)
+                else:
+                    repos = repos.union(set([repo["url"] for repo in data["repo"]]))
         return repos
 
     def run(self, protocol_name, crawler_config):

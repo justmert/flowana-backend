@@ -265,8 +265,8 @@ class Pipeline:
 
         except Exception as e:
             logging.info(f"[#ERR] Error running function: {f.__name__} error: {e}")
-            # print traceback
-            traceback.print_exc()
+            # log traceback 
+            logging.error(traceback.format_exc())
 
         else:
             logging.info(f"[*] Completed running function: {f.__name__}")

@@ -1,0 +1,38 @@
+{
+    "compound": {
+        "projects": true,       
+        "cumulative": true,
+        "leaderboard": true,
+        "discourse": true,
+        "developers": true,
+        "governance": true,
+        "messari": true
+    },
+    "flow": {
+        "projects": true,
+        "cumulative": true,
+        "leaderboard": true,
+        "discourse": true,
+        "developers": true,
+        "governance": false,
+        "messari": true
+    },
+    "lens": {
+        "projects": true,
+        "cumulative": true,
+        "leaderboard": true,
+        "discourse": false,
+        "developers": false,
+        "governance": false,
+        "messari": true
+    },
+    "polkadot": {
+        "projects": true,
+        "cumulative": true,
+        "leaderboard": true,
+        "discourse": true,
+        "developers": true,
+        "governance": false,
+        "messari": true
+    }
+}

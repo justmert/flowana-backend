@@ -17,12 +17,12 @@ class DiscourseActor:
         self.api_key = os.environ.get("DISCOURSE_API_KEY", None)
         self.discourse_api_endpoint = base_url  # https://forum.onflow.org
 
-        self.github_rest_headers = {
+        self.discourse_rest_headers = {
             "Accept": "application/json",
         }
         if self.api_username and self.api_key:
-            self.github_rest_headers["Api-Username"] = self.api_username
-            self.github_rest_headers["Api-Key"] = self.api_key
+            self.discourse_rest_headers["Api-Username"] = self.api_username
+            self.discourse_rest_headers["Api-Key"] = self.api_key
 
         self.session = session
         if not self.session:
@@ -36,20 +36,24 @@ class DiscourseActor:
         logger.info(f". [=] Fetching data from REST API from {url}")
         while url and (current_fetch_count < max_page_fetch):
             logger.info(f". page {current_fetch_count + 1}/{max_page_fetch} of {url}")
-            self.session.headers.update(self.github_rest_headers)
+            self.session.headers.update(self.discourse_rest_headers)
             response = self.session.get(url, params=variables)
             if response.status_code == 202:
                 logger.info(". [...] Waiting for the data to be ready.")
                 time.sleep(1)
                 continue  # fetch again!
 
-            elif response.status_code == 403:
-                self.rate_limit_wait()
+            elif response.status_code in [403, 429]:
+                logger.warning(". [...] Rate limit reached. Sleeping for 10 seconds.")
+                time.sleep(10.1)
                 continue
 
             elif response.status_code == 200:
                 json_response = response.json()
                 return json_response
+
+            elif response.status_code == 429:
+                logger.warnin
 
             else:
                 logger.error(f" [-] Failed to retrieve from API. Status code: {response.status_code} - {response.text}")
