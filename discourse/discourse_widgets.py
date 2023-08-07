@@ -408,4 +408,3 @@ class DiscourseWidgets:
                         break
 
         self.collection_refs["discourse"].document(f"top_users").set({"data": top_users})
-

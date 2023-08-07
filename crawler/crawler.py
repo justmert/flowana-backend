@@ -75,9 +75,9 @@ class Crawler:
             logger.info(f"[*] Main toml file: {toml_name}")
             data = self.fetch_toml(toml_name)
             repos = repos.union(set([repo["url"] for repo in data["repo"]]))
-        
+
         if include_sub_ecosystem:
-            for sub_ecosystem in data["sub_ecosystems"] :
+            for sub_ecosystem in data["sub_ecosystems"]:
                 logger.info(f"[*] Sub ecosystem: {sub_ecosystem}")
                 toml_name = self._transform_ecosystem_name(sub_ecosystem)
                 data = self.fetch_toml(toml_name)
@@ -118,7 +118,7 @@ class Crawler:
                     "valid": False,
                     "categories.lvl0": [],
                     "url": f"https://github.com/{owner}/{repo_name}",
-                    "stars": 0
+                    "stars": 0,
                 }
             else:
                 repo_metadata = {

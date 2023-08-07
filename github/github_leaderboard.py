@@ -29,19 +29,15 @@ class GithubLeaderboard:
         repo_doc = self.collection_refs["widgets"].document("repositories")
         for subcollection in repo_doc.collections():
             try:
-                health_score_doc = (
-                    subcollection.document("health_score").get(field_paths=["data"]).to_dict()
-                )
-                repository_info_doc = (
-                    subcollection.document("repository_info").get(field_paths=["data"]).to_dict()
-                )
+                health_score_doc = subcollection.document("health_score").get(field_paths=["data"]).to_dict()
+                repository_info_doc = subcollection.document("repository_info").get(field_paths=["data"]).to_dict()
 
                 if not health_score_doc or not repository_info_doc:
                     continue
 
                 health_score_doc_val = health_score_doc.get("data", None)
                 repository_info_doc_val = repository_info_doc.get("data", None)
-                
+
                 if not health_score_doc_val or not repository_info_doc_val:
                     continue
             except Exception as ex:
@@ -117,4 +113,3 @@ class GithubLeaderboard:
 
         # Return the leaderboard
         return leaderboard
-

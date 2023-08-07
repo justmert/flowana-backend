@@ -500,4 +500,3 @@ class GovernanceWidgets:
                 ] = f"https://www.tally.xyz/profile/{owner['address']}?governanceId={self.governance_id}"
 
         self.collection_refs["governance"].document("safes").set({"data": data})
-

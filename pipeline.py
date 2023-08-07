@@ -19,7 +19,6 @@ from enum import Enum
 logger = logging.getLogger(__name__)
 
 
-
 class PipelineType(str, Enum):
     GITHUB_CUMULATIVE = "cumulative"
     GITHUB_PROJECTS = "projects"
@@ -28,6 +27,7 @@ class PipelineType(str, Enum):
     DEVELOPERS = "developers"
     GOVERNANCE = "governance"
     MESSARI = "messari"
+
 
 class Pipeline:
     def __init__(self, app, db, github_actor):
@@ -43,7 +43,6 @@ class Pipeline:
         self.protocol_messari_functions = []
         self.protocol_github_functions = []
         self.protocol_leaderboard_functions = []
-
 
     def build_discourse_pipeline(self, protocol):
         if protocol.get("forum", None):
@@ -238,7 +237,6 @@ class Pipeline:
         )
 
     def run_pipelines(self):
-
         self.run_protocol_pipeline(PipelineType.GOVERNANCE, self.protocol_governance_functions)
         self.run_protocol_pipeline(PipelineType.DISCOURSE, self.protocol_discourse_functions)
         self.run_protocol_pipeline(PipelineType.DEVELOPERS, self.protocol_developers_functions)
@@ -246,7 +244,6 @@ class Pipeline:
         self.run_project_pipeline(PipelineType.GITHUB_PROJECTS, self.project_pipeline_functions)
         self.run_protocol_pipeline(PipelineType.GITHUB_CUMULATIVE, self.protocol_github_functions)
         self.run_protocol_pipeline(PipelineType.GITHUB_LEADERBOARD, self.protocol_leaderboard_functions)
-
 
     def function_executer(self, f, *args, **kwargs):
         logging.info(f"[...] Running function: {f.__name__}")
@@ -265,7 +262,7 @@ class Pipeline:
 
         except Exception as e:
             logging.info(f"[#ERR] Error running function: {f.__name__} error: {e}")
-            # log traceback 
+            # log traceback
             logging.error(traceback.format_exc())
 
         else:
@@ -285,12 +282,12 @@ class Pipeline:
 
     def run_project_pipeline(self, pipeline_type, project_pipeline):
         for repository in self.repositories:
-        # for repository in [  # for testing purposes
-        #     {
-        #         "owner": "lensterxyz",
-        #         "repo": "lenster",
-        #     }
-        # ]:
+            # for repository in [  # for testing purposes
+            #     {
+            #         "owner": "lensterxyz",
+            #         "repo": "lenster",
+            #     }
+            # ]:
             if not repository:
                 continue
 
@@ -329,5 +326,5 @@ class Pipeline:
                     self.function_executer(item, repository["owner"], repository["repo"])
 
             logger.info(f'Finished running pipeline for repository {repository["owner"]}/{repository["repo"]}')
-            
+
         helpers.write_last_updated(self.collection_refs[pipeline_type.value])

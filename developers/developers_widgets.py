@@ -185,4 +185,3 @@ class DevelopersWidget:
             "series": data["series"],
         }
         self.collection_refs["developers"].document("monthly_commits_chart").set({"data": formatted_data})
-

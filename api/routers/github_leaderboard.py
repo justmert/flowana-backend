@@ -11,7 +11,7 @@ router = APIRouter()
 
 @router.get(
     "/{protocol_name}/projects",
-    # dependencies=[Depends(get_current_user)],
+    dependencies=[Depends(get_current_user)],
     tags=["Github - Leaderboard"],
     responses={
         200: {
@@ -44,7 +44,7 @@ router = APIRouter()
                                     "tailwindcss",
                                     "wagmi",
                                     "dapp",
-                                    "playwright"
+                                    "playwright",
                                 ],
                                 "watcher_count": 101,
                                 "url": "https://github.com/lensterxyz/lenster",
@@ -62,7 +62,7 @@ router = APIRouter()
                                 "is_closed": False,
                                 "fork_count": 1262,
                                 "is_fork": False,
-                                "primary_language_name": "TypeScript"
+                                "primary_language_name": "TypeScript",
                             },
                             "health_score": {
                                 "total": 50,
@@ -71,8 +71,8 @@ router = APIRouter()
                                 "contribution_activity": 50,
                                 "issue_activity": 50,
                                 "grade": "C+",
-                                "release_activity": 50
-                            }
+                                "release_activity": 50,
+                            },
                         }
                     ]
                 }
@@ -113,8 +113,7 @@ def project_leaderboard(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}")
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
@@ -188,8 +187,7 @@ def project_contributors(
 
     except Exception as e:
         # Handle other exceptions
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred {str(e)}")
+        raise HTTPException(status_code=500, detail=f"An error occurred {str(e)}")
 
     data = ref.get("data", None)
     if not data:
