@@ -68,16 +68,17 @@ class GovernanceActor:
                 json={"query": _query, "variables": variables},
             )
 
-        if response.status_code != 200:
+        elif response.status_code == 429:
+            logger.warning(". [!] Rate limit exceeded. Waiting for 10 seconds.")
+            time.sleep(10)
+            return self.governance_graphql_make_query(_query, variables)
+
+        else:
             logger.error(f". [-] Failed to retrieve from API. Status code: {response.status_code} - {response.text}")
             logger.info(f". [#] Graphql endpoint: {self.governance_graphql_endpoint}")
             logger.info(f". [#] Query: {_query}")
             logger.info(f". [#] Variables: {variables}")
             return None
 
-        elif response.status_code == 429:
-            logger.warning(". [!] Rate limit exceeded. Waiting for 10 seconds.")
-            time.sleep(10)
-            return self.governance_graphql_make_query(_query, variables)
 
         return response.json()

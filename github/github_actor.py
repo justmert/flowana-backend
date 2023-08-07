@@ -42,17 +42,17 @@ class GithubActor:
                 json={"query": _query, "variables": variables},
             )
 
-        if response.status_code != 200:
+        elif response.status_code == 403:
+            self.rate_limit_wait()
+            return self.github_graphql_make_query(_query, variables)
+
+        else:
             logger.error(f". [-] Failed to retrieve from API. Status code: {response.status_code} - {response.text}")
             logger.info(f". [#] Graphql endpoint: {self.github_graphql_endpoint}")
             logger.info(f". [#] Query: {_query}")
             logger.info(f". [#] Variables: {variables}")
 
             return None
-
-        elif response.status_code == 403:
-            self.rate_limit_wait()
-            return self.github_graphql_make_query(_query, variables)
 
         return response.json()
 
