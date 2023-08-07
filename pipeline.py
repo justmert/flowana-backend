@@ -239,10 +239,10 @@ class Pipeline:
 
     def run_pipelines(self):
 
+        self.run_protocol_pipeline(PipelineType.GOVERNANCE, self.protocol_governance_functions)
         self.run_protocol_pipeline(PipelineType.DISCOURSE, self.protocol_discourse_functions)
         self.run_protocol_pipeline(PipelineType.DEVELOPERS, self.protocol_developers_functions)
-        self.run_protocol_pipeline(PipelineType.GOVERNANCE, self.protocol_governance_functions)
-        self.run_protocol_pipeline(PipelineType.MESSARI, self.protocol_messari_functions)
+        # self.run_protocol_pipeline(PipelineType.MESSARI, self.protocol_messari_functions) # will implement later
         self.run_project_pipeline(PipelineType.GITHUB_PROJECTS, self.project_pipeline_functions)
         self.run_protocol_pipeline(PipelineType.GITHUB_CUMULATIVE, self.protocol_github_functions)
         self.run_protocol_pipeline(PipelineType.GITHUB_LEADERBOARD, self.protocol_leaderboard_functions)

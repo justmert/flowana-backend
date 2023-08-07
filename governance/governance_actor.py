@@ -58,7 +58,7 @@ class GovernanceActor:
         return result
 
     def governance_graphql_make_query(self, _query, variables=None):
-        logger.info(f". [=] Fetching data from Graphql API from {self.github_graphql_endpoint}")
+        logger.info(f". [=] Fetching data from Graphql API from {self.governance_graphql_endpoint}")
         self.session.headers.update(self.governance_graphql_headers)
         response = self.session.post(
             self.governance_graphql_endpoint,
@@ -73,7 +73,7 @@ class GovernanceActor:
 
         if response.status_code != 200:
             logger.error(f". [-] Failed to retrieve from API. Status code: {response.status_code} - {response.text}")
-            logger.info(f". [#] Graphql endpoint: {self.github_graphql_endpoint}")
+            logger.info(f". [#] Graphql endpoint: {self.governance_graphql_endpoint}")
             logger.info(f". [#] Query: {_query}")
             logger.info(f". [#] Variables: {variables}")
             return None
