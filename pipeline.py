@@ -124,38 +124,38 @@ class Pipeline:
         self.github_leaderboard = GithubLeaderboard(self.github_actor, self.collection_refs)
 
         self.project_pipeline_functions = [
-            self.github_widgets.commit_activity,
-            self.github_widgets.code_frequency,
-            self.github_widgets.participation,
-            self.github_widgets.code_frequency,
-            self.github_widgets.community_profile,
-            self.github_widgets.punch_card,
-            self.github_widgets.issue_count,
-            (
-                self.github_widgets.recent_issues,
-                {"order_by": self.github_widgets.RecentIssuesOrder.CREATED_AT},
-            ),
-            (
-                self.github_widgets.recent_issues,
-                {"order_by": self.github_widgets.RecentIssuesOrder.UPDATED_AT},
-            ),
-            self.github_widgets.most_active_issues,
-            self.github_widgets.pull_request_count,
-            (
-                self.github_widgets.recent_pull_requests,
-                {"order_by": self.github_widgets.RecentPullRequestsOrder.CREATED_AT},
-            ),
-            (
-                self.github_widgets.recent_pull_requests,
-                {"order_by": self.github_widgets.RecentPullRequestsOrder.UPDATED_AT},
-            ),
-            self.github_widgets.language_breakdown,
-            self.github_widgets.recent_stargazing_activity,
-            self.github_widgets.recent_commits,
-            self.github_widgets.recent_releases,
-            self.github_widgets.contributors,  # paginated
-            self.github_widgets.issue_activity,  # paginated
-            self.github_widgets.pull_request_activity,  # paginated
+            # self.github_widgets.commit_activity,
+            # self.github_widgets.code_frequency,
+            # self.github_widgets.participation,
+            # self.github_widgets.code_frequency,
+            # self.github_widgets.community_profile,
+            # self.github_widgets.punch_card,
+            # self.github_widgets.issue_count,
+            # (
+            #     self.github_widgets.recent_issues,
+            #     {"order_by": self.github_widgets.RecentIssuesOrder.CREATED_AT},
+            # ),
+            # (
+            #     self.github_widgets.recent_issues,
+            #     {"order_by": self.github_widgets.RecentIssuesOrder.UPDATED_AT},
+            # ),
+            # self.github_widgets.most_active_issues,
+            # self.github_widgets.pull_request_count,
+            # (
+            #     self.github_widgets.recent_pull_requests,
+            #     {"order_by": self.github_widgets.RecentPullRequestsOrder.CREATED_AT},
+            # ),
+            # (
+            #     self.github_widgets.recent_pull_requests,
+            #     {"order_by": self.github_widgets.RecentPullRequestsOrder.UPDATED_AT},
+            # ),
+            # self.github_widgets.language_breakdown,
+            # self.github_widgets.recent_stargazing_activity,
+            # self.github_widgets.recent_commits,
+            # self.github_widgets.recent_releases,
+            # self.github_widgets.contributors,  # paginated
+            # self.github_widgets.issue_activity,  # paginated
+            # self.github_widgets.pull_request_activity,  # paginated
             self.github_widgets.health_score,
         ]
 
@@ -221,13 +221,13 @@ class Pipeline:
 
     def run_pipelines(self):
         self.protocol_governance_functions = []
-        self.run_protocol_pipeline(helpers.PipelineType.GOVERNANCE, self.protocol_governance_functions)
-        self.run_protocol_pipeline(helpers.PipelineType.DISCOURSE, self.protocol_discourse_functions)
-        self.run_protocol_pipeline(helpers.PipelineType.DEVELOPERS, self.protocol_developers_functions)
+        # self.run_protocol_pipeline(helpers.PipelineType.GOVERNANCE, self.protocol_governance_functions)
+        # self.run_protocol_pipeline(helpers.PipelineType.DISCOURSE, self.protocol_discourse_functions)
+        # self.run_protocol_pipeline(helpers.PipelineType.DEVELOPERS, self.protocol_developers_functions)
         # self.run_protocol_pipeline(PipelineType.MESSARI, self.protocol_messari_functions) # will implement later
         self.run_project_pipeline(helpers.PipelineType.GITHUB_PROJECTS, self.project_pipeline_functions)
-        self.run_protocol_pipeline(helpers.PipelineType.GITHUB_CUMULATIVE, self.protocol_github_functions)
-        self.run_protocol_pipeline(helpers.PipelineType.GITHUB_LEADERBOARD, self.protocol_leaderboard_functions)
+        # self.run_protocol_pipeline(helpers.PipelineType.GITHUB_CUMULATIVE, self.protocol_github_functions)
+        # self.run_protocol_pipeline(helpers.PipelineType.GITHUB_LEADERBOARD, self.protocol_leaderboard_functions)
 
     def function_executer(self, f, *args, **kwargs):
         logging.info(f"[...] Running function: {f.__name__}")
@@ -265,7 +265,8 @@ class Pipeline:
         helpers.write_last_updated(self.collection_refs["last_updated"], pipeline_type.value)
 
     def run_project_pipeline(self, pipeline_type, project_pipeline):
-        for i, repository in enumerate(self.repositories):
+        # for i, repository in enumerate(self.repositories):
+        for i, repository in enumerate([{"owner": "compound-finance", "repo": "QuickBorrow"}]):
             if not repository:
                 continue
 

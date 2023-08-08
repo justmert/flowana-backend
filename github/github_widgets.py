@@ -397,21 +397,23 @@ class GithubWidgets:
                 ]
 
                 # Compute the standard deviation of the release intervals
-                std_dev = np.std(release_intervals)
-
-                # Compute the inverse of the standard deviation, with a small constant added for stability
-                inverse_std_dev = 1 / (std_dev + 0.01)
-
-                # Compute the time since the last release (in days)
-                time_since_last_release = (datetime.now(timezone.utc) - release_dates[0]).days
-
-                # Penalty factor
-                penalty = 1 / (1 + penalty_param * time_since_last_release)
-
-                # Time-Weighted Release Activity Score with Release Interval Consistency and Penalty for Time Since Last Release
-                RAS = 0
-                for i in range(len(release_dates)):
-                    RAS += penalty * math.exp(-lambda_ * i) * inverse_std_dev
+                if len(release_dates) == 1:
+                    std_dev = 0  # or some other appropriate default value
+                    time_since_last_release = (datetime.now(timezone.utc) - release_dates[0]).days
+                    # Adjust the penalty and score computation if necessary
+                    penalty = 1 / (1 + penalty_param * time_since_last_release)
+                    RAS = penalty  # Adjust this as needed
+                else:
+                    release_intervals = [
+                        (release_dates[i - 1] - release_dates[i]).days for i in range(1, len(release_dates))
+                    ]
+                    std_dev = np.std(release_intervals)
+                    inverse_std_dev = 1 / (std_dev + 0.01)
+                    time_since_last_release = (datetime.now(timezone.utc) - release_dates[0]).days
+                    penalty = 1 / (1 + penalty_param * time_since_last_release)
+                    RAS = 0
+                    for i in range(len(release_dates)):
+                        RAS += penalty * math.exp(-lambda_ * i) * inverse_std_dev
 
                 return RAS
         return 0
@@ -506,16 +508,6 @@ class GithubWidgets:
                 weight_contributor_gini_coefficient = 0.30
                 weight_new_metric_average = 0.20  # assign 25% importance to new metric average
                 weight_contributor_count = 0.30  # assign 25% importance to contributor count
-
-                print(
-                    "repo: {}, commit_trend: {}, contributor_gini_coefficient: {}, new_metric_average: {}, contributor_count: {}".format(
-                        repo,
-                        commit_trend,
-                        contributor_gini_coefficient,
-                        new_metric_average,
-                        contributor_count,
-                    )
-                )
 
                 # Calculate weighted sum
                 liveness_score = (

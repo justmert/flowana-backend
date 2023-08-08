@@ -44,7 +44,14 @@ class GithubLeaderboard:
                 logger.warning(f"Leaderboard project data fetch error: {ex}")
                 continue
 
-            reference_list.append({"repository_info": repository_info_doc_val, "health_score": health_score_doc_val})
+            reference_list.append(
+                {
+                    "repository_info": repository_info_doc_val,
+                    "health_score": health_score_doc_val,
+                    "owner": subcollection.id.split("#")[0],
+                    "repo": subcollection.id.split("#")[1],
+                }
+            )
 
         reference_list = sorted(reference_list, key=lambda k: k["health_score"]["total"], reverse=True)[:15]
 
