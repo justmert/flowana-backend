@@ -249,8 +249,10 @@ class GithubWidgets:
         else:
             # pull_requests = ref.get('data', None)
             avg_days_to_close_pull_request = None
-            if ref2 is None:
+            if ref2 is not None:
                 avg_days_to_close_pull_request = ref2.get("data", None)
+            else:
+                avg_days_to_close_pull_request = None
 
             if pull_requests:
                 # Weights for open and closed pull_requests
@@ -321,8 +323,10 @@ class GithubWidgets:
 
         else:
             avg_days_to_close_issue = None
-            if ref2 is None:
+            if ref2 is not None:
                 avg_days_to_close_issue = ref2.get("data", None)
+            else:
+                avg_days_to_close_issue = None
 
             if issues:
                 # Weights for open and closed issues
