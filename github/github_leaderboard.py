@@ -92,6 +92,7 @@ class GithubLeaderboard:
                             "owner": owner,
                             "repo": repo,
                             "html_url": f"https://github.com/{owner}/{repo}",
+                            "commits": contributor["total"],
                         }
                         total_contributors[contributor["author"]["login"]]["total_commits"] += contributor["total"]
 

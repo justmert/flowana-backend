@@ -21,7 +21,7 @@
   },
   {
     "name": "flow",
-    "update": true,
+    "update": false,
     "crawl": false,
     "crawler": {
       "include_sub_ecosystems": true,

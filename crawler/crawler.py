@@ -26,22 +26,22 @@ class Crawler:
             self.adapters.append(flow_adapter)
             logger.info("Flow blockchain adapter initialized.")
 
-    def _transform_ecosystem_name(self, name):
+    def _transform_ecosystem_name(name):
         # Lowercase the name
         name = name.lower()
 
         # Replace spaces and commas with hyphens
-        name = name.replace(" ", "-").replace(",", "-")
+        name = name.replace(" ", "-").replace(",", "-").replace(".", "-")
 
         # Replace other special characters
-        name = name.replace("@", "-").replace("(", "-").replace(")", "-")
+        name = name.replace("@", "-").replace("(", "-").replace(")", "-").replace("[", "-").replace("]", "-")
 
         # Remove leading and trailing hyphens from each part of the name
         name_parts = name.split("-")
         name_parts = [part.strip("-") for part in name_parts]
 
         # Rejoin the parts of the name
-        name = "-".join(name_parts)
+        name = "-".join(name_parts).strip("-")
 
         # Remove any remaining disallowed characters (GitHub repo names only allow alphanumeric and hyphens)
         name = re.sub(r"[^a-z0-9\-]", "", name)
