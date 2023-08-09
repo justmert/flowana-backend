@@ -26,7 +26,7 @@ class Crawler:
             self.adapters.append(flow_adapter)
             logger.info("Flow blockchain adapter initialized.")
 
-    def _transform_ecosystem_name(name):
+    def _transform_ecosystem_name(self, name):
         # Lowercase the name
         name = name.lower()
 
