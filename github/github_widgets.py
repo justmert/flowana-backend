@@ -109,12 +109,7 @@ class GithubWidgets:
             logger.warning(
                 f"[-] {owner}/{repo} is not accessible. Will be added to project metadata list, but will not be included in statistics."
             )
-            flattened_data = {
-                "owner": owner,
-                "repo": repo,
-                "is_closed": True,
-                "valid": False,
-            }
+            flattened_data = {"owner": owner, "repo": repo, "is_closed": True, "valid": False, "categories.lvl0": []}
 
         else:
             flattened_data["default_branch_commit_count"] = (
@@ -133,6 +128,8 @@ class GithubWidgets:
             flattened_data["categories.lvl0"] = [
                 node["topic"]["name"] for node in repository["repositoryTopics"]["nodes"]
             ]
+            if flattened_data["categories.lvl0"] is None:
+                flattened_data["categories.lvl0"] = []
             flattened_data["watcher_count"] = repository["watchers"]["totalCount"]
             flattened_data["is_fork"] = repository["isFork"]
             flattened_data["is_archived"] = repository["isArchived"]
@@ -161,7 +158,16 @@ class GithubWidgets:
     def _score_commit_activity(self, owner, repo):
         try:
             ref = self.get_db_ref(owner, repo).document("commit_activity").get(field_paths=["data"]).to_dict()
-
+            default_branch_commit_count = 0
+            try:
+                ref2 = self.get_db_ref(owner, repo).document("repository_info").get(field_paths=["data"]).to_dict()
+            except exceptions.NotFound:
+                # Handle case where document or collection does not exist
+                pass
+            else:
+                repository_info = ref2.get("data", None)
+                if repository_info is not None:
+                    default_branch_commit_count = repository_info.get("default_branch_commit_count", 0)
             if ref is None:
                 raise exceptions.NotFound("Collection or document not found")
         except exceptions.NotFound as ex:
@@ -198,7 +204,7 @@ class GithubWidgets:
                 lambda_ = 0.05
 
                 # Time-Weighted Commit Activity Score with Commit Interval Consistency
-                CAS = 0
+                CAS = math.sqrt(default_branch_commit_count)
                 for data in commit_activity:
                     # convert from seconds to weeks
                     weeks_ago = (now_timestamp - data["week"]) // (7 * 24 * 60 * 60)
@@ -213,13 +219,6 @@ class GithubWidgets:
 
     def _score_pull_request_activity(self, owner, repo):
         try:
-            # ref = self.get_db_ref(owner, repo).document(
-            #     'pull_request_activity').get(field_paths=['data']).to_dict()
-
-            # if ref is None:
-            #     raise exceptions.NotFound(
-            #         'Collection or document not found')
-
             # Initialize the base reference
             doc_base = self.get_db_ref(owner, repo)
 
@@ -261,9 +260,6 @@ class GithubWidgets:
 
                 # Decay parameter
                 lambda_ = 0.005
-
-                # Average time to close an issue (in days)
-                # avg_days_to_close_issue = 7
 
                 # Comment reward factor
                 comment_reward_factor = 0.05  # for example
@@ -547,7 +543,7 @@ class GithubWidgets:
         # formatting will be in frontend
         data = self.actor.github_rest_make_request(f"/repos/{owner}/{repo}/stats/commit_activity")
 
-        if not self.is_valid(data):
+        if not self.is_valid(data) or not any(item["total"] > 0 for item in data):
             logger.warning("[!] Invalid or empty data returned")
             return
 
@@ -579,7 +575,7 @@ class GithubWidgets:
         # formatting will be in here
         data = self.actor.github_rest_make_request(f"/repos/{owner}/{repo}/stats/participation")
 
-        if not self.is_valid(data):
+        if not self.is_valid(data) or not any(data["all"]):
             logger.warning("[!] Invalid or empty data returned")
             return
 
@@ -615,7 +611,7 @@ class GithubWidgets:
         # formatting will be in here
         data = self.actor.github_rest_make_request(f"/repos/{owner}/{repo}/stats/code_frequency")
 
-        if not self.is_valid(data):
+        if not self.is_valid(data) and not any(item[1] or item[2] for item in data):
             logger.warning("[!] Invalid or empty data returned")
             return
 
@@ -647,7 +643,7 @@ class GithubWidgets:
         # formatting will be in frontend
         data = self.actor.github_rest_make_request(f"/repos/{owner}/{repo}/stats/punch_card")
 
-        if not self.is_valid(data):
+        if not self.is_valid(data) or not any(item[2] for item in data):
             logger.warning("[!] Invalid or empty data returned")
             return
 

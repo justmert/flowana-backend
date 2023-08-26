@@ -53,7 +53,7 @@ class GithubLeaderboard:
                 }
             )
 
-        reference_list = sorted(reference_list, key=lambda k: k["health_score"]["total"], reverse=True)[:15]
+        reference_list = sorted(reference_list, key=lambda k: k["health_score"]["total"], reverse=True)[:20]
 
         self.collection_refs["leaderboard"].document("project_leaderboard").set({"data": reference_list})
 
@@ -115,7 +115,7 @@ class GithubLeaderboard:
                     }
 
         # Sort the contributors by total commits and take the top 15
-        leaderboard = sorted(total_contributors.values(), key=lambda x: x["total_commits"], reverse=True)[:15]
+        leaderboard = sorted(total_contributors.values(), key=lambda x: x["total_commits"], reverse=True)[:20]
 
         self.collection_refs["leaderboard"].document("contributor_leaderboard").set({"data": leaderboard})
 

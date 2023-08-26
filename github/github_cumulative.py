@@ -111,10 +111,10 @@ class GithubCumulative:
 
     def normalize_health_score(self, **kwargs):
         weight_dict = {
-            "commit_activity": 0.28,
+            "commit_activity": 0.26,
             "issue_activity": 0.16,
             "pull_request_activity": 0.16,
-            "release_activity": 0.08,
+            "release_activity": 0.10,
             "contribution_activity": 0.32,
         }
 
@@ -137,17 +137,16 @@ class GithubCumulative:
                 raw_scores[key].append((doc_name, value))
 
         robust_scaler = RobustScaler()
-        standard_scaler = StandardScaler()
+        # standard_scaler = StandardScaler()
         new_scores = {}
 
         for key, values in raw_scores.items():
             names, scores = zip(*values)  # Unpack repo names and scores
             scores_array = np.array(scores).reshape(-1, 1)
-            robust_values = robust_scaler.fit_transform(scores_array)
-            normalized_values = standard_scaler.fit_transform(robust_values).flatten()
+            normalized_values = robust_scaler.fit_transform(scores_array).flatten()
             # Convert Z-scores to percentiles
             percentiles = ndtr(normalized_values) * 100
-            normalized_scores = list(zip(names, percentiles.tolist()))
+            normalized_scores = list(zip(names, [round(p, 2) for p in percentiles]))
 
             # Add each score to the new_scores dictionary
             for name, score in normalized_scores:
@@ -155,51 +154,29 @@ class GithubCumulative:
                     new_scores[name] = {}
                 new_scores[name][key] = score
 
-        for doc_name, scores in new_scores.items():
-            for key, value in scores.items():
-                if isinstance(value, float):
-                    scores[key] = round(value, 2)
+        grade_boundaries = [
+            (91, "S+"),
+            (84, "S"),
+            (77, "A+"),
+            (70, "A"),
+            (63, "B+"),
+            (56, "B"),
+            (49, "C+"),
+            (42, "C"),
+            (35, "D+"),
+            (28, "D"),
+            (21, "E+"),
+            (14, "E"),
+            (0, "F"),
+        ]
 
+        for doc_name, scores in new_scores.items():
             scores["total"] = sum(scores[key] * weight_dict.get(key, 0) for key in scores.keys())
 
-            if scores["total"] > 91:
-                scores["grade"] = "S+"
-
-            elif scores["total"] > 84:
-                scores["grade"] = "S"
-
-            elif scores["total"] > 77:
-                scores["grade"] = "A+"
-
-            elif scores["total"] > 70:
-                scores["grade"] = "A"
-
-            elif scores["total"] > 63:
-                scores["grade"] = "B+"
-
-            elif scores["total"] > 56:
-                scores["grade"] = "B"
-
-            elif scores["total"] > 49:
-                scores["grade"] = "C+"
-
-            elif scores["total"] > 42:
-                scores["grade"] = "C"
-
-            elif scores["total"] > 35:
-                scores["grade"] = "D+"
-
-            elif scores["total"] > 28:
-                scores["grade"] = "D"
-
-            elif scores["total"] > 21:
-                scores["grade"] = "E+"
-
-            elif scores["total"] > 14:
-                scores["grade"] = "E"
-
-            else:
-                scores["grade"] = "F"
+            for boundary, grade in grade_boundaries:
+                if scores["total"] > boundary:
+                    scores["grade"] = grade
+                    break
 
             self.collection_refs["widgets"].document("repositories").collection(doc_name).document("health_score").set(
                 {"data": scores}
