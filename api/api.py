@@ -127,30 +127,14 @@ app.include_router(governance.router, prefix="/governance", tags=[tags_metadata[
 app.include_router(messari.router, prefix="/messari", tags=[tags_metadata[7]["name"]])
 app.include_router(misc.router, prefix="/misc", tags=[tags_metadata[8]["name"]])
 
-origins = [
-    "https://192.168.1.4:8000",
-    "https://localhost:3000",
-    "http://localhost:3000",
-    "http://localhost:3000/",
-    "https://192.168.1.4",
-    "http://localhost",
-    "http://localhost:8080",
-    "http://192.168.1.8:63157",
-    "http://192.168.1.8",
-    "https://flowana-dev.vercel.app"
-    "http://flowana-dev.vercel.app"
-    "http://www.flowana-dev.vercel.app"
-    "https://www.flowana-dev.vercel.app",
-]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 class AdminIn(BaseModel):
     admin_username: str = Field(..., description="The username of the admin.")
