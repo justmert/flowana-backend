@@ -580,7 +580,7 @@ class GithubWidgets:
             return
 
         # Generate dates for last 52 weeks
-        today_utc = datetime.utcnow() # Switch from datetime.now() to datetime.utcnow()
+        today_utc = datetime.utcnow()  # Switch from datetime.now() to datetime.utcnow()
         dates = [(today_utc - timedelta(weeks=i)).strftime("%Y-%m-%d") for i in range(52)][::-1]
 
         chart_data = {

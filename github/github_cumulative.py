@@ -194,8 +194,8 @@ class GithubCumulative:
             if not doc_val.exists:
                 continue
 
-            d2 = doc_val.to_dict().get("data", None)    
-            today_utc = datetime.datetime.utcnow() # Switch from datetime.now() to datetime.utcnow()
+            d2 = doc_val.to_dict().get("data", None)
+            today_utc = datetime.datetime.utcnow()  # Switch from datetime.now() to datetime.utcnow()
 
             if d2 is None:
                 continue
@@ -203,7 +203,10 @@ class GithubCumulative:
                 d1 = d2
             else:
                 d1 = {
-                    "xAxis": {"type": "category", "data": [(today_utc - timedelta(weeks=i)).strftime("%Y-%m-%d") for i in range(52)][::-1]},
+                    "xAxis": {
+                        "type": "category",
+                        "data": [(today_utc - timedelta(weeks=i)).strftime("%Y-%m-%d") for i in range(52)][::-1],
+                    },
                     "yAxis": {"type": "value"},
                     "series": [
                         {

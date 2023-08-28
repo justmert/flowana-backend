@@ -1,7 +1,7 @@
 import logging
 import os
 
-log_file = os.path.join(os.path.dirname(__file__), "flowana.log")
+log_file = os.path.join(os.path.dirname(__file__), "../flowana.log")
 
 logging.basicConfig(
     filename=log_file,
