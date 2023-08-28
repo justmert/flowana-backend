@@ -118,7 +118,7 @@ class Crawler:
                     "valid": False,
                     "categories.lvl0": [],
                     "url": f"https://github.com/{owner}/{repo_name}",
-                    "stars": 0,
+                    "stargazers_count": 0,
                 }
             else:
                 repo_metadata = {
@@ -127,7 +127,7 @@ class Crawler:
                     "description": data["description"],
                     "categories.lvl0": [] if data["topics"] is None else data["topics"],
                     "url": data["html_url"],
-                    "stars": data["stargazers_count"],
+                    "stargazers_count": data["stargazers_count"],
                     "avatar_url": data["owner"]["avatar_url"],
                     "created_at": data["created_at"],
                     "updated_at": data["updated_at"],
@@ -149,7 +149,7 @@ class Crawler:
 
             logger.info(f"[+] Added {owner}/{repo_name} to project metadata list.")
 
-        repo_metadata_list = sorted(repo_metadata_list, key=lambda x: x["stars"], reverse=True)
+        repo_metadata_list = sorted(repo_metadata_list, key=lambda x: x["stargazers_count"], reverse=True)
 
         for repo_metadata in repo_metadata_list:
             self.db.collection(f"{protocol_name}-projects").document(

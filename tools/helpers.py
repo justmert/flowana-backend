@@ -1,5 +1,6 @@
 from datetime import datetime
 from enum import Enum
+from datetime import timezone
 
 
 class PipelineType(str, Enum):
@@ -15,7 +16,7 @@ class PipelineType(str, Enum):
 
 def write_last_updated(collection_ref, pipeline_name, **kwargs):
     # datetime in rfc3339 format
-    rfc_format = datetime.now().isoformat() + "Z"
+    rfc_format = datetime.now(timezone.utc).isoformat() + "Z"
     collection_ref.document(pipeline_name).set({"data": rfc_format})
 
 

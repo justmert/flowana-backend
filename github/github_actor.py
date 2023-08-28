@@ -109,6 +109,8 @@ class GithubActor:
     def rate_limit_wait(self, rate_limit_reset):
         reset_time = int(rate_limit_reset)
         time_to_wait = reset_time - int(time.time())
+        if time_to_wait <= 0:
+            return
         logger.warning(f". [-] Waiting for {time_to_wait} seconds which is {round(time_to_wait / 60, 2)} minutes.")
         time.sleep(time_to_wait)
 
@@ -139,6 +141,10 @@ class GithubActor:
 
         elif response.status_code == 403:
             logger.warning(f". [-] The user has exceeded the rate limit and needs to wait before making more requests.")
+            # print rate limits
+            logger.info(f". [#] Rate limit: {response.headers['x-ratelimit-limit']}")
+            logger.info(f". [#] Remaining: {response.headers['x-ratelimit-remaining']}")
+            logger.info(f". [#] Reset time: {response.headers['x-ratelimit-reset']}")
             self.rate_limit_wait(response.headers["x-ratelimit-reset"])
             return self.check_repo_validity(owner, repo, try_val + 1)
 

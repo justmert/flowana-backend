@@ -26,7 +26,7 @@ router = APIRouter()
                                 "release_count": 17,
                                 "owner_login": "lensterxyz",
                                 "is_empty": False,
-                                "stargazer_count": 20884,
+                                "stargazers _count": 20884,
                                 "categories.lvl0": [
                                     "web3",
                                     "blockchain",

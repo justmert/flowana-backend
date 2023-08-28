@@ -118,7 +118,7 @@ class GithubWidgets:
                 else None
             )
             flattened_data["fork_count"] = repository["forkCount"]
-            flattened_data["stargazer_count"] = repository["stargazerCount"]
+            flattened_data["stargazers_count"] = repository["stargazerCount"]
             flattened_data["created_at"] = repository["createdAt"]
             flattened_data["updated_at"] = repository["updatedAt"]
             flattened_data["pull_request_count"] = repository["pullRequests"]["totalCount"]
@@ -580,8 +580,8 @@ class GithubWidgets:
             return
 
         # Generate dates for last 52 weeks
-        today = datetime.now()
-        dates = [(today - timedelta(weeks=i)).strftime("%Y-%m-%d") for i in range(52)][::-1]
+        today_utc = datetime.utcnow() # Switch from datetime.now() to datetime.utcnow()
+        dates = [(today_utc - timedelta(weeks=i)).strftime("%Y-%m-%d") for i in range(52)][::-1]
 
         chart_data = {
             "xAxis": {"type": "category", "data": dates},
@@ -1018,19 +1018,19 @@ class GithubWidgets:
         for interval in ["day", "week", "month", "year"]:
             flattened_data[interval] = []
             if interval == "day":
-                current_time = datetime.now()
+                current_time = datetime.now(timezone.utc)
                 since = current_time - timedelta(days=1)
 
             elif interval == "week":
-                current_time = datetime.now()
+                current_time = datetime.now(timezone.utc)
                 since = current_time - timedelta(days=7)
 
             elif interval == "month":
-                current_time = datetime.now()
+                current_time = datetime.now(timezone.utc)
                 since = current_time - timedelta(days=30)
 
             elif interval == "year":
-                current_time = datetime.now()
+                current_time = datetime.now(timezone.utc)
                 since = current_time - timedelta(days=365)
 
             query = """

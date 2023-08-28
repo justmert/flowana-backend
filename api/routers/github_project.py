@@ -51,7 +51,7 @@ router = APIRouter()
                         "description": "Lenster is a decentralized and permissionless social media app built with Lens Protocol 🌿",
                         "owner_login": "lensterxyz",
                         "primary_language_color": "#3178c6",
-                        "stargazer_count": 20601,
+                        "stargazers_count": 20601,
                         "environment_count": 8,
                         "primary_language_name": "TypeScript",
                         "url": "https://github.com/lensterxyz/lenster",
