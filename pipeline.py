@@ -195,10 +195,18 @@ class Pipeline:
             self.github_leaderboard.contributor_leaderboard,
         ]
 
-    def contruct_pipeline(self, protocol, collection_refs):
+    def construct_pipeline(self, protocol, collection_refs):
         self.protocol_name = protocol["name"]
         self.collection_refs = collection_refs
         self.repositories.clear()
+        self.project_pipeline_functions.clear()
+        self.protocol_discourse_functions.clear()
+        self.protocol_governance_functions.clear()
+        self.protocol_developers_functions.clear()
+        self.protocol_messari_functions.clear()
+        self.protocol_github_functions.clear()
+        self.protocol_leaderboard_functions.clear()
+
 
         self.build_github_pipeline()
 
@@ -221,13 +229,13 @@ class Pipeline:
         )
 
     def run_pipelines(self):
-        # self.run_protocol_pipeline(helpers.PipelineType.GOVERNANCE, self.protocol_governance_functions)
-        # self.run_protocol_pipeline(helpers.PipelineType.DISCOURSE, self.protocol_discourse_functions)
-        # self.run_protocol_pipeline(helpers.PipelineType.DEVELOPERS, self.protocol_developers_functions)
+        self.run_protocol_pipeline(helpers.PipelineType.GOVERNANCE, self.protocol_governance_functions)
+        self.run_protocol_pipeline(helpers.PipelineType.DISCOURSE, self.protocol_discourse_functions)
+        self.run_protocol_pipeline(helpers.PipelineType.DEVELOPERS, self.protocol_developers_functions)
         # self.run_protocol_pipeline(helpers.PipelineType.MESSARI, self.protocol_messari_functions) # will implement later
         self.run_project_pipeline(helpers.PipelineType.GITHUB_PROJECTS, self.project_pipeline_functions)
-        # self.run_protocol_pipeline(helpers.PipelineType.GITHUB_CUMULATIVE, self.protocol_github_functions)
-        # self.run_protocol_pipeline(helpers.PipelineType.GITHUB_LEADERBOARD, self.protocol_leaderboard_functions)
+        self.run_protocol_pipeline(helpers.PipelineType.GITHUB_CUMULATIVE, self.protocol_github_functions)
+        self.run_protocol_pipeline(helpers.PipelineType.GITHUB_LEADERBOARD, self.protocol_leaderboard_functions)
 
     def function_executer(self, f, *args, **kwargs):
         logging.info(f"[...] Running function: {f.__name__}")

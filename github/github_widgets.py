@@ -109,7 +109,7 @@ class GithubWidgets:
             logger.warning(
                 f"[-] {owner}/{repo} is not accessible. Will be added to project metadata list, but will not be included in statistics."
             )
-            flattened_data = {"owner": owner, "repo": repo, "is_closed": True, "valid": False, "categories.lvl0": []}
+            flattened_data = {"owner": owner, "repo": repo, "is_closed": True, "valid": False, "categories.lvl0": [], "stargazers_count": 0, "url": f"https://github.com/{owner}/{repo}"}
 
         else:
             flattened_data["default_branch_commit_count"] = (
@@ -521,13 +521,6 @@ class GithubWidgets:
         return 0
 
     def health_score(self, owner, repo, **kwargs):
-        """
-        commit_activity: A high score suggests frequent and recent commit activity. A low score may indicate infrequent or old commit activity.
-        issue_activity: A high score indicates efficient issue management, such as closing issues quickly and getting many comments. A low score may suggest poor issue handling.
-        pull_request_activity: A high score indicates effective pull request management, like quick closing times and receiving many comments. A low score suggests the opposite.
-        release_activity: A high score represents frequent and recent software releases. A low score may imply less frequent or outdated releases.
-        contribution_activity: A high score indicates a healthy number of contributors with healty commit trends. A low score may suggest a lack of contributors or unhealthy commit trends.
-        """
 
         raw_health_score = {
             "commit_activity": self._score_commit_activity(owner, repo, **kwargs),

@@ -60,29 +60,24 @@ class Flowana:
         self.crawler = Crawler(self.app, self.db, self.github_actor)
         self.pipeline = Pipeline(self.app, self.db, self.github_actor)
 
-        self.collection_refs = self.set_collection_refs()
+    def get_collection_refs(self, protocol_name):
+        collection_refs = {
+            "projects": self.db.collection(f"{protocol_name}-projects"),
+            "cumulative": self.db.collection(f"{protocol_name}-cumulative"),
+            "leaderboard": self.db.collection(f"{protocol_name}-leaderboard"),
+            "discourse": self.db.collection(f"{protocol_name}-discourse"),
+            "developers": self.db.collection(f"{protocol_name}-developers"),
+            "governance": self.db.collection(f"{protocol_name}-governance"),
+            "messari": self.db.collection(f"{protocol_name}-messari"),
+            "last_updated": self.db.collection(f"{protocol_name}-last-updated"),
+        }
 
-    def set_collection_refs(self):
-        for protocol in self.protocols:
-            protocol_name = protocol["name"]
-            collection_refs = {
-                "projects": self.db.collection(f"{protocol_name}-projects"),
-                "cumulative": self.db.collection(f"{protocol_name}-cumulative"),
-                "leaderboard": self.db.collection(f"{protocol_name}-leaderboard"),
-                "discourse": self.db.collection(f"{protocol_name}-discourse"),
-                "developers": self.db.collection(f"{protocol_name}-developers"),
-                "governance": self.db.collection(f"{protocol_name}-governance"),
-                "messari": self.db.collection(f"{protocol_name}-messari"),
-                "last_updated": self.db.collection(f"{protocol_name}-last-updated"),
-            }
+        if not self.db.collection(f"{protocol_name}-widgets").get():
+            self.db.collection(f"{protocol_name}-widgets").document("repositories").set({})
 
-            if not self.db.collection(f"{protocol_name}-widgets").get():
-                self.db.collection(f"{protocol_name}-widgets").document("repositories").set({})
-
-            # widgets (collection) -> repositories (doc) -> PROJECT_HASH (sub-collection) -> DATA_NAME (doc) -> 'data': data (field)
-            collection_refs["widgets"] = self.db.collection(f"{protocol_name}-widgets")
-            logger.info("[*] Collection references are created for protocol {}".format(protocol_name))
-
+        # widgets (collection) -> repositories (doc) -> PROJECT_HASH (sub-collection) -> DATA_NAME (doc) -> 'data': data (field)
+        collection_refs["widgets"] = self.db.collection(f"{protocol_name}-widgets")
+        logger.info("[*] Collection references are created for protocol {}".format(protocol_name))
         return collection_refs
 
     def time_until_next_run(self, job):
@@ -95,8 +90,8 @@ class Flowana:
 
     def schedule_tasks(self):
         # Start the jobs immediately upon initialization
-        self.crawl_all_protocols()
-        self.update_all_protocols()
+        self.crawl_all_protocols(is_first=True)
+        self.update_all_protocols(is_first=True)
 
         # Then schedule the jobs for subsequent runs
         # Schedule crawler to run every 4 weeks
@@ -137,20 +132,27 @@ class Flowana:
             schedule.run_pending()
             time.sleep(60)  # Sleep for a minute before checking again.
 
-    def crawl_all_protocols(self):
+    def crawl_all_protocols(self, is_first = False):
         logger.info("[*] Starting the crawling process for all protocols...")
         for protocol in self.protocols:
             if protocol["crawl"] == True:
                 protocol_name = protocol["name"]
+                if is_first and not protocol["crawler"]["index_now"]:
+                    logger.info(f"[!] Skipping protocol {protocol_name} because it is not set to index on startup.")
+                    continue
                 crawler_config = protocol["crawler"]
-                self.run_crawler(protocol_name, self.collection_refs, crawler_config)
+                self.run_crawler(protocol_name, self.get_collection_refs(protocol_name), crawler_config)
         logger.info("[*] Completed the crawling process for all protocols.")
 
-    def update_all_protocols(self):
+    def update_all_protocols(self, is_first = False):
         logger.info("[*] Starting the protocol update process for all protocols...")
         for protocol in self.protocols:
+            protocol_name = protocol["name"]
+            if is_first and not protocol["updater"]["index_now"]:
+                logger.info(f"[!] Skipping protocol {protocol_name} because it is not set to index on startup.")
+                continue
             if protocol["update"] == True:
-                self.run_protocol_update(protocol, self.collection_refs)
+                self.run_protocol_update(protocol, self.get_collection_refs(protocol_name))
         logger.info("[*] Completed the protocol update process for all protocols.")
 
     def run_crawler(self, protocol_name, collection_refs, crawler_config):
@@ -163,7 +165,7 @@ class Flowana:
         ascii_banner = pyfiglet.figlet_format(protocol_name, font="rectangles")
         print(ascii_banner)
 
-        self.pipeline.contruct_pipeline(protocol, collection_refs)
+        self.pipeline.construct_pipeline(protocol, collection_refs)
         self.pipeline.run_pipelines()
 
     def check_collection(self, collection_ref):

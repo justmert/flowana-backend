@@ -2,8 +2,12 @@
   {
     "name": "compound",
     "update": true,
+    "updater": {
+      "index_now": true
+    },
     "crawl": true,
     "crawler": {
+      "index_now": false,
       "include_sub_ecosystems": true,
       "tomls": ["compound.toml"]
     },
@@ -22,8 +26,12 @@
   {
     "name": "flow",
     "update": true,
+    "updater": {
+      "index_now": true
+    },
     "crawl": true,
     "crawler": {
+      "index_now": false,
       "include_sub_ecosystems": true,
       "tomls": ["flow.toml"]
     },
@@ -37,8 +45,12 @@
   {
     "name": "lens",
     "update": true,
+    "updater": {
+      "index_now": true
+    },
     "crawl": true,
     "crawler": {
+      "index_now": false,
       "include_sub_ecosystems": true,
       "tomls": ["lens-protocol.toml"]
     },
@@ -52,8 +64,12 @@
   {
     "name": "polkadot",
     "update": true,
+    "updater": {
+      "index_now": true
+    },
     "crawl": true,
     "crawler": {
+      "index_now": false,
       "include_sub_ecosystems": false,
       "tomls": ["polkadot.toml"]
     },

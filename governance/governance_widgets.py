@@ -123,7 +123,8 @@ class GovernanceWidgets:
                         {
                             "timestamp": change["timestamp"],
                             # rounding to 2 decimal places
-                            "balance": self._scale_down(change["newBalance"]),
+                            # "balance": self._scale_down(change["newBalance"]),
+                            "balance": change["newBalance"],
                         }
                     )
 
@@ -219,29 +220,29 @@ class GovernanceWidgets:
             flatted_delegates = []
 
             for delegate in delegates:
-                delegate["participation"]["stats"]["tokenBalance"] = self._scale_down(
-                    delegate["participation"]["stats"]["tokenBalance"]
-                )
+                # delegate["participation"]["stats"]["tokenBalance"] = self._scale_down(
+                #     delegate["participation"]["stats"]["tokenBalance"]
+                # )
 
-                delegate["participation"]["stats"]["weight"]["total"] = self._scale_down(
-                    delegate["participation"]["stats"]["weight"]["total"]
-                )
+                # delegate["participation"]["stats"]["weight"]["total"] = self._scale_down(
+                #     delegate["participation"]["stats"]["weight"]["total"]
+                # )
 
-                delegate["participation"]["stats"]["weight"]["owned"] = self._scale_down(
-                    delegate["participation"]["stats"]["weight"]["owned"]
-                )
+                # delegate["participation"]["stats"]["weight"]["owned"] = self._scale_down(
+                #     delegate["participation"]["stats"]["weight"]["owned"]
+                # )
 
-                delegate["participation"]["stats"]["votingPower"]["in"] = self._scale_down(
-                    delegate["participation"]["stats"]["votingPower"]["in"]
-                )
+                # delegate["participation"]["stats"]["votingPower"]["in"] = self._scale_down(
+                #     delegate["participation"]["stats"]["votingPower"]["in"]
+                # )
 
-                delegate["participation"]["stats"]["votingPower"]["net"] = self._scale_down(
-                    delegate["participation"]["stats"]["votingPower"]["net"]
-                )
+                # delegate["participation"]["stats"]["votingPower"]["net"] = self._scale_down(
+                #     delegate["participation"]["stats"]["votingPower"]["net"]
+                # )
 
-                delegate["participation"]["stats"]["votingPower"]["out"] = self._scale_down(
-                    delegate["participation"]["stats"]["votingPower"]["out"]
-                )
+                # delegate["participation"]["stats"]["votingPower"]["out"] = self._scale_down(
+                #     delegate["participation"]["stats"]["votingPower"]["out"]
+                # )
 
                 delegate["account"][
                     "tally_url"
@@ -370,11 +371,11 @@ class GovernanceWidgets:
 
             proposal["id"] = int(proposal["id"])
             proposal["tally_url"] = f"https://www.tally.xyz/gov/{self.slug}/proposal/{proposal['id']}"
-            for vote_stat in proposal["voteStats"]:
-                vote_stat["weight"] = self._scale_down(vote_stat["weight"])
+            # for vote_stat in proposal["voteStats"]:
+                # vote_stat["weight"] = self._scale_down(vote_stat["weight"])
 
             for vote in proposal["votes"]:
-                vote["weight"] = self._scale_down(vote["weight"])
+                # vote["weight"] = self._scale_down(vote["weight"])
                 vote[
                     "tally_url"
                 ] = f"https://www.tally.xyz/profile/{vote['voter']['address']}?governanceId={self.governance_id}"
@@ -464,20 +465,20 @@ class GovernanceWidgets:
 
         governance_info = result["data"]["governance"]
 
-        governance_info["proposalThreshold"] = self._scale_down(governance_info["proposalThreshold"])
+        # governance_info["proposalThreshold"] = self._scale_down(governance_info["proposalThreshold"])
 
         governance_info["contracts"]["timelock"] = {}
         governance_info["contracts"]["timelock"]["address"] = governance_info["timelockId"].split(":")[-1]
 
-        governance_info["stats"]["tokens"]["supply"] = self._scale_down(governance_info["stats"]["tokens"]["supply"])
+        # governance_info["stats"]["tokens"]["supply"] = self._scale_down(governance_info["stats"]["tokens"]["supply"])
 
-        governance_info["stats"]["tokens"]["delegatedVotingPower"] = self._scale_down(
-            governance_info["stats"]["tokens"]["delegatedVotingPower"]
-        )
+        # governance_info["stats"]["tokens"]["delegatedVotingPower"] = self._scale_down(
+        #     governance_info["stats"]["tokens"]["delegatedVotingPower"]
+        # )
 
-        governance_info["organization"]["votingParameters"]["quorum"] = self._scale_down(
-            governance_info["organization"]["votingParameters"]["quorum"]
-        )
+        # governance_info["organization"]["votingParameters"]["quorum"] = self._scale_down(
+        #     governance_info["organization"]["votingParameters"]["quorum"]
+        # )
 
         governance_info["organization"]["tally_url"] = f"https://www.tally.xyz/gov/{self.slug}"
 
