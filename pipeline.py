@@ -14,7 +14,7 @@ import traceback
 import tools.log_config as log_config
 import tools.helpers as helpers
 from enum import Enum
-
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -237,7 +237,7 @@ class Pipeline:
         self.run_protocol_pipeline(helpers.PipelineType.GITHUB_CUMULATIVE, self.protocol_github_functions)
         self.run_protocol_pipeline(helpers.PipelineType.GITHUB_LEADERBOARD, self.protocol_leaderboard_functions)
 
-    def function_executer(self, f, *args, **kwargs):
+    def function_executer(self, f, is_cumulative = False, *args, **kwargs):
         logging.info(f"[...] Running function: {f.__name__}")
         try:
             if len(args) and len(kwargs):
@@ -252,6 +252,11 @@ class Pipeline:
             else:
                 f()
 
+            # sleep for 3 hours after the function execution
+            if is_cumulative:
+                logging.info(f"[*] Sleeping for 3 hours after running function: {f.__name__}")
+                time.sleep(60 * 60 * 3)
+
         except Exception as e:
             logging.info(f"[#ERR] Error running function: {f.__name__} error: {e}")
             # log traceback
@@ -261,18 +266,22 @@ class Pipeline:
             logging.info(f"[*] Completed running function: {f.__name__}")
 
     def run_protocol_pipeline(self, pipeline_type, protocol_pipeline):
+        is_cumulative = False
+        if pipeline_type == helpers.PipelineType.GITHUB_CUMULATIVE:
+            is_cumulative = True
         for i, item in enumerate(protocol_pipeline):
             logger.info(f"[===] {self.protocol_name.upper()}/{pipeline_type} - [{i + 1}/{len(protocol_pipeline)}]")
             if isinstance(item, tuple) or isinstance(item, list):
                 if len(item) == 1:
-                    self.function_executer(item[0])
+                    self.function_executer(item[0], is_cumulative=is_cumulative)
                 else:
-                    self.function_executer(item[0], **item[1])
+                    self.function_executer(item[0], is_cumulative=is_cumulative, **item[1])
             else:
-                self.function_executer(item)
+                self.function_executer(item, is_cumulative=is_cumulative)
         helpers.write_last_updated(self.collection_refs["last_updated"], pipeline_type.value)
 
     def run_project_pipeline(self, pipeline_type, project_pipeline):
+        # sleep every two hours after processing 100 projects
         for i, repository in enumerate(self.repositories):
             if not repository:
                 continue
@@ -314,5 +323,10 @@ class Pipeline:
                     self.function_executer(item, repository["owner"], repository["repo"])
 
             logger.info(f'Finished running pipeline for repository {repository["owner"]}/{repository["repo"]}')
+
+            # sleep every two hours after processing 100 projects
+            if i % 100 == 0 and i != 0:
+                logger.info(f"[*] Sleeping for 2 hour after processing 100 projects.")
+                time.sleep(60 * 60 * 2)
 
         helpers.write_last_updated(self.collection_refs["last_updated"], pipeline_type.value)

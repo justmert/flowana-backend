@@ -3,7 +3,7 @@
     "name": "compound",
     "update": true,
     "updater": {
-      "index_now": true
+      "index_now": false
     },
     "crawl": true,
     "crawler": {
