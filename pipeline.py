@@ -237,7 +237,7 @@ class Pipeline:
         self.run_protocol_pipeline(helpers.PipelineType.GITHUB_CUMULATIVE, self.protocol_github_functions)
         self.run_protocol_pipeline(helpers.PipelineType.GITHUB_LEADERBOARD, self.protocol_leaderboard_functions)
 
-    def function_executer(self, f, is_cumulative = False, *args, **kwargs):
+    def function_executer(self, f, *args, **kwargs):
         logging.info(f"[...] Running function: {f.__name__}")
         try:
             if len(args) and len(kwargs):
