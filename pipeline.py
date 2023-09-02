@@ -252,11 +252,6 @@ class Pipeline:
             else:
                 f()
 
-            # sleep for 3 hours after the function execution
-            if is_cumulative:
-                logging.info(f"[*] Sleeping for 3 hours after running function: {f.__name__}")
-                time.sleep(60 * 60 * 3)
-
         except Exception as e:
             logging.info(f"[#ERR] Error running function: {f.__name__} error: {e}")
             # log traceback
@@ -278,6 +273,12 @@ class Pipeline:
                     self.function_executer(item[0], is_cumulative=is_cumulative, **item[1])
             else:
                 self.function_executer(item, is_cumulative=is_cumulative)
+
+            # sleep for 3 hours after the function execution
+            if is_cumulative:
+                logging.info(f"[*] Sleeping for 2 hours after running function: {f.__name__}")
+                time.sleep(60 * 60 * 2)
+
         helpers.write_last_updated(self.collection_refs["last_updated"], pipeline_type.value)
 
     def run_project_pipeline(self, pipeline_type, project_pipeline):
@@ -326,7 +327,7 @@ class Pipeline:
 
             # sleep every two hours after processing 100 projects
             if i % 100 == 0 and i != 0:
-                logger.info(f"[*] Sleeping for 2 hour after processing 100 projects.")
-                time.sleep(60 * 60 * 2)
+                logger.info(f"[*] Sleeping for 1 hour after processing 100 projects.")
+                time.sleep(60 * 60 * 1)
 
         helpers.write_last_updated(self.collection_refs["last_updated"], pipeline_type.value)
