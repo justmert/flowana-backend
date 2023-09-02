@@ -1,26 +1,22 @@
 [
+
   {
-    "name": "compound",
+    "name": "lens",
     "update": true,
     "updater": {
-      "index_now": false
+      "index_now": true
     },
     "crawl": true,
     "crawler": {
       "index_now": false,
       "include_sub_ecosystems": true,
-      "tomls": ["compound.toml"]
+      "tomls": ["lens-protocol.toml"]
     },
-    "forum": "https://www.comp.xyz/",
-    "developers": "compound",
-    "governance": {
-      "slug": "compound",
-      "organization_id": 1,
-      "chain_id": "eip155:1",
-      "governance_id": "eip155:1:0xc0Da02939E1441F497fd74F78cE7Decb17B66529"
-    },
+    "forum": null,
+    "developers": null,
+    "governance": null,
     "messari": {
-      "asset_key": "comp"
+      "asset_key": "lens-protocol"
     }
   },
   {
@@ -43,7 +39,7 @@
     }
   },
   {
-    "name": "lens",
+    "name": "compound",
     "update": true,
     "updater": {
       "index_now": true
@@ -52,13 +48,18 @@
     "crawler": {
       "index_now": false,
       "include_sub_ecosystems": true,
-      "tomls": ["lens-protocol.toml"]
+      "tomls": ["compound.toml"]
     },
-    "forum": null,
-    "developers": null,
-    "governance": null,
+    "forum": "https://www.comp.xyz/",
+    "developers": "compound",
+    "governance": {
+      "slug": "compound",
+      "organization_id": 1,
+      "chain_id": "eip155:1",
+      "governance_id": "eip155:1:0xc0Da02939E1441F497fd74F78cE7Decb17B66529"
+    },
     "messari": {
-      "asset_key": "lens-protocol"
+      "asset_key": "comp"
     }
   },
   {

@@ -256,6 +256,7 @@ class Pipeline:
             logging.info(f"[#ERR] Error running function: {f.__name__} error: {e}")
             # log traceback
             logging.error(traceback.format_exc())
+            return
 
         else:
             logging.info(f"[*] Completed running function: {f.__name__}")
