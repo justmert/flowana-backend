@@ -568,7 +568,7 @@ class GithubWidgets:
         # formatting will be in here
         data = self.actor.github_rest_make_request(f"/repos/{owner}/{repo}/stats/participation")
 
-        if not self.is_valid(data) or not any(data["all"]):
+        if not self.is_valid(data) or not sum(data["all"]) > 0:
             logger.warning("[!] Invalid or empty data returned")
             return
 
