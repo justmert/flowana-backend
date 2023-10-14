@@ -1,10 +1,9 @@
 [
-
   {
     "name": "lens",
     "update": true,
     "updater": {
-      "index_now": true
+      "index_now": false
     },
     "crawl": true,
     "crawler": {
@@ -23,7 +22,7 @@
     "name": "flow",
     "update": true,
     "updater": {
-      "index_now": true
+      "index_now": false
     },
     "crawl": true,
     "crawler": {
@@ -42,7 +41,7 @@
     "name": "compound",
     "update": true,
     "updater": {
-      "index_now": true
+      "index_now": false
     },
     "crawl": true,
     "crawler": {
@@ -66,7 +65,7 @@
     "name": "polkadot",
     "update": true,
     "updater": {
-      "index_now": true
+      "index_now": false
     },
     "crawl": true,
     "crawler": {
@@ -74,12 +73,176 @@
       "include_sub_ecosystems": false,
       "tomls": ["polkadot.toml"]
     },
-    "crawler_tomls": ["polkadot"],
     "forum": "https://forum.polkadot.network/",
     "developers": "polkadot",
     "governance": null,
     "messari": {
       "asset_key": "dot"
+    }
+  },
+
+  {
+    "name": "balancer",
+    "update": true,
+    "updater": {
+      "index_now": true
+    },
+    "crawl": true,
+    "crawler": {
+      "index_now": true,
+      "include_sub_ecosystems": true,
+      "tomls": ["balancer.toml"]
+    },
+    "forum": "https://forum.balancer.fi/",
+    "developers": "balancer",
+    "governance": null,
+    "messari": {
+      "asset_key": "balancer"
+    }
+  },
+
+  {
+    "name": "aave",
+    "update": true,
+    "updater": {
+      "index_now": true
+    },
+    "crawl": true,
+    "crawler": {
+      "index_now": true,
+      "include_sub_ecosystems": true,
+      "tomls": ["aave.toml"]
+    },
+    "forum": "https://governance.aave.com/",
+    "developers": "aave",
+    "governance": {
+      "slug": "aave",
+      "organization_id": "401751fa-de17-4a56-9e37-63e0d9dc12da",
+      "chain_id": "eip155:1",
+      "governance_id": "eip155:1:0xEC568fffba86c094cf06b22134B23074DFE2252c"
+    },
+    "messari": {
+      "asset_key": "aave"
+    }
+  },
+
+  {
+    "name": "proton",
+    "update": true,
+    "updater": {
+      "index_now": true
+    },
+    "crawl": true,
+    "crawler": {
+      "index_now": true,
+      "include_sub_ecosystems": true,
+      "tomls": ["proton.toml"]
+    },
+    "forum": null,
+    "developers": null,
+    "governance": null,
+    "messari": {
+      "asset_key": "proton"
+    }
+  },
+
+  {
+    "name": "osmosis",
+    "update": true,
+    "updater": {
+      "index_now": true
+    },
+    "crawl": true,
+    "crawler": {
+      "index_now": true,
+      "include_sub_ecosystems": true,
+      "tomls": ["osmosis.toml"]
+    },
+    "forum": null,
+    "developers": "osmosis",
+    "governance": null,
+    "messari": {
+      "asset_key": "osmosis"
+    }
+  },
+
+  {
+    "name": "the-graph",
+    "update": true,
+    "updater": {
+      "index_now": true
+    },
+    "crawl": true,
+    "crawler": {
+      "index_now": true,
+      "include_sub_ecosystems": true,
+      "tomls": ["the-graph.toml"]
+    },
+    "forum": "https://forum.thegraph.com/",
+    "developers": "the-graph",
+    "governance": null,
+    "messari": {
+      "asset_key": "the-graph"
+    }
+  },
+
+  {
+    "name": "ton",
+    "update": true,
+    "updater": {
+      "index_now": true
+    },
+    "crawl": true,
+    "crawler": {
+      "index_now": true,
+      "include_sub_ecosystems": true,
+      "tomls": ["ton.toml"]
+    },
+    "forum": null,
+    "developers": "ton",
+    "governance": null,
+    "messari": {
+      "asset_key": "the-open-network"
+    }
+  },
+
+  {
+    "name": "ocean",
+    "update": true,
+    "updater": {
+      "index_now": true
+    },
+    "crawl": true,
+    "crawler": {
+      "index_now": true,
+      "include_sub_ecosystems": true,
+      "tomls": ["ocean-protocol.toml"]
+    },
+    "forum": null,
+    "developers": null,
+    "governance": null,
+    "messari": {
+      "asset_key": "ocean-protocol"
+    }
+  },
+
+  {
+    "name": "eos",
+    "update": true,
+    "updater": {
+      "index_now": true
+    },
+    "crawl": true,
+    "crawler": {
+      "index_now": true,
+      "include_sub_ecosystems": true,
+      "tomls": ["eos.toml"]
+    },
+    "forum": "https://forums.eoscommunity.org/",
+    "developers": "eos",
+    "governance": null,
+    "messari": {
+      "asset_key": "eos"
     }
   }
 ]

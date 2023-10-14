@@ -99,7 +99,7 @@ class Flowana:
         logger.info("[*] Crawler scheduled to run every 4 weeks.")
 
         # Schedule protocol update to run every week
-        schedule.every(1).weeks.do(self.update_all_protocols).tag("update_all_protocols")
+        schedule.every(4).days.do(self.update_all_protocols).tag("update_all_protocols")
         logger.info("[*] Protocol update scheduled to run every week.")
 
         while True:
