@@ -89,7 +89,7 @@
     },
     "crawl": true,
     "crawler": {
-      "index_now": true,
+      "index_now": false,
       "include_sub_ecosystems": true,
       "tomls": ["balancer.toml"]
     },
@@ -109,7 +109,7 @@
     },
     "crawl": true,
     "crawler": {
-      "index_now": true,
+      "index_now": false,
       "include_sub_ecosystems": true,
       "tomls": ["aave.toml"]
     },
@@ -134,7 +134,7 @@
     },
     "crawl": true,
     "crawler": {
-      "index_now": true,
+      "index_now": false,
       "include_sub_ecosystems": true,
       "tomls": ["proton.toml"]
     },
@@ -154,7 +154,7 @@
     },
     "crawl": true,
     "crawler": {
-      "index_now": true,
+      "index_now": false,
       "include_sub_ecosystems": true,
       "tomls": ["osmosis.toml"]
     },
@@ -174,7 +174,7 @@
     },
     "crawl": true,
     "crawler": {
-      "index_now": true,
+      "index_now": false,
       "include_sub_ecosystems": true,
       "tomls": ["the-graph.toml"]
     },
@@ -194,7 +194,7 @@
     },
     "crawl": true,
     "crawler": {
-      "index_now": true,
+      "index_now": false,
       "include_sub_ecosystems": true,
       "tomls": ["ton.toml"]
     },
@@ -214,7 +214,7 @@
     },
     "crawl": true,
     "crawler": {
-      "index_now": true,
+      "index_now": false,
       "include_sub_ecosystems": true,
       "tomls": ["ocean-protocol.toml"]
     },
@@ -228,13 +228,13 @@
 
   {
     "name": "eos",
-    "update": true,
+    "update": false,
     "updater": {
-      "index_now": true
+      "index_now": false
     },
-    "crawl": true,
+    "crawl": false,
     "crawler": {
-      "index_now": true,
+      "index_now": false,
       "include_sub_ecosystems": true,
       "tomls": ["eos.toml"]
     },
