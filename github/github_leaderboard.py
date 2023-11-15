@@ -1,9 +1,7 @@
 from .github_actor import GithubActor
 import logging
-import tools.log_config as log_config
 
 logger = logging.getLogger(__name__)
-import datetime
 
 
 class GithubLeaderboard:
@@ -29,8 +27,16 @@ class GithubLeaderboard:
         repo_doc = self.collection_refs["widgets"].document("repositories")
         for subcollection in repo_doc.collections():
             try:
-                health_score_doc = subcollection.document("health_score").get(field_paths=["data"]).to_dict()
-                repository_info_doc = subcollection.document("repository_info").get(field_paths=["data"]).to_dict()
+                health_score_doc = (
+                    subcollection.document("health_score")
+                    .get(field_paths=["data"])
+                    .to_dict()
+                )
+                repository_info_doc = (
+                    subcollection.document("repository_info")
+                    .get(field_paths=["data"])
+                    .to_dict()
+                )
 
                 if not health_score_doc or not repository_info_doc:
                     continue
@@ -53,9 +59,13 @@ class GithubLeaderboard:
                 }
             )
 
-        reference_list = sorted(reference_list, key=lambda k: k["health_score"]["total"], reverse=True)[:20]
+        reference_list = sorted(
+            reference_list, key=lambda k: k["health_score"]["total"], reverse=True
+        )[:20]
 
-        self.collection_refs["leaderboard"].document("project_leaderboard").set({"data": reference_list})
+        self.collection_refs["leaderboard"].document("project_leaderboard").set(
+            {"data": reference_list}
+        )
 
     def contributor_leaderboard(self, **kwargs):
         # Initialize a dictionary to store total commits per contributor
@@ -79,22 +89,28 @@ class GithubLeaderboard:
             # Iterate over each contributor and add their total to the dictionary
             for contributor in project_contributor_data:
                 if contributor["author"]["login"] in total_contributors:
-                    contribution_does_exist = total_contributors[contributor["author"]["login"]]["contributions"].get(
-                        subcollection.id
-                    )
+                    contribution_does_exist = total_contributors[
+                        contributor["author"]["login"]
+                    ]["contributions"].get(subcollection.id)
                     if contribution_does_exist:
-                        total_contributors[contributor["author"]["login"]]["contributions"][subcollection.id][
-                            "commits"
+                        total_contributors[contributor["author"]["login"]][
+                            "contributions"
+                        ][subcollection.id]["commits"] += contributor["total"]
+                        total_contributors[contributor["author"]["login"]][
+                            "total_commits"
                         ] += contributor["total"]
-                        total_contributors[contributor["author"]["login"]]["total_commits"] += contributor["total"]
                     else:
-                        total_contributors[contributor["author"]["login"]]["contributions"][subcollection.id] = {
+                        total_contributors[contributor["author"]["login"]][
+                            "contributions"
+                        ][subcollection.id] = {
                             "owner": owner,
                             "repo": repo,
                             "html_url": f"https://github.com/{owner}/{repo}",
                             "commits": contributor["total"],
                         }
-                        total_contributors[contributor["author"]["login"]]["total_commits"] += contributor["total"]
+                        total_contributors[contributor["author"]["login"]][
+                            "total_commits"
+                        ] += contributor["total"]
 
                 else:
                     total_contributors[contributor["author"]["login"]] = {
@@ -115,9 +131,19 @@ class GithubLeaderboard:
                     }
 
         # Sort the contributors by total commits and take the top 15
-        leaderboard = sorted(total_contributors.values(), key=lambda x: x["total_commits"], reverse=True)[:20]
+        leaderboard = sorted(
+            (
+                contributor
+                for contributor in total_contributors.values()
+                if "[bot]" not in contributor["author"]["login"]
+            ),
+            key=lambda x: x["total_commits"],
+            reverse=True,
+        )[:20]
 
-        self.collection_refs["leaderboard"].document("contributor_leaderboard").set({"data": leaderboard})
+        self.collection_refs["leaderboard"].document("contributor_leaderboard").set(
+            {"data": leaderboard}
+        )
 
         # Return the leaderboard
         return leaderboard

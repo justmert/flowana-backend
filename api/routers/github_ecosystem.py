@@ -43,7 +43,9 @@ router = APIRouter()
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -58,7 +60,7 @@ def stats(
     try:
         ref = (
             db.collection(f"{protocol_name}-cumulative")
-            .document(f"cumulative_info")
+            .document("cumulative_info")
             .get(field_paths=["data"])
             .to_dict()
         )
@@ -106,7 +108,9 @@ def stats(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -121,7 +125,7 @@ def commit_activity(
     try:
         ref = (
             db.collection(f"{protocol_name}-cumulative")
-            .document(f"cumulative_commit_activity")
+            .document("cumulative_commit_activity")
             .get(field_paths=["data"])
             .to_dict()
         )
@@ -185,7 +189,9 @@ def commit_activity(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -200,7 +206,7 @@ def participation(
     try:
         ref = (
             db.collection(f"{protocol_name}-cumulative")
-            .document(f"cumulative_participation")
+            .document("cumulative_participation")
             .get(field_paths=["data"])
             .to_dict()
         )
@@ -264,7 +270,9 @@ def participation(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -279,7 +287,7 @@ def code_frequency(
     try:
         ref = (
             db.collection(f"{protocol_name}-cumulative")
-            .document(f"cumulative_code_frequency")
+            .document("cumulative_code_frequency")
             .get(field_paths=["data"])
             .to_dict()
         )
@@ -324,7 +332,9 @@ def code_frequency(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -339,7 +349,7 @@ def punch_card(
     try:
         ref = (
             db.collection(f"{protocol_name}-cumulative")
-            .document(f"cumulative_punch_card")
+            .document("cumulative_punch_card")
             .get(field_paths=["data"])
             .to_dict()
         )
@@ -369,7 +379,13 @@ def punch_card(
     responses={
         200: {
             "description": "Cumulative Language Breakdown",
-            "content": {"application/json": {"example": [{"name": "JavaScript", "percentage": 100, "size": 55852}]}},
+            "content": {
+                "application/json": {
+                    "example": [
+                        {"name": "JavaScript", "percentage": 100, "size": 55852}
+                    ]
+                }
+            },
         },
         204: {
             "description": "No content found.",
@@ -377,7 +393,9 @@ def punch_card(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -392,7 +410,7 @@ def language_breakdown(
     try:
         ref = (
             db.collection(f"{protocol_name}-cumulative")
-            .document(f"cumulative_language_breakdown")
+            .document("cumulative_language_breakdown")
             .get(field_paths=["data"])
             .to_dict()
         )
@@ -430,7 +448,9 @@ def language_breakdown(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -445,7 +465,7 @@ def issue_count(
     try:
         ref = (
             db.collection(f"{protocol_name}-cumulative")
-            .document(f"cumulative_issue_count")
+            .document("cumulative_issue_count")
             .get(field_paths=["data"])
             .to_dict()
         )
@@ -509,7 +529,9 @@ class CumulativeMostActiveIssuesInterval(str, Enum):
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -530,7 +552,7 @@ def most_active_issues(
     try:
         ref = (
             db.collection(f"{protocol_name}-cumulative")
-            .document(f"cumulative_most_active_issues")
+            .document("cumulative_most_active_issues")
             .get(field_paths=["data"])
             .to_dict()
         )
@@ -572,7 +594,9 @@ def most_active_issues(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -587,7 +611,7 @@ def pull_request_count(
     try:
         ref = (
             db.collection(f"{protocol_name}-cumulative")
-            .document(f"cumulative_pull_request_count")
+            .document("cumulative_pull_request_count")
             .get(field_paths=["data"])
             .to_dict()
         )
@@ -647,7 +671,9 @@ class CumulativeRecentIssuesOrder(str, Enum):
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -667,7 +693,7 @@ def recent_issues(
         field_name = "recent_created_issues"
 
     elif order_by == RecentIssuesOrder.updated_at:
-        field_name = f"recent_updated_issues"
+        field_name = "recent_updated_issues"
 
     try:
         ref = (
@@ -727,7 +753,9 @@ def recent_issues(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -747,7 +775,7 @@ def recent_pull_requests(
         field_name = "recent_created_pull_requests"
 
     elif order_by == RecentIssuesOrder.updated_at:
-        field_name = f"recent_updated_pull_requests"
+        field_name = "recent_updated_pull_requests"
 
     try:
         ref = (
@@ -804,7 +832,9 @@ def recent_pull_requests(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -819,7 +849,7 @@ def recent_commits(
     try:
         ref = (
             db.collection(f"{protocol_name}-cumulative")
-            .document(f"cumulative_recent_commits")
+            .document("cumulative_recent_commits")
             .get(field_paths=["data"])
             .to_dict()
         )
@@ -870,7 +900,9 @@ def recent_commits(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -885,7 +917,7 @@ def recent_releases(
     try:
         ref = (
             db.collection(f"{protocol_name}-cumulative")
-            .document(f"cumulative_recent_releases")
+            .document("cumulative_recent_releases")
             .get(field_paths=["data"])
             .to_dict()
         )

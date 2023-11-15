@@ -1,8 +1,6 @@
 import logging
 from enum import Enum
 from .governance_actor import GovernanceActor
-import tools.log_config as log_config
-import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +85,9 @@ class GovernanceWidgets:
                 "weightChangesPagination": {"limit": 1000, "offset": 0},
             }
 
-            result = self.actor.governance_graphql_make_query(query, variables=variables)
+            result = self.actor.governance_graphql_make_query(
+                query, variables=variables
+            )
 
             if not self.is_valid(result):
                 logger.warning("[!] Invalid or empty data returned")
@@ -133,9 +133,9 @@ class GovernanceWidgets:
 
             # all_intervals[interval.value] = chart_data
 
-            self.collection_refs["governance"].document(f"voting_power_chart_{interval.value.lower()}").set(
-                {"data": chart_data}
-            )
+            self.collection_refs["governance"].document(
+                f"voting_power_chart_{interval.value.lower()}"
+            ).set({"data": chart_data})
 
     class DelegateSortField(Enum):
         CREATED = "CREATED"
@@ -209,13 +209,21 @@ class GovernanceWidgets:
                 "sort": {"field": order_by.value, "order": "DESC"},
             }
 
-            result = self.actor.governance_graphql_make_query(query, variables=variables)
+            result = self.actor.governance_graphql_make_query(
+                query, variables=variables
+            )
 
             if not self.is_valid(result):
                 logger.warning("[!] Invalid or empty data returned")
                 continue
 
-            delegates = result["data"]["governance"]["delegates"]
+            delegates = result["data"]
+            delegates = delegates.get("governance", None)
+            if delegates is None:
+                continue
+            delegates = delegates.get("delegates", None)
+            if delegates is None:
+                continue
 
             flatted_delegates = []
 
@@ -250,9 +258,9 @@ class GovernanceWidgets:
 
                 flatted_delegates.append(delegate)
 
-            self.collection_refs["governance"].document(f"delegates_{order_by.value.lower()}").set(
-                {"data": flatted_delegates}
-            )
+            self.collection_refs["governance"].document(
+                f"delegates_{order_by.value.lower()}"
+            ).set({"data": flatted_delegates})
 
     def proposals(self, **kwargs):
         query = """
@@ -370,9 +378,11 @@ class GovernanceWidgets:
             # scale down all values
 
             proposal["id"] = int(proposal["id"])
-            proposal["tally_url"] = f"https://www.tally.xyz/gov/{self.slug}/proposal/{proposal['id']}"
+            proposal[
+                "tally_url"
+            ] = f"https://www.tally.xyz/gov/{self.slug}/proposal/{proposal['id']}"
             # for vote_stat in proposal["voteStats"]:
-                # vote_stat["weight"] = self._scale_down(vote_stat["weight"])
+            # vote_stat["weight"] = self._scale_down(vote_stat["weight"])
 
             for vote in proposal["votes"]:
                 # vote["weight"] = self._scale_down(vote["weight"])
@@ -386,7 +396,9 @@ class GovernanceWidgets:
 
             flattened_proposals.append(proposal)
 
-        self.collection_refs["governance"].document("proposals").set({"data": flattened_proposals})
+        self.collection_refs["governance"].document("proposals").set(
+            {"data": flattened_proposals}
+        )
 
     def governance_info(self, **kwargs):
         query = """
@@ -467,22 +479,29 @@ class GovernanceWidgets:
 
         # governance_info["proposalThreshold"] = self._scale_down(governance_info["proposalThreshold"])
 
-        governance_info["contracts"]["timelock"] = {}
-        governance_info["contracts"]["timelock"]["address"] = governance_info["timelockId"].split(":")[-1]
+        if (
+            governance_info
+            and governance_info.get("organization", None) is not None
+            and governance_info.get("contracts", None) is not None
+            and governance_info.get("timelockId", None) is not None
+        ):
+            try:
+                governance_info["contracts"]["timelock"] = {}
+                governance_info["contracts"]["timelock"]["address"] = governance_info[
+                    "timelockId"
+                ].split(":")[-1]
+                governance_info["organization"][
+                    "tally_url"
+                ] = f"https://www.tally.xyz/gov/{self.slug}"
+            except:
+                self.collection_refs["governance"].document("governance_info").set(
+                    {"data": None}
+                )
+                return
 
-        # governance_info["stats"]["tokens"]["supply"] = self._scale_down(governance_info["stats"]["tokens"]["supply"])
-
-        # governance_info["stats"]["tokens"]["delegatedVotingPower"] = self._scale_down(
-        #     governance_info["stats"]["tokens"]["delegatedVotingPower"]
-        # )
-
-        # governance_info["organization"]["votingParameters"]["quorum"] = self._scale_down(
-        #     governance_info["organization"]["votingParameters"]["quorum"]
-        # )
-
-        governance_info["organization"]["tally_url"] = f"https://www.tally.xyz/gov/{self.slug}"
-
-        self.collection_refs["governance"].document("governance_info").set({"data": governance_info})
+        self.collection_refs["governance"].document("governance_info").set(
+            {"data": governance_info}
+        )
 
     def safes(self, **kwargs):
         data = self.actor.governance_rest_make_request(

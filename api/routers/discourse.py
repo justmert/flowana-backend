@@ -50,7 +50,9 @@ class TopicActivityInterval(str, Enum):
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -65,7 +67,10 @@ def discourse_topic_activity(
 
     try:
         ref = (
-            db.collection(f"{protocol_name}-discourse").document(f"topic_activity").get(field_paths=["data"]).to_dict()
+            db.collection(f"{protocol_name}-discourse")
+            .document("topic_activity")
+            .get(field_paths=["data"])
+            .to_dict()
         )
 
         if ref is None:
@@ -152,7 +157,9 @@ def discourse_topic_activity(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -165,7 +172,12 @@ def discourse_topic_metrics(
     """
 
     try:
-        ref = db.collection(f"{protocol_name}-discourse").document(f"topic_metrics").get(field_paths=["data"]).to_dict()
+        ref = (
+            db.collection(f"{protocol_name}-discourse")
+            .document("topic_metrics")
+            .get(field_paths=["data"])
+            .to_dict()
+        )
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -220,7 +232,9 @@ def discourse_topic_metrics(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -233,7 +247,12 @@ def discourse_user_metrics(
     """
 
     try:
-        ref = db.collection(f"{protocol_name}-discourse").document(f"user_metrics").get(field_paths=["data"]).to_dict()
+        ref = (
+            db.collection(f"{protocol_name}-discourse")
+            .document("user_metrics")
+            .get(field_paths=["data"])
+            .to_dict()
+        )
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -291,7 +310,9 @@ def discourse_user_metrics(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -304,7 +325,12 @@ def discourse_categories(
     """
 
     try:
-        ref = db.collection(f"{protocol_name}-discourse").document(f"categories").get(field_paths=["data"]).to_dict()
+        ref = (
+            db.collection(f"{protocol_name}-discourse")
+            .document("categories")
+            .get(field_paths=["data"])
+            .to_dict()
+        )
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -351,7 +377,9 @@ def discourse_categories(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -364,7 +392,12 @@ def discourse_tags(
     """
 
     try:
-        ref = db.collection(f"{protocol_name}-discourse").document(f"tags").get(field_paths=["data"]).to_dict()
+        ref = (
+            db.collection(f"{protocol_name}-discourse")
+            .document("tags")
+            .get(field_paths=["data"])
+            .to_dict()
+        )
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -426,7 +459,9 @@ class DiscourseTopTopicsInterval(str, Enum):
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -440,7 +475,12 @@ def discourse_top_topics(
     """
 
     try:
-        ref = db.collection(f"{protocol_name}-discourse").document(f"top_topics").get(field_paths=["data"]).to_dict()
+        ref = (
+            db.collection(f"{protocol_name}-discourse")
+            .document("top_topics")
+            .get(field_paths=["data"])
+            .to_dict()
+        )
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -525,7 +565,9 @@ class LatestTopicsOrder(str, Enum):
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -539,7 +581,12 @@ def discourse_latest_topics(
     """
 
     try:
-        ref = db.collection(f"{protocol_name}-discourse").document(f"latest_topics").get(field_paths=["data"]).to_dict()
+        ref = (
+            db.collection(f"{protocol_name}-discourse")
+            .document("latest_topics")
+            .get(field_paths=["data"])
+            .to_dict()
+        )
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -622,7 +669,9 @@ def discourse_latest_topics(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -635,7 +684,12 @@ def discourse_latest_posts(
     """
 
     try:
-        ref = db.collection(f"{protocol_name}-discourse").document(f"latest_posts").get(field_paths=["data"]).to_dict()
+        ref = (
+            db.collection(f"{protocol_name}-discourse")
+            .document("latest_posts")
+            .get(field_paths=["data"])
+            .to_dict()
+        )
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -708,7 +762,9 @@ class TopUsersOrder(str, Enum):
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -725,7 +781,12 @@ def discourse_top_users(
     """
 
     try:
-        ref = db.collection(f"{protocol_name}-discourse").document(f"top_users").get(field_paths=["data"]).to_dict()
+        ref = (
+            db.collection(f"{protocol_name}-discourse")
+            .document("top_users")
+            .get(field_paths=["data"])
+            .to_dict()
+        )
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")

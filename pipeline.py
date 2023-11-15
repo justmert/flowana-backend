@@ -88,7 +88,8 @@ class Pipeline:
             asset_key = protocol["messari"].get("asset_key", None)
 
             if asset_key is None:
-                raise ValueError(f"Messari configuration for protocol {self.protocol_name} is missing asset.")
+                logger.warning(f"Messari configuration for protocol {self.protocol_name} is missing asset.")
+                return
 
             self.messari_actor = MessariActor()
             self.messari_widgets = MessariWidgets(self.messari_actor, self.collection_refs, asset_key)
@@ -207,7 +208,6 @@ class Pipeline:
         self.protocol_github_functions.clear()
         self.protocol_leaderboard_functions.clear()
 
-
         self.build_github_pipeline()
 
         self.build_discourse_pipeline(protocol)
@@ -317,6 +317,7 @@ class Pipeline:
                 )
                 if isinstance(item, tuple) or isinstance(item, list):
                     if len(item) == 1:
+                        func = item[0]
                         self.function_executer(func, repository["owner"], repository["repo"])
                     else:
                         func, args = item

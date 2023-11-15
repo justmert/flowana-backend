@@ -54,7 +54,9 @@ class Flowana:
         with open("protocols.json") as f:
             self.protocols = json.load(f)
 
-        logger.info("[*] Loaded protocols. There are {} protocols.".format(len(self.protocols)))
+        logger.info(
+            "[*] Loaded protocols. There are {} protocols.".format(len(self.protocols))
+        )
 
         self.github_actor = GithubActor()
         self.crawler = Crawler(self.app, self.db, self.github_actor)
@@ -73,11 +75,17 @@ class Flowana:
         }
 
         if not self.db.collection(f"{protocol_name}-widgets").get():
-            self.db.collection(f"{protocol_name}-widgets").document("repositories").set({})
+            self.db.collection(f"{protocol_name}-widgets").document("repositories").set(
+                {}
+            )
 
         # widgets (collection) -> repositories (doc) -> PROJECT_HASH (sub-collection) -> DATA_NAME (doc) -> 'data': data (field)
         collection_refs["widgets"] = self.db.collection(f"{protocol_name}-widgets")
-        logger.info("[*] Collection references are created for protocol {}".format(protocol_name))
+        logger.info(
+            "[*] Collection references are created for protocol {}".format(
+                protocol_name
+            )
+        )
         return collection_refs
 
     def time_until_next_run(self, job):
@@ -86,6 +94,7 @@ class Flowana:
         """
         if job.next_run is None:
             return None
+
         return (job.next_run - datetime.datetime.now()).total_seconds()
 
     def schedule_tasks(self):
@@ -110,7 +119,9 @@ class Flowana:
                 next_crawl = self.time_until_next_run(scheduled_crawls[0])
                 if next_crawl is not None:  # Ensure it's not None before logging
                     next_crawl_formatted = helpers.format_time_duration(next_crawl)
-                    next_crawl_datetime = datetime.datetime.now() + datetime.timedelta(seconds=next_crawl)
+                    next_crawl_datetime = datetime.datetime.now() + datetime.timedelta(
+                        seconds=next_crawl
+                    )
                     logger.info(
                         f"[*] Crawling task will run in {next_crawl_formatted}, at {next_crawl_datetime.strftime('%Y-%m-%d %H:%M:%S')}."
                     )
@@ -121,7 +132,9 @@ class Flowana:
                 next_update = self.time_until_next_run(scheduled_updates[0])
                 if next_update is not None:  # Ensure it's not None before logging
                     next_update_formatted = helpers.format_time_duration(next_update)
-                    next_update_datetime = datetime.datetime.now() + datetime.timedelta(seconds=next_update)
+                    next_update_datetime = datetime.datetime.now() + datetime.timedelta(
+                        seconds=next_update
+                    )
                     logger.info(
                         f"[*] Update task will run in {next_update_formatted}, at {next_update_datetime.strftime('%Y-%m-%d %H:%M:%S')}."
                     )
@@ -132,32 +145,44 @@ class Flowana:
             schedule.run_pending()
             time.sleep(60)  # Sleep for a minute before checking again.
 
-    def crawl_all_protocols(self, is_first = False):
+    def crawl_all_protocols(self, is_first=False):
         logger.info("[*] Starting the crawling process for all protocols...")
         for protocol in self.protocols:
-            if protocol["crawl"] == True:
+            if protocol["crawl"] is True:
                 protocol_name = protocol["name"]
                 if is_first and not protocol["crawler"]["index_now"]:
-                    logger.info(f"[!] Skipping protocol {protocol_name} because it is not set to index on startup.")
+                    logger.info(
+                        f"[!] Skipping protocol {protocol_name} because it is not set to index on startup."
+                    )
                     continue
                 crawler_config = protocol["crawler"]
-                self.run_crawler(protocol_name, self.get_collection_refs(protocol_name), crawler_config)
+                self.run_crawler(
+                    protocol_name,
+                    self.get_collection_refs(protocol_name),
+                    crawler_config,
+                )
         logger.info("[*] Completed the crawling process for all protocols.")
 
-    def update_all_protocols(self, is_first = False):
+    def update_all_protocols(self, is_first=False):
         logger.info("[*] Starting the protocol update process for all protocols...")
         for protocol in self.protocols:
             protocol_name = protocol["name"]
             if is_first and not protocol["updater"]["index_now"]:
-                logger.info(f"[!] Skipping protocol {protocol_name} because it is not set to index on startup.")
+                logger.info(
+                    f"[!] Skipping protocol {protocol_name} because it is not set to index on startup."
+                )
                 continue
-            if protocol["update"] == True:
-                self.run_protocol_update(protocol, self.get_collection_refs(protocol_name))
+            if protocol["update"] is True:
+                self.run_protocol_update(
+                    protocol, self.get_collection_refs(protocol_name)
+                )
         logger.info("[*] Completed the protocol update process for all protocols.")
 
     def run_crawler(self, protocol_name, collection_refs, crawler_config):
         self.crawler.run(protocol_name, crawler_config)
-        helpers.write_last_updated(collection_refs["last_updated"], PipelineType.CRAWLER.value)
+        helpers.write_last_updated(
+            collection_refs["last_updated"], PipelineType.CRAWLER.value
+        )
 
     def run_protocol_update(self, protocol, collection_refs):
         protocol_name = protocol["name"]
@@ -182,10 +207,16 @@ class Flowana:
 
     def _create_dummies(self, collection_refs):
         # Create the collections if they don't exist
-        [self.check_collection(collection_ref) for collection_ref in collection_refs.values()]
+        [
+            self.check_collection(collection_ref)
+            for collection_ref in collection_refs.values()
+        ]
         logger.info("[*] Created dummy documents.")
 
     def _delete_dummies(self, collection_refs):
         # Delete the dummy documents
-        [self.delete_dummy_docs(collection_ref) for collection_ref in collection_refs.values()]
+        [
+            self.delete_dummy_docs(collection_ref)
+            for collection_ref in collection_refs.values()
+        ]
         logger.info("[*] Deleted dummy documents.")

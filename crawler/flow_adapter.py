@@ -2,7 +2,6 @@ import requests
 import logging
 from bs4 import BeautifulSoup
 import re
-import tools.log_config as log_config
 
 logger = logging.getLogger(__name__)
 

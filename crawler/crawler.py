@@ -4,7 +4,6 @@ import logging
 from github.github_actor import GithubActor
 from .flow_adapter import FlowAdapter
 import re
-import tools.log_config as log_config
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +33,13 @@ class Crawler:
         name = name.replace(" ", "-").replace(",", "-").replace(".", "-")
 
         # Replace other special characters
-        name = name.replace("@", "-").replace("(", "-").replace(")", "-").replace("[", "-").replace("]", "-")
+        name = (
+            name.replace("@", "-")
+            .replace("(", "-")
+            .replace(")", "-")
+            .replace("[", "-")
+            .replace("]", "-")
+        )
 
         # Remove leading and trailing hyphens from each part of the name
         name_parts = name.split("-")
@@ -92,11 +97,15 @@ class Crawler:
         self.check_adapters(protocol_name)
 
         include_sub_ecosystem = crawler_config["include_sub_ecosystems"]
-        crawler_tomls = set([toml_name.lower() for toml_name in crawler_config["tomls"]])
+        crawler_tomls = set(
+            [toml_name.lower() for toml_name in crawler_config["tomls"]]
+        )
 
         repos = set()
         for crawler_toml in crawler_tomls:
-            repos = repos.union(self.collect_repos(crawler_toml, include_sub_ecosystem, repos=repos))
+            repos = repos.union(
+                self.collect_repos(crawler_toml, include_sub_ecosystem, repos=repos)
+            )
 
         logger.info(f"[*] Found {len(repos)} repos for {protocol_name} protocol")
 
@@ -136,7 +145,11 @@ class Crawler:
                     "is_empty": data["size"] == 0,
                     "is_closed": False,
                 }
-                if repo_metadata["is_empty"] or repo_metadata["is_archived"] or repo_metadata["is_fork"]:
+                if (
+                    repo_metadata["is_empty"]
+                    or repo_metadata["is_archived"]
+                    or repo_metadata["is_fork"]
+                ):
                     repo_metadata["valid"] = False
 
                 else:
@@ -149,7 +162,9 @@ class Crawler:
 
             logger.info(f"[+] Added {owner}/{repo_name} to project metadata list.")
 
-        repo_metadata_list = sorted(repo_metadata_list, key=lambda x: x["stargazers_count"], reverse=True)
+        repo_metadata_list = sorted(
+            repo_metadata_list, key=lambda x: x["stargazers_count"], reverse=True
+        )
 
         for repo_metadata in repo_metadata_list:
             self.db.collection(f"{protocol_name}-projects").document(
@@ -158,7 +173,9 @@ class Crawler:
                 repo_metadata,
                 merge=True,
             )
-            logger.info(f"[./] Added {repo_metadata['owner']}/{repo_metadata['repo']} to Firestore Database.")
+            logger.info(
+                f"[./] Added {repo_metadata['owner']}/{repo_metadata['repo']} to Firestore Database."
+            )
 
         logger.info(f"[*] Crawler for {protocol_name} protocol finished.")
 

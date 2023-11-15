@@ -3,7 +3,6 @@ import os
 import time
 import time
 import logging
-import tools.log_config as log_config
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +26,9 @@ class GovernanceActor:
         if not self.session:
             self.session = requests.Session()
 
-    def governance_rest_make_request(self, url, variables=None, max_page_fetch=float("inf")):
+    def governance_rest_make_request(
+        self, url, variables=None, max_page_fetch=float("inf")
+    ):
         url = f"{self.governance_rest_endpoint}{url}"
         result = []
 
@@ -47,15 +48,24 @@ class GovernanceActor:
                 time.sleep(10)
                 continue
 
+            elif response.status_code == 502:
+                logger.warning(". [-] Bad gateway.")
+                time.sleep(30)
+                continue
+
             else:
-                logger.error(f" [-] Failed to retrieve from API. Status code: {response.status_code} - {response.text}")
+                logger.error(
+                    f" [-] Failed to retrieve from API. Status code: {response.status_code} - {response.text}"
+                )
                 logger.info(f" [#] Rest endpoint: {url}")
                 logger.info(f" [#] Variables: {variables}")
                 break
         return result
 
     def governance_graphql_make_query(self, _query, variables=None):
-        logger.info(f". [=] Fetching data from Graphql API from {self.governance_graphql_endpoint}")
+        logger.info(
+            f". [=] Fetching data from Graphql API from {self.governance_graphql_endpoint}"
+        )
         self.session.headers.update(self.governance_graphql_headers)
         response = self.session.post(
             self.governance_graphql_endpoint,
@@ -77,8 +87,15 @@ class GovernanceActor:
             time.sleep(10)
             return self.governance_graphql_make_query(_query, variables)
 
+        elif response.status_code == 502:
+            logger.warning(". [-] Bad gateway.")
+            time.sleep(30)
+            return self.governance_graphql_make_query(_query, variables)
+
         else:
-            logger.error(f". [-] Failed to retrieve from API. Status code: {response.status_code} - {response.text}")
+            logger.error(
+                f". [-] Failed to retrieve from API. Status code: {response.status_code} - {response.text}"
+            )
             logger.info(f". [#] Graphql endpoint: {self.governance_graphql_endpoint}")
             logger.info(f". [#] Query: {_query}")
             logger.info(f". [#] Variables: {variables}")

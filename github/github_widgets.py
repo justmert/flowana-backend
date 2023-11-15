@@ -11,7 +11,10 @@ from datetime import timezone
 from dateutil import parser
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
-import tools.log_config as log_config
+import numpy as np
+import math
+from datetime import datetime, timezone
+from sklearn.preprocessing import RobustScaler, MinMaxScaler
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +25,11 @@ class GithubWidgets:
         self.collection_refs = collection_refs
 
     def get_db_ref(self, owner, repo):
-        return self.collection_refs["widgets"].document("repositories").collection(self.get_repo_hash(owner, repo))
+        return (
+            self.collection_refs["widgets"]
+            .document("repositories")
+            .collection(self.get_repo_hash(owner, repo))
+        )
 
     def is_valid(self, response):
         if response is None:
@@ -103,13 +110,23 @@ class GithubWidgets:
         # Flatten the response to a dictionary
         flattened_data = {}
 
-        result = self.actor.github_graphql_make_query(query, {"owner": owner, "name": repo})
+        result = self.actor.github_graphql_make_query(
+            query, {"owner": owner, "name": repo}
+        )
         repository = result["data"]["repository"]
         if repository is None:
             logger.warning(
                 f"[-] {owner}/{repo} is not accessible. Will be added to project metadata list, but will not be included in statistics."
             )
-            flattened_data = {"owner": owner, "repo": repo, "is_closed": True, "valid": False, "categories.lvl0": [], "stargazers_count": 0, "url": f"https://github.com/{owner}/{repo}"}
+            flattened_data = {
+                "owner": owner,
+                "repo": repo,
+                "is_closed": True,
+                "valid": False,
+                "categories.lvl0": [],
+                "stargazers_count": 0,
+                "url": f"https://github.com/{owner}/{repo}",
+            }
 
         else:
             flattened_data["default_branch_commit_count"] = (
@@ -121,12 +138,17 @@ class GithubWidgets:
             flattened_data["stargazers_count"] = repository["stargazerCount"]
             flattened_data["created_at"] = repository["createdAt"]
             flattened_data["updated_at"] = repository["updatedAt"]
-            flattened_data["pull_request_count"] = repository["pullRequests"]["totalCount"]
-            flattened_data["commit_comment_count"] = repository["commitComments"]["totalCount"]
+            flattened_data["pull_request_count"] = repository["pullRequests"][
+                "totalCount"
+            ]
+            flattened_data["commit_comment_count"] = repository["commitComments"][
+                "totalCount"
+            ]
             flattened_data["issue_count"] = repository["issues"]["totalCount"]
             flattened_data["description"] = repository["description"]
             flattened_data["categories.lvl0"] = [
-                node["topic"]["name"] for node in repository["repositoryTopics"]["nodes"]
+                node["topic"]["name"]
+                for node in repository["repositoryTopics"]["nodes"]
             ]
             if flattened_data["categories.lvl0"] is None:
                 flattened_data["categories.lvl0"] = []
@@ -139,38 +161,88 @@ class GithubWidgets:
             flattened_data["owner_avatar_url"] = repository["owner"]["avatarUrl"]
             flattened_data["release_count"] = repository["releases"]["totalCount"]
             flattened_data["primary_language_name"] = (
-                repository["primaryLanguage"]["name"] if repository["primaryLanguage"] is not None else None
+                repository["primaryLanguage"]["name"]
+                if repository["primaryLanguage"] is not None
+                else None
             )
             flattened_data["primary_language_color"] = (
-                repository["primaryLanguage"]["color"] if repository["primaryLanguage"] is not None else None
+                repository["primaryLanguage"]["color"]
+                if repository["primaryLanguage"] is not None
+                else None
             )
-            flattened_data["environment_count"] = repository["environments"]["totalCount"]
+            flattened_data["environment_count"] = repository["environments"][
+                "totalCount"
+            ]
             flattened_data["disk_usage"] = repository["diskUsage"]
             flattened_data["is_closed"] = False
-            if flattened_data["is_empty"] or flattened_data["is_archived"] or flattened_data["is_fork"]:
+            if (
+                flattened_data["is_empty"]
+                or flattened_data["is_archived"]
+                or flattened_data["is_fork"]
+            ):
                 flattened_data["valid"] = False
             else:
                 flattened_data["valid"] = True
 
-        self.get_db_ref(owner, repo).document("repository_info").set({"data": flattened_data})
+        self.get_db_ref(owner, repo).document("repository_info").set(
+            {"data": flattened_data}
+        )
         return flattened_data
+
+    def _calculate_time_decayed_scores(self, timestamps, commit_counts, now_timestamp):
+        lambda_ = 0.05  # Decay parameter, less aggressive than before
+        decayed_scores = []
+        for week_timestamp, commit_count in zip(timestamps, commit_counts):
+            weeks_ago = (now_timestamp - week_timestamp) // (7 * 24 * 60 * 60)
+            decayed_score = commit_count * math.exp(-lambda_ * weeks_ago)
+            decayed_scores.append(decayed_score)
+        return decayed_scores
+
+    def _calculate_consistency(self, timestamps, now_timestamp):
+        # Calculate intervals between commits in weeks
+        intervals = np.diff(sorted(timestamps)) / (7 * 24 * 60 * 60)
+        if len(intervals) > 1:
+            std_dev_intervals = np.std(intervals)
+            # Normalize standard deviation using MinMaxScaler
+            scaler = MinMaxScaler()
+            normalized_std_dev = scaler.fit_transform(
+                np.array([std_dev_intervals]).reshape(-1, 1)
+            ).flatten()[0]
+            # Invert the normalized std dev so that higher values indicate better consistency
+            consistency_score = 1 - normalized_std_dev
+        else:
+            # If there's only one interval, default to perfect consistency
+            consistency_score = 1.0
+        return consistency_score
 
     def _score_commit_activity(self, owner, repo):
         try:
-            ref = self.get_db_ref(owner, repo).document("commit_activity").get(field_paths=["data"]).to_dict()
+            ref = (
+                self.get_db_ref(owner, repo)
+                .document("commit_activity")
+                .get(field_paths=["data"])
+                .to_dict()
+            )
             default_branch_commit_count = 0
             try:
-                ref2 = self.get_db_ref(owner, repo).document("repository_info").get(field_paths=["data"]).to_dict()
+                ref2 = (
+                    self.get_db_ref(owner, repo)
+                    .document("repository_info")
+                    .get(field_paths=["data"])
+                    .to_dict()
+                )
             except exceptions.NotFound:
                 # Handle case where document or collection does not exist
                 pass
             else:
                 repository_info = ref2.get("data", None)
                 if repository_info is not None:
-                    default_branch_commit_count = repository_info.get("default_branch_commit_count", 0)
+                    default_branch_commit_count = repository_info.get(
+                        "default_branch_commit_count", 0
+                    )
             if ref is None:
                 raise exceptions.NotFound("Collection or document not found")
-        except exceptions.NotFound as ex:
+        except exceptions.NotFound:
             # Handle case where document or collection does not exist
             pass
         else:
@@ -178,43 +250,37 @@ class GithubWidgets:
             if commit_activity:
                 # Current date
                 now = datetime.now(timezone.utc)
-
-                # Convert now to a Unix timestamp (seconds since 1970-01-01 00:00:00 UTC)
                 now_timestamp = int(now.timestamp())
 
-                # Compute the list of commit counts
+                # Extract commit counts and timestamps
                 commit_counts = [data["total"] for data in commit_activity]
+                commit_timestamps = [data["week"] for data in commit_activity]
 
-                # Calculate the mean and standard deviation of commit counts
-                mean_commit_count = np.mean(commit_counts)
-                std_dev_commit_count = np.std(commit_counts)
+                # Normalizing commit counts using RobustScaler to handle outliers
+                scaler = RobustScaler()
+                normalized_commit_counts = scaler.fit_transform(
+                    np.array(commit_counts).reshape(-1, 1)
+                ).flatten()
 
-                # Calculate the coefficient of variation (CV)
-                if np.isnan(std_dev_commit_count) or np.isnan(mean_commit_count):
-                    cv_commit_count = 0  # or any other default value
-                elif abs(mean_commit_count) < 1e-10:  # Close to zero
-                    cv_commit_count = 0  # or any other default value
-                else:
-                    cv_commit_count = std_dev_commit_count / mean_commit_count
+                # Calculate time decayed activity scores
+                decayed_scores = self._calculate_time_decayed_scores(
+                    commit_timestamps, normalized_commit_counts, now_timestamp
+                )
 
-                # Apply a weight to the commit count consistency (you can adjust the factor as needed)
-                consistency_weight = math.exp(-10 * cv_commit_count)
+                # Calculate consistency measure
+                consistency_score = self._calculate_consistency(
+                    commit_timestamps, now_timestamp
+                )
 
-                # Decay parameter
-                lambda_ = 0.05
+                # Calculate a baseline score from the total commit count
+                baseline_score = np.log1p(default_branch_commit_count)
 
-                # Time-Weighted Commit Activity Score with Commit Interval Consistency
-                CAS = math.sqrt(default_branch_commit_count)
-                for data in commit_activity:
-                    # convert from seconds to weeks
-                    weeks_ago = (now_timestamp - data["week"]) // (7 * 24 * 60 * 60)
-                    commit_volume = data["total"]
-                    CAS += commit_volume * math.exp(-lambda_ * weeks_ago)
-
-                # Apply the consistency weight to the final score
-                CAS *= consistency_weight
-
-                return CAS
+                # Combine the baseline score, decayed scores, and consistency
+                commit_activity_score = baseline_score + np.sum(decayed_scores) * (
+                    1 - consistency_score
+                )
+                print(owner, repo, commit_activity_score)
+                return commit_activity_score
         return 0
 
     def _score_pull_request_activity(self, owner, repo):
@@ -234,28 +300,15 @@ class GithubWidgets:
                     if doc_dict and "data" in doc_dict:
                         pull_requests.extend(doc_dict["data"])
 
-            ref2 = (
-                self.get_db_ref(owner, repo)
-                .document("average_days_to_close_pull_request")
-                .get(field_paths=["data"])
-                .to_dict()
-            )
-
-        except exceptions.NotFound as ex:
+        except exceptions.NotFound:
             # Handle case where document or collection does not exist
             pass
 
         else:
-            # pull_requests = ref.get('data', None)
-            avg_days_to_close_pull_request = None
-            if ref2 is not None:
-                avg_days_to_close_pull_request = ref2.get("data", None)
-            else:
-                avg_days_to_close_pull_request = None
-
+            pull_request_scores = []
             if pull_requests:
-                # Weights for open and closed pull_requests
-                weight_closed = 1.5
+                # Weights for open and closed issues
+                weight_closed = 1.25
                 weight_open = 1
 
                 # Decay parameter
@@ -270,26 +323,26 @@ class GithubWidgets:
                 # Time-Weighted Pull request Activity Score
                 PRAS = 0
                 for pull_request in pull_requests:
-                    days_since_created = (now - parser.isoparse(pull_request["createdAt"])).days
-                    comment_reward = pull_request["comment_count"] * comment_reward_factor
+                    days_since_created = (
+                        now - parser.isoparse(pull_request["createdAt"])
+                    ).days
+                    comment_reward = (
+                        pull_request["comment_count"] * comment_reward_factor
+                    )
                     if pull_request["closed"]:
-                        days_since_closed = (now - parser.isoparse(pull_request["closedAt"])).days
-                        time_to_close = days_since_created - days_since_closed
-                        if avg_days_to_close_pull_request is None:
-                            close_time_factor = 1
-                        else:
-                            close_time_factor = avg_days_to_close_pull_request / (
-                                time_to_close + 0.01
-                            )  # add a small constant to avoid division by zero
-                        PRAS += (weight_closed * close_time_factor + comment_reward) * math.exp(
+                        days_since_closed = (
+                            now - parser.isoparse(pull_request["closedAt"])
+                        ).days
+                        PRAS += (weight_closed + comment_reward) * math.exp(
                             -lambda_ * days_since_closed
                         )
                     else:  # issue is still open
-                        PRAS += (weight_open + comment_reward) * math.exp(-lambda_ * days_since_created)
+                        PRAS += (weight_open + comment_reward) * math.exp(
+                            -lambda_ * days_since_created
+                        )
+                    pull_request_scores.append(PRAS)
 
-                # Normalize PRAS by the total number of pull_requests
-                # PRAS /= len(pull_requests)
-                return PRAS
+                return sum(pull_request_scores)
         return 0
 
     def _score_issue_activity(self, owner, repo):
@@ -309,24 +362,15 @@ class GithubWidgets:
                     if doc_dict and "data" in doc_dict:
                         issues.extend(doc_dict["data"])
 
-            ref2 = (
-                self.get_db_ref(owner, repo).document("average_days_to_close_issue").get(field_paths=["data"]).to_dict()
-            )
-
-        except exceptions.NotFound as ex:
+        except exceptions.NotFound:
             # Handle case where document or collection does not exist
             pass
 
         else:
-            avg_days_to_close_issue = None
-            if ref2 is not None:
-                avg_days_to_close_issue = ref2.get("data", None)
-            else:
-                avg_days_to_close_issue = None
-
+            issue_scores = []
             if issues:
                 # Weights for open and closed issues
-                weight_closed = 1.5
+                weight_closed = 1.25
                 weight_open = 1
 
                 # Decay parameter
@@ -342,37 +386,42 @@ class GithubWidgets:
                 now = datetime.now(timezone.utc)
 
                 # Time-Weighted Issue Activity Score
-                IAS = 0
                 for issue in issues:
-                    days_since_created = (now - parser.isoparse(issue["createdAt"])).days
+                    days_since_created = (
+                        now - parser.isoparse(issue["createdAt"])
+                    ).days
                     comment_reward = issue["comment_count"] * comment_reward_factor
+                    issue_score = 0
                     if issue["closed"]:
-                        days_since_closed = (now - parser.isoparse(issue["closedAt"])).days
-                        time_to_close = days_since_created - days_since_closed
-                        if avg_days_to_close_issue is None:
-                            close_time_factor = 1
-                        else:
-                            # add a small constant to avoid division by zero
-                            close_time_factor = avg_days_to_close_issue / (time_to_close + 0.01)
-                        IAS += (weight_closed * close_time_factor + comment_reward) * math.exp(
+                        days_since_closed = (
+                            now - parser.isoparse(issue["closedAt"])
+                        ).days
+                        issue_score = (weight_closed + comment_reward) * math.exp(
                             -lambda_ * days_since_closed
                         )
                     else:  # issue is still open
-                        IAS += (weight_open + comment_reward) * math.exp(-lambda_ * days_since_created)
+                        issue_score = (weight_open + comment_reward) * math.exp(
+                            -lambda_ * days_since_created
+                        )
+                    # Append individual issue score to the list
+                    issue_scores.append(issue_score)
 
-                # Normalize IAS by the total number of issues
-                # IAS /= len(issues)
-                return IAS
+                return sum(issue_scores)
         return 0
 
     def _score_release_activity(self, owner, repo):
         try:
-            ref = self.get_db_ref(owner, repo).document("recent_releases").get(field_paths=["data"]).to_dict()
+            ref = (
+                self.get_db_ref(owner, repo)
+                .document("recent_releases")
+                .get(field_paths=["data"])
+                .to_dict()
+            )
 
             if ref is None:
                 raise exceptions.NotFound("Collection or document not found")
 
-        except exceptions.NotFound as ex:
+        except exceptions.NotFound:
             # Handle case where document or collection does not exist
             pass
 
@@ -393,23 +442,25 @@ class GithubWidgets:
 
                 # Compute the list of release intervals (in days)
                 release_intervals = [
-                    (release_dates[i - 1] - release_dates[i]).days for i in range(1, len(release_dates))
+                    (release_dates[i - 1] - release_dates[i]).days
+                    for i in range(1, len(release_dates))
                 ]
 
                 # Compute the standard deviation of the release intervals
                 if len(release_dates) == 1:
                     std_dev = 0  # or some other appropriate default value
-                    time_since_last_release = (datetime.now(timezone.utc) - release_dates[0]).days
+                    time_since_last_release = (
+                        datetime.now(timezone.utc) - release_dates[0]
+                    ).days
                     # Adjust the penalty and score computation if necessary
                     penalty = 1 / (1 + penalty_param * time_since_last_release)
                     RAS = penalty  # Adjust this as needed
                 else:
-                    release_intervals = [
-                        (release_dates[i - 1] - release_dates[i]).days for i in range(1, len(release_dates))
-                    ]
                     std_dev = np.std(release_intervals)
                     inverse_std_dev = 1 / (std_dev + 0.01)
-                    time_since_last_release = (datetime.now(timezone.utc) - release_dates[0]).days
+                    time_since_last_release = (
+                        datetime.now(timezone.utc) - release_dates[0]
+                    ).days
                     penalty = 1 / (1 + penalty_param * time_since_last_release)
                     RAS = 0
                     for i in range(len(release_dates)):
@@ -442,7 +493,7 @@ class GithubWidgets:
                     if doc_dict and "data" in doc_dict:
                         data.extend(doc_dict["data"])
 
-        except exceptions.NotFound as ex:
+        except exceptions.NotFound:
             # Handle case where document or collection does not exist
             pass
 
@@ -454,11 +505,22 @@ class GithubWidgets:
                     weeks = np.array([week["w"] for week in contributor["weeks"]])
                     num_weeks = len(weeks)
                     # Now giving higher weight to recent weeks
-                    decay_weights = np.array([i / num_weeks for i in range(1, num_weeks + 1)])
+                    decay_weights = np.array(
+                        [i / num_weeks for i in range(1, num_weeks + 1)]
+                    )
 
-                    weighted_additions = np.array([week["a"] for week in contributor["weeks"]]) * decay_weights
-                    weighted_deletions = np.array([week["d"] for week in contributor["weeks"]]) * decay_weights
-                    weighted_commits = np.array([week["c"] for week in contributor["weeks"]]) * decay_weights
+                    weighted_additions = (
+                        np.array([week["a"] for week in contributor["weeks"]])
+                        * decay_weights
+                    )
+                    weighted_deletions = (
+                        np.array([week["d"] for week in contributor["weeks"]])
+                        * decay_weights
+                    )
+                    weighted_commits = (
+                        np.array([week["c"] for week in contributor["weeks"]])
+                        * decay_weights
+                    )
 
                     additions.extend(weighted_additions)
                     deletions.extend(weighted_deletions)
@@ -467,12 +529,20 @@ class GithubWidgets:
 
                 # Normalize each score to be between 0 and 1
                 scaler = MinMaxScaler()
-                normalized_additions = scaler.fit_transform(np.array(additions).reshape(-1, 1))
-                normalized_deletions = scaler.fit_transform(np.array(deletions).reshape(-1, 1))
-                normalized_commits = scaler.fit_transform(np.array(commits).reshape(-1, 1))
+                normalized_additions = scaler.fit_transform(
+                    np.array(additions).reshape(-1, 1)
+                )
+                normalized_deletions = scaler.fit_transform(
+                    np.array(deletions).reshape(-1, 1)
+                )
+                normalized_commits = scaler.fit_transform(
+                    np.array(commits).reshape(-1, 1)
+                )
 
                 # Calculate commit trend
-                EMA_commits = calculate_EMA(normalized_commits.flatten(), alpha=0.1)  # calculate EMA
+                EMA_commits = calculate_EMA(
+                    normalized_commits.flatten(), alpha=0.1
+                )  # calculate EMA
                 # the trend can be the difference between the last and the first EMA
                 commit_trend = EMA_commits[-1] - EMA_commits[0]
                 commit_trend = (commit_trend + 1) / 2
@@ -495,9 +565,9 @@ class GithubWidgets:
                     contributor_gini_coefficient = 1
                 else:
                     n = len(contributors)
-                    contributor_gini_coefficient = (2 * np.sum((np.arange(1, n + 1) * np.sort(contributors)))) / (
-                        n * np.sum(contributors)
-                    ) - (n + 1) / n
+                    contributor_gini_coefficient = (
+                        2 * np.sum((np.arange(1, n + 1) * np.sort(contributors)))
+                    ) / (n * np.sum(contributors)) - (n + 1) / n
 
                 MAX_CONTRIBUTORS = 100
                 contributor_count = len(data) / MAX_CONTRIBUTORS
@@ -506,13 +576,18 @@ class GithubWidgets:
                 weight_commit_trend = 0.20  # assign 25% importance to commit trend
                 # assign 25% importance to contributor gini coefficient
                 weight_contributor_gini_coefficient = 0.30
-                weight_new_metric_average = 0.20  # assign 25% importance to new metric average
-                weight_contributor_count = 0.30  # assign 25% importance to contributor count
+                weight_new_metric_average = (
+                    0.20  # assign 25% importance to new metric average
+                )
+                weight_contributor_count = (
+                    0.30  # assign 25% importance to contributor count
+                )
 
                 # Calculate weighted sum
                 liveness_score = (
                     weight_commit_trend * commit_trend
-                    + weight_contributor_gini_coefficient * (1 - contributor_gini_coefficient)
+                    + weight_contributor_gini_coefficient
+                    * (1 - contributor_gini_coefficient)
                     + weight_new_metric_average * new_metric_average
                     + weight_contributor_count * contributor_count
                 )
@@ -521,20 +596,27 @@ class GithubWidgets:
         return 0
 
     def health_score(self, owner, repo, **kwargs):
-
         raw_health_score = {
             "commit_activity": self._score_commit_activity(owner, repo, **kwargs),
             "issue_activity": self._score_issue_activity(owner, repo, **kwargs),
-            "pull_request_activity": self._score_pull_request_activity(owner, repo, **kwargs),
+            "pull_request_activity": self._score_pull_request_activity(
+                owner, repo, **kwargs
+            ),
             "release_activity": self._score_release_activity(owner, repo, **kwargs),
-            "contribution_activity": self._score_contributors_data(owner, repo, **kwargs),
+            "contribution_activity": self._score_contributors_data(
+                owner, repo, **kwargs
+            ),
         }
 
-        self.get_db_ref(owner, repo).document("raw_health_score").set({"data": raw_health_score})
+        self.get_db_ref(owner, repo).document("raw_health_score").set(
+            {"data": raw_health_score}
+        )
 
     def commit_activity(self, owner, repo, **kwargs):
         # formatting will be in frontend
-        data = self.actor.github_rest_make_request(f"/repos/{owner}/{repo}/stats/commit_activity")
+        data = self.actor.github_rest_make_request(
+            f"/repos/{owner}/{repo}/stats/commit_activity"
+        )
 
         if not self.is_valid(data) or not any(item["total"] > 0 for item in data):
             logger.warning("[!] Invalid or empty data returned")
@@ -544,7 +626,9 @@ class GithubWidgets:
 
     def contributors(self, owner, repo, **kwargs):
         # formatting will be in frontend
-        data = self.actor.github_rest_make_request(f"/repos/{owner}/{repo}/stats/contributors")
+        data = self.actor.github_rest_make_request(
+            f"/repos/{owner}/{repo}/stats/contributors"
+        )
         sorted_data = sorted(data, key=lambda x: x["total"], reverse=True)
 
         if not self.is_valid(data):
@@ -566,7 +650,9 @@ class GithubWidgets:
 
     def participation(self, owner, repo, **kwargs):
         # formatting will be in here
-        data = self.actor.github_rest_make_request(f"/repos/{owner}/{repo}/stats/participation")
+        data = self.actor.github_rest_make_request(
+            f"/repos/{owner}/{repo}/stats/participation"
+        )
 
         if not self.is_valid(data) or not sum(data["all"]) > 0:
             logger.warning("[!] Invalid or empty data returned")
@@ -574,7 +660,9 @@ class GithubWidgets:
 
         # Generate dates for last 52 weeks
         today_utc = datetime.utcnow()  # Switch from datetime.now() to datetime.utcnow()
-        dates = [(today_utc - timedelta(weeks=i)).strftime("%Y-%m-%d") for i in range(52)][::-1]
+        dates = [
+            (today_utc - timedelta(weeks=i)).strftime("%Y-%m-%d") for i in range(52)
+        ][::-1]
 
         chart_data = {
             "xAxis": {"type": "category", "data": dates},
@@ -583,7 +671,10 @@ class GithubWidgets:
         }
 
         # Subtract 'owner' from 'all' to get 'others'
-        others = [all_count - owner_count for all_count, owner_count in zip(data["all"], data["owner"])]
+        others = [
+            all_count - owner_count
+            for all_count, owner_count in zip(data["all"], data["owner"])
+        ]
 
         owner_sum = sum(data["owner"])
         others_sum = sum(others)
@@ -602,7 +693,9 @@ class GithubWidgets:
 
     def code_frequency(self, owner, repo, **kwargs):
         # formatting will be in here
-        data = self.actor.github_rest_make_request(f"/repos/{owner}/{repo}/stats/code_frequency")
+        data = self.actor.github_rest_make_request(
+            f"/repos/{owner}/{repo}/stats/code_frequency"
+        )
 
         if not self.is_valid(data) and not any(item[1] or item[2] for item in data):
             logger.warning("[!] Invalid or empty data returned")
@@ -610,7 +703,9 @@ class GithubWidgets:
 
         # Define the chart option
         chart_data = {
-            "xAxis": {"data": [str(datetime.fromtimestamp(item[0]).date()) for item in data]},
+            "xAxis": {
+                "data": [str(datetime.fromtimestamp(item[0]).date()) for item in data]
+            },
             "yAxis": {},
             "series": [
                 {"data": [], "type": "line", "stack": "x"},
@@ -620,11 +715,15 @@ class GithubWidgets:
         chart_data["series"][0]["data"] = [item[1] for item in data]
         chart_data["series"][1]["data"] = [item[2] for item in data]
 
-        self.get_db_ref(owner, repo).document("code_frequency").set({"data": chart_data})
+        self.get_db_ref(owner, repo).document("code_frequency").set(
+            {"data": chart_data}
+        )
 
     def community_profile(self, owner, repo, **kwargs):
         # formatting will be in frontend
-        data = self.actor.github_rest_make_request(f"/repos/{owner}/{repo}/community/profile")
+        data = self.actor.github_rest_make_request(
+            f"/repos/{owner}/{repo}/community/profile"
+        )
 
         if not self.is_valid(data):
             logger.warning("[!] Invalid or empty data returned")
@@ -634,7 +733,9 @@ class GithubWidgets:
 
     def punch_card(self, owner, repo, **kwargs):
         # formatting will be in frontend
-        data = self.actor.github_rest_make_request(f"/repos/{owner}/{repo}/stats/punch_card")
+        data = self.actor.github_rest_make_request(
+            f"/repos/{owner}/{repo}/stats/punch_card"
+        )
 
         if not self.is_valid(data) or not any(item[2] for item in data):
             logger.warning("[!] Invalid or empty data returned")
@@ -663,7 +764,9 @@ class GithubWidgets:
             }
         }
         """
-        data = self.actor.github_graphql_make_query(query, {"owner": owner, "name": repo})
+        data = self.actor.github_graphql_make_query(
+            query, {"owner": owner, "name": repo}
+        )
 
         if not self.is_valid(data):
             logger.warning("[!] Invalid or empty data returned")
@@ -722,7 +825,7 @@ class GithubWidgets:
             )
 
             if not self.is_valid(result):
-                logger.info(f"[!] Invalid or empty data returned")
+                logger.info("[!] Invalid or empty data returned")
                 if issues:
                     break
                 else:
@@ -730,7 +833,9 @@ class GithubWidgets:
 
             nodes = result["data"]["repository"]["issues"]["nodes"]
             end_cursor = result["data"]["repository"]["issues"]["pageInfo"]["endCursor"]
-            has_next_page = result["data"]["repository"]["issues"]["pageInfo"]["hasNextPage"]
+            has_next_page = result["data"]["repository"]["issues"]["pageInfo"][
+                "hasNextPage"
+            ]
 
             # Extract relevant data points
             for node in nodes:
@@ -765,10 +870,14 @@ class GithubWidgets:
             closed_at = issue["closedAt"]
             closed = issue["closed"]
 
-            created_at_time = datetime.strptime(issue["createdAt"], "%Y-%m-%dT%H:%M:%SZ")
+            created_at_time = datetime.strptime(
+                issue["createdAt"], "%Y-%m-%dT%H:%M:%SZ"
+            )
 
             if closed:
-                closed_at_time = datetime.strptime(issue["closedAt"], "%Y-%m-%dT%H:%M:%SZ")
+                closed_at_time = datetime.strptime(
+                    issue["closedAt"], "%Y-%m-%dT%H:%M:%SZ"
+                )
                 days_to_close = (closed_at_time - created_at_time).days
                 total_days += days_to_close
                 closed_issue_count += 1
@@ -788,7 +897,11 @@ class GithubWidgets:
             self.get_db_ref(owner, repo).document(doc_name).set({"data": chunk})
 
         self.get_db_ref(owner, repo).document("average_days_to_close_issue").set(
-            {"data": round(total_days / closed_issue_count, 2) if closed_issue_count > 0 else 0}
+            {
+                "data": round(total_days / closed_issue_count, 2)
+                if closed_issue_count > 0
+                else 0
+            }
         )
 
         # process here
@@ -820,7 +933,11 @@ class GithubWidgets:
 
             # Check if there are any closed pull requests
             if any(issues_df["closed"]):
-                closed_issues = issues_df[issues_df["closed"]].resample(pd_interval, on="closedAt").size()
+                closed_issues = (
+                    issues_df[issues_df["closed"]]
+                    .resample(pd_interval, on="closedAt")
+                    .size()
+                )
             else:
                 closed_issues = pd.Series(index=new_issues.index, data=0)
 
@@ -839,7 +956,9 @@ class GithubWidgets:
                 ],
             }
 
-            self.get_db_ref(owner, repo).document(f"issue_chart_{interval}").set({"data": echart_data})
+            self.get_db_ref(owner, repo).document(f"issue_chart_{interval}").set(
+                {"data": echart_data}
+            )
 
     def pull_request_activity(self, owner, repo, **kwargs):
         # formatting will be in api
@@ -884,15 +1003,19 @@ class GithubWidgets:
             )
 
             if not self.is_valid(result):
-                logger.info(f"[!] Invalid or empty data returned")
+                logger.info("[!] Invalid or empty data returned")
                 if pull_requests:
                     break
                 else:
                     return
 
             nodes = result["data"]["repository"]["pullRequests"]["nodes"]
-            end_cursor = result["data"]["repository"]["pullRequests"]["pageInfo"]["endCursor"]
-            has_next_page = result["data"]["repository"]["pullRequests"]["pageInfo"]["hasNextPage"]
+            end_cursor = result["data"]["repository"]["pullRequests"]["pageInfo"][
+                "endCursor"
+            ]
+            has_next_page = result["data"]["repository"]["pullRequests"]["pageInfo"][
+                "hasNextPage"
+            ]
 
             # Extract relevant data points
             for node in nodes:
@@ -929,10 +1052,14 @@ class GithubWidgets:
             closed_at = pull_request["closedAt"]
             closed = pull_request["closed"]
 
-            created_at_time = datetime.strptime(pull_request["createdAt"], "%Y-%m-%dT%H:%M:%SZ")
+            created_at_time = datetime.strptime(
+                pull_request["createdAt"], "%Y-%m-%dT%H:%M:%SZ"
+            )
 
             if closed:
-                closed_at_time = datetime.strptime(pull_request["closedAt"], "%Y-%m-%dT%H:%M:%SZ")
+                closed_at_time = datetime.strptime(
+                    pull_request["closedAt"], "%Y-%m-%dT%H:%M:%SZ"
+                )
                 days_to_close = (closed_at_time - created_at_time).days
                 total_days += days_to_close
                 closed_pull_request_count += 1
@@ -952,7 +1079,11 @@ class GithubWidgets:
             self.get_db_ref(owner, repo).document(doc_name).set({"data": chunk})
 
         self.get_db_ref(owner, repo).document("average_days_to_close_pull_request").set(
-            {"data": round(total_days / closed_pull_request_count, 2) if closed_pull_request_count > 0 else 0}
+            {
+                "data": round(total_days / closed_pull_request_count, 2)
+                if closed_pull_request_count > 0
+                else 0
+            }
         )
 
         # interval_chart
@@ -962,7 +1093,9 @@ class GithubWidgets:
                 continue
 
             # Convert createdAt and closedAt to datetime format
-            pull_requests_df["createdAt"] = pd.to_datetime(pull_requests_df["createdAt"])
+            pull_requests_df["createdAt"] = pd.to_datetime(
+                pull_requests_df["createdAt"]
+            )
             pull_requests_df["closedAt"] = pd.to_datetime(pull_requests_df["closedAt"])
 
             pd_interval = None
@@ -976,11 +1109,15 @@ class GithubWidgets:
                 pd_interval = "Y"
 
             # Group by date and count new and closed issues separately
-            new_pull_requests = pull_requests_df.resample(pd_interval, on="createdAt").size()
+            new_pull_requests = pull_requests_df.resample(
+                pd_interval, on="createdAt"
+            ).size()
             # Check if there are any closed pull requests
             if any(pull_requests_df["closed"]):
                 closed_pull_requests = (
-                    pull_requests_df[pull_requests_df["closed"]].resample(pd_interval, on="closedAt").size()
+                    pull_requests_df[pull_requests_df["closed"]]
+                    .resample(pd_interval, on="closedAt")
+                    .size()
                 )
             else:
                 closed_pull_requests = pd.Series(index=new_pull_requests.index, data=0)
@@ -1000,7 +1137,9 @@ class GithubWidgets:
                 ],
             }
 
-            self.get_db_ref(owner, repo).document(f"pull_request_chart_{interval}").set({"data": echart_data})
+            self.get_db_ref(owner, repo).document(f"pull_request_chart_{interval}").set(
+                {"data": echart_data}
+            )
 
     def most_active_issues(self, owner, repo, **kwargs):
         # formatting will be in frontend
@@ -1069,7 +1208,9 @@ class GithubWidgets:
             )
 
             if not self.is_valid(data):
-                logger.info(f"[#invalid] No most active issues for repository {owner}/{repo}")
+                logger.info(
+                    f"[#invalid] No most active issues for repository {owner}/{repo}"
+                )
                 continue
 
             # Extract the issues from the response
@@ -1079,8 +1220,12 @@ class GithubWidgets:
             for issue in issues:
                 flattened_issue = {
                     "number": issue["number"],
-                    "author_avatar_url": issue["author"]["avatarUrl"],
-                    "author_login": issue["author"]["login"],
+                    "author_avatar_url": None
+                    if issue.get("author", {}).get("avatarUrl", None) is None
+                    else issue["author"]["avatarUrl"],
+                    "author_login": None
+                    if issue.get("author", {}).get("login", None) is None
+                    else issue["author"]["login"],
                     "title": issue["title"],
                     "state": issue["state"],
                     "comments_count": issue["comments"]["totalCount"],
@@ -1094,7 +1239,9 @@ class GithubWidgets:
                 }
                 flattened_data[interval].append(flattened_issue)
 
-        self.get_db_ref(owner, repo).document("most_active_issues").set({"data": flattened_data})
+        self.get_db_ref(owner, repo).document("most_active_issues").set(
+            {"data": flattened_data}
+        )
 
     def pull_request_count(self, owner, repo, **kwargs):
         # formatting will be in api
@@ -1110,7 +1257,9 @@ class GithubWidgets:
             }
         }
         """
-        data = self.actor.github_graphql_make_query(query, {"owner": owner, "name": repo})
+        data = self.actor.github_graphql_make_query(
+            query, {"owner": owner, "name": repo}
+        )
 
         if not self.is_valid(data):
             logger.warning("[!] Invalid or empty data returned")
@@ -1119,8 +1268,12 @@ class GithubWidgets:
         self.get_db_ref(owner, repo).document("pull_request_count").set(
             {
                 "data": {
-                    "open": data["data"]["repository"]["openedPullRequests"]["totalCount"],
-                    "closed": data["data"]["repository"]["closedPullRequests"]["totalCount"],
+                    "open": data["data"]["repository"]["openedPullRequests"][
+                        "totalCount"
+                    ],
+                    "closed": data["data"]["repository"]["closedPullRequests"][
+                        "totalCount"
+                    ],
                 }
             }
         )
@@ -1141,7 +1294,9 @@ class GithubWidgets:
             }
         }
         """
-        data = self.actor.github_graphql_make_query(query, {"owner": owner, "name": repo})
+        data = self.actor.github_graphql_make_query(
+            query, {"owner": owner, "name": repo}
+        )
 
         if not self.is_valid(data):
             logger.warning("[!] Invalid or empty data returned")
@@ -1165,7 +1320,9 @@ class GithubWidgets:
             }
             flattened_data.append(flattened_language)
 
-        self.get_db_ref(owner, repo).document("language_breakdown").set({"data": flattened_data})
+        self.get_db_ref(owner, repo).document("language_breakdown").set(
+            {"data": flattened_data}
+        )
 
     class RecentIssuesOrder(Enum):
         CREATED_AT = "CREATED_AT"
@@ -1209,7 +1366,9 @@ class GithubWidgets:
             }
         }
         """
-        data = self.actor.github_graphql_make_query(query, {"owner": owner, "name": repo, "order_by": order_by.value})
+        data = self.actor.github_graphql_make_query(
+            query, {"owner": owner, "name": repo, "order_by": order_by.value}
+        )
 
         if not self.is_valid(data):
             logger.warning("[!] Invalid or empty data returned")
@@ -1224,8 +1383,12 @@ class GithubWidgets:
         for issue in issues:
             flattened_issue = {
                 "number": issue["number"],
-                "author_avatar_url": issue["author"]["avatarUrl"],
-                "author_login": issue["author"]["login"],
+                "author_avatar_url": None
+                if issue["author"] is None
+                else issue["author"].get("avatarUrl", None),
+                "author_login": None
+                if issue["author"] is None
+                else issue["author"].get("login", None),
                 "title": issue["title"],
                 "state": issue["state"],
                 "comments_count": issue["comments"]["totalCount"],
@@ -1238,10 +1401,14 @@ class GithubWidgets:
             flattened_data.append(flattened_issue)
 
         if order_by == self.RecentIssuesOrder.CREATED_AT:
-            self.get_db_ref(owner, repo).document("recent_created_issues").set({"data": flattened_data})
+            self.get_db_ref(owner, repo).document("recent_created_issues").set(
+                {"data": flattened_data}
+            )
 
         elif order_by == self.RecentIssuesOrder.UPDATED_AT:
-            self.get_db_ref(owner, repo).document("recent_updated_issues").set({"data": flattened_data})
+            self.get_db_ref(owner, repo).document("recent_updated_issues").set(
+                {"data": flattened_data}
+            )
 
     def recent_pull_requests(self, owner, repo, **kwargs):
         # formatting will be in frontend
@@ -1278,7 +1445,9 @@ class GithubWidgets:
             }}
         """
 
-        data = self.actor.github_graphql_make_query(query, {"owner": owner, "name": repo, "order_by": order_by.value})
+        data = self.actor.github_graphql_make_query(
+            query, {"owner": owner, "name": repo, "order_by": order_by.value}
+        )
 
         if not self.is_valid(data):
             logger.warning("[!] Invalid or empty data returned")
@@ -1293,8 +1462,12 @@ class GithubWidgets:
         for pull_request in pull_requests:
             flattened_pull_request = {
                 "number": pull_request["number"],
-                "author_avatar_url": pull_request["author"]["avatarUrl"],
-                "author_login": pull_request["author"]["login"],
+                "author_avatar_url": None
+                if pull_request["author"] is None
+                else pull_request["author"].get("avatarUrl", None),
+                "author_login": None
+                if pull_request["author"] is None
+                else pull_request["author"].get("login", None),
                 "title": pull_request["title"],
                 "state": pull_request["state"],
                 "comments_count": pull_request["comments"]["totalCount"],
@@ -1307,10 +1480,14 @@ class GithubWidgets:
             flattened_data.append(flattened_pull_request)
 
         if order_by == self.RecentPullRequestsOrder.CREATED_AT:
-            self.get_db_ref(owner, repo).document("recent_created_pull_requests").set({"data": flattened_data})
+            self.get_db_ref(owner, repo).document("recent_created_pull_requests").set(
+                {"data": flattened_data}
+            )
 
         elif order_by == self.RecentPullRequestsOrder.UPDATED_AT:
-            self.get_db_ref(owner, repo).document("recent_updated_pull_requests").set({"data": flattened_data})
+            self.get_db_ref(owner, repo).document("recent_updated_pull_requests").set(
+                {"data": flattened_data}
+            )
 
     def recent_stargazing_activity(self, owner, repo, **kwargs):
         # formatting will be in here
@@ -1338,7 +1515,9 @@ class GithubWidgets:
         star_dict = {}
         while has_next_page and current_page < max_fetch_pages:
             # Make the request
-            result = self.actor.github_graphql_make_query(query, {"owner": owner, "name": repo, "cursor": cursor})
+            result = self.actor.github_graphql_make_query(
+                query, {"owner": owner, "name": repo, "cursor": cursor}
+            )
 
             if not self.is_valid(result):
                 logger.warning("[!] Invalid or empty data returned")
@@ -1357,7 +1536,9 @@ class GithubWidgets:
                     star_dict[starred_at] = 1
 
             # Check if there is another page of data to fetch
-            has_next_page = result["data"]["repository"]["stargazers"]["pageInfo"]["hasNextPage"]
+            has_next_page = result["data"]["repository"]["stargazers"]["pageInfo"][
+                "hasNextPage"
+            ]
             current_page += 1
 
         if len(star_dict) < 0:
@@ -1397,7 +1578,9 @@ class GithubWidgets:
             ],
         }
 
-        self.get_db_ref(owner, repo).document("recent_stargazing_activity").set({"data": chart_data})
+        self.get_db_ref(owner, repo).document("recent_stargazing_activity").set(
+            {"data": chart_data}
+        )
 
     def recent_commits(self, owner, repo, **kwargs):
         # formatting will be in frontend
@@ -1439,7 +1622,9 @@ class GithubWidgets:
             }
         }
         """
-        data = self.actor.github_graphql_make_query(query, {"owner": owner, "name": repo, "count": 10})
+        data = self.actor.github_graphql_make_query(
+            query, {"owner": owner, "name": repo, "count": 10}
+        )
 
         if not self.is_valid(data):
             logger.warning("[!] Invalid or empty data returned")
@@ -1456,14 +1641,14 @@ class GithubWidgets:
 
         # Iterate through the commits and flatten the data
         for commit in commits:
-            committer_user = commit["author"].get("user", None)
+            committer_user = commit.get("author", {}).get("user", None)
             committer_name = None
             if committer_user is None:
-                committer_name = commit["committer"]["name"]
+                committer_name = commit.get("committer", {}).get("name", None)
             else:
-                committer_name = committer_user["login"]
+                committer_name = committer_user.get("login", None)
             flattened_commit = {
-                "author_avatar_url": commit["author"]["avatarUrl"],
+                "author_avatar_url": commit.get("author", {}).get("avatarUrl", None),
                 "author_login": committer_name,
                 "message": commit["message"],
                 "committed_date": commit["committedDate"],
@@ -1473,7 +1658,9 @@ class GithubWidgets:
             }
             flattened_data.append(flattened_commit)
 
-        self.get_db_ref(owner, repo).document("recent_commits").set({"data": flattened_data})
+        self.get_db_ref(owner, repo).document("recent_commits").set(
+            {"data": flattened_data}
+        )
 
     def recent_releases(self, owner, repo, **kwargs):
         # formatting will be in frontend
@@ -1518,7 +1705,9 @@ class GithubWidgets:
             )
 
             if not self.is_valid(data):
-                logger.info(f"[#invalid] No recent releases for repository {owner}/{repo}")
+                logger.info(
+                    f"[#invalid] No recent releases for repository {owner}/{repo}"
+                )
                 break
 
             # Extract the releases from the response
@@ -1537,11 +1726,15 @@ class GithubWidgets:
                 flattened_data.append(flattened_release)
 
             # Check if there is another page of data to fetch
-            has_next_page = data["data"]["repository"]["releases"]["pageInfo"]["hasNextPage"]
+            has_next_page = data["data"]["repository"]["releases"]["pageInfo"][
+                "hasNextPage"
+            ]
             if not has_next_page:
                 break
 
             # Update the cursor
             cursor = data["data"]["repository"]["releases"]["pageInfo"]["endCursor"]
 
-        self.get_db_ref(owner, repo).document("recent_releases").set({"data": flattened_data})
+        self.get_db_ref(owner, repo).document("recent_releases").set(
+            {"data": flattened_data}
+        )

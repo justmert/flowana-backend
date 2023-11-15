@@ -72,7 +72,9 @@ router = APIRouter()
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -142,7 +144,9 @@ def repository_info(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -219,7 +223,9 @@ def health_score(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -301,7 +307,9 @@ def commit_activity(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -369,7 +377,9 @@ def participation(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -446,7 +456,9 @@ def participation_count(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -512,7 +524,9 @@ def code_frequency(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -607,7 +621,9 @@ def punch_card(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -635,7 +651,11 @@ def contributors(
         # if ref is None:
         #     raise exceptions.NotFound('Collection or document not found')
 
-        doc_base = db.collection(f"{protocol_name}-widgets").document("repositories").collection(f"{owner}#{repo}")
+        doc_base = (
+            db.collection(f"{protocol_name}-widgets")
+            .document("repositories")
+            .collection(f"{owner}#{repo}")
+        )
 
         # Initialize an empty list to hold all contributors
         data = []
@@ -725,7 +745,9 @@ def contributors(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -782,7 +804,13 @@ def community_profile(
     responses={
         200: {
             "description": "Language breakdown",
-            "content": {"application/json": {"example": [{"name": "JavaScript", "percentage": 100, "size": 55852}]}},
+            "content": {
+                "application/json": {
+                    "example": [
+                        {"name": "JavaScript", "percentage": 100, "size": 55852}
+                    ]
+                }
+            },
         },
         204: {
             "description": "No content found",
@@ -790,7 +818,9 @@ def community_profile(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -856,7 +886,9 @@ def language_breakdown(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -956,7 +988,9 @@ class MostActiveIssuesInterval(str, Enum):
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -1004,7 +1038,9 @@ def most_active_issues(
 
     interval_data = data.get(interval.value, [])
     if not interval_data:
-        raise HTTPException(status_code=204, detail="Content is empty for the given interval.")
+        raise HTTPException(
+            status_code=204, detail="Content is empty for the given interval."
+        )
 
     return interval_data
 
@@ -1032,7 +1068,9 @@ def most_active_issues(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -1129,7 +1167,9 @@ class RecentIssuesOrder(str, Enum):
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -1137,7 +1177,9 @@ def recent_issues(
     protocol_name: str = Path(..., description="Protocol name"),
     owner: str = Query(..., description="Project owner name"),
     repo: str = Query(..., description="Project repository name"),
-    order_by: RecentIssuesOrder = Query(RecentIssuesOrder.created_at, description="Order by field"),
+    order_by: RecentIssuesOrder = Query(
+        RecentIssuesOrder.created_at, description="Order by field"
+    ),
 ):
     """
     Returns the recent issues for the repository ordered by 'created_at' or 'updated_at'.
@@ -1153,7 +1195,7 @@ def recent_issues(
         field_name = "recent_created_issues"
 
     elif order_by == RecentIssuesOrder.updated_at:
-        field_name = f"recent_updated_issues"
+        field_name = "recent_updated_issues"
 
     try:
         collection_ref = (
@@ -1166,7 +1208,9 @@ def recent_issues(
         )
 
         if collection_ref is None:
-            raise HTTPException(status_code=404, detail="Collection or document not found.")
+            raise HTTPException(
+                status_code=404, detail="Collection or document not found."
+            )
 
     except exceptions.NotFound as ex:
         # Handle case where document or collection does not exist
@@ -1222,7 +1266,9 @@ class RecentPullRequestOrder(str, Enum):
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -1242,7 +1288,7 @@ def recent_pull_requests(
         field_name = "recent_created_pull_requests"
 
     elif order_by == RecentPullRequestOrder.updated_at:
-        field_name = f"recent_updated_pull_requests"
+        field_name = "recent_updated_pull_requests"
 
     try:
         collection_ref = (
@@ -1308,7 +1354,9 @@ def recent_pull_requests(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -1382,7 +1430,9 @@ class IssueActivityInterval(str, Enum):
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -1526,7 +1576,9 @@ class PullRequestActivityInterval(str, Enum):
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -1673,7 +1725,9 @@ def pull_request_activity(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -1744,7 +1798,9 @@ def recent_commits(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )

@@ -1,6 +1,5 @@
 from fastapi import APIRouter
 from fastapi import Depends, HTTPException
-from enum import Enum
 from fastapi import HTTPException
 from fastapi import Query, Path, HTTPException
 from google.cloud import exceptions
@@ -26,13 +25,17 @@ router = APIRouter()
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
 def get_last_updated(
     protocol_name: str = Path(..., description="Protocol name"),
-    page_type: PipelineType = Query(PipelineType.GITHUB_PROJECTS, description="Page type"),
+    page_type: PipelineType = Query(
+        PipelineType.GITHUB_PROJECTS, description="Page type"
+    ),
 ):
     """
     Returns the last updated timestamp for the protocol.
@@ -41,7 +44,10 @@ def get_last_updated(
 
     try:
         ref = (
-            db.collection(f"{protocol_name}-last-updated").document(page_type.value).get(field_paths=["data"]).to_dict()
+            db.collection(f"{protocol_name}-last-updated")
+            .document(page_type.value)
+            .get(field_paths=["data"])
+            .to_dict()
         )
 
         if ref is None:

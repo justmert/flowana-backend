@@ -3,12 +3,10 @@ import logging
 from enum import Enum
 from collections import defaultdict
 import numpy as np
-from sklearn.preprocessing import StandardScaler
-from sklearn.preprocessing import RobustScaler, StandardScaler
-from scipy.special import ndtr
+from sklearn.preprocessing import RobustScaler
 import datetime
 from datetime import timedelta
-import tools.log_config as log_config
+from scipy.stats import norm
 
 
 logger = logging.getLogger(__name__)
@@ -31,7 +29,7 @@ class GithubCumulative:
 
         return True
 
-    def cumulative_stats(self, **kwargs):
+    def cumulative_stats(self, **kwargs) -> None:
         cum_disk_usage = 0
         cum_commit_comment_count = 0
         cum_default_branch_commit_count = 0
@@ -56,8 +54,9 @@ class GithubCumulative:
 
             branch_commit_count = data.get("default_branch_commit_count", 0)
 
-            cum_default_branch_commit_count += branch_commit_count if branch_commit_count is not None else 0
-
+            cum_default_branch_commit_count += (
+                branch_commit_count if branch_commit_count is not None else 0
+            )
             cum_environment_count += data.get("environment_count", 0)
             cum_fork_count += data.get("fork_count", 0)
             cum_pull_request_count += data.get("pull_request_count", 0)
@@ -108,18 +107,36 @@ class GithubCumulative:
                     for d1, d2 in zip(d1, d2)
                 ]
 
-        self.collection_refs["cumulative"].document("cumulative_commit_activity").set({"data": d1})
+        self.collection_refs["cumulative"].document("cumulative_commit_activity").set(
+            {"data": d1}
+        )
 
     def normalize_health_score(self, **kwargs):
         weight_dict = {
-            "commit_activity": 0.26,
-            "issue_activity": 0.16,
-            "pull_request_activity": 0.16,
-            "release_activity": 0.10,
-            "contribution_activity": 0.32,
+            "commit_activity": 0.24,
+            "issue_activity": 0.18,
+            "pull_request_activity": 0.18,
+            "release_activity": 0.12,
+            "contribution_activity": 0.28,
         }
+        grades_boundaries = [
+            "S+",
+            "S",
+            "A+",
+            "A",
+            "B+",
+            "B",
+            "C+",
+            "C",
+            "D+",
+            "D",
+            "E+",
+            "E",
+        ]
 
-        collection_docs = self.collection_refs["widgets"].document("repositories").collections()
+        collection_docs = (
+            self.collection_refs["widgets"].document("repositories").collections()
+        )
 
         raw_scores = {}
         for sub_collection in collection_docs:
@@ -137,53 +154,123 @@ class GithubCumulative:
                     raw_scores[key] = []
                 raw_scores[key].append((doc_name, value))
 
+        # Initialize the robust scaler
         robust_scaler = RobustScaler()
-        # standard_scaler = StandardScaler()
+
+        # Initialize a new dictionary to hold the normalized scores
         new_scores = {}
 
+        # Iterate over each feature in the raw_scores dictionary
         for key, values in raw_scores.items():
+            # Extract names and scores
             names, scores = zip(*values)  # Unpack repo names and scores
+
+            # Convert the list of scores to a numpy array and reshape for the scaler
             scores_array = np.array(scores).reshape(-1, 1)
-            normalized_values = robust_scaler.fit_transform(scores_array).flatten()
-            # Convert Z-scores to percentiles
-            percentiles = ndtr(normalized_values) * 100
+
+            # Mask for non-zero entries
+            non_zero_mask = scores_array != 0
+            # Extract non-zero scores for scaling
+            non_zero_scores = scores_array[non_zero_mask]
+
+            # Reshape non_zero_scores to a 2D array for fitting the scaler
+            if non_zero_scores.ndim == 1:
+                non_zero_scores = non_zero_scores.reshape(-1, 1)
+
+            # Initialize an array to hold the normalized scores
+            normalized_scores_array = np.zeros_like(scores_array)
+
+            # Fit and transform non-zero scores
+            if non_zero_scores.size > 0:  # Check if there are any non-zero scores
+                robust_scaler.fit(non_zero_scores)
+                # Normalize the non-zero scores
+                normalized_non_zero_scores = robust_scaler.transform(
+                    non_zero_scores
+                ).flatten()
+                # Assign normalized scores back to their corresponding positions in the normalized array
+                normalized_scores_array[non_zero_mask] = normalized_non_zero_scores
+
+            # Convert the non-zero normalized values to percentiles
+            percentiles = np.zeros_like(scores_array)
+            percentiles[non_zero_mask] = (
+                norm.cdf(normalized_scores_array[non_zero_mask].flatten()) * 100
+            )
+
+            # Flatten the percentiles array to convert it to 1D
+            percentiles = percentiles.flatten()
+
+            # Round the percentiles and create a list of (name, score)
             normalized_scores = list(zip(names, [round(p, 2) for p in percentiles]))
 
-            # Add each score to the new_scores dictionary
+            # Add each normalized score to the new_scores dictionary
             for name, score in normalized_scores:
                 if name not in new_scores:
                     new_scores[name] = {}
                 new_scores[name][key] = score
 
-        grade_boundaries = [
-            (91, "S+"),
-            (84, "S"),
-            (77, "A+"),
-            (70, "A"),
-            (63, "B+"),
-            (56, "B"),
-            (49, "C+"),
-            (42, "C"),
-            (35, "D+"),
-            (28, "D"),
-            (21, "E+"),
-            (14, "E"),
-            (0, "F"),
-        ]
-
         for doc_name, scores in new_scores.items():
-            scores["total"] = sum(scores[key] * weight_dict.get(key, 0) for key in scores.keys())
-
-            for boundary, grade in grade_boundaries:
-                if scores["total"] > boundary:
-                    scores["grade"] = grade
-                    break
-
-            self.collection_refs["widgets"].document("repositories").collection(doc_name).document("health_score").set(
-                {"data": scores}
+            print(scores)
+            # Calculate the total score based on the weighted sum of the individual scores
+            scores["total"] = sum(
+                scores[key] * weight_dict.get(key, 0) for key in scores.keys()
             )
 
-            self.collection_refs["projects"].document(doc_name).set({"health_score": scores}, merge=True)
+        # Assuming `all_total_scores` contains the 'total' score of each repository
+        all_total_scores = [scores["total"] for scores in new_scores.values()]
+
+        # Calculate the percentile values for each grade
+        percentiles_to_compute = [
+            100 - (10 / len(all_total_scores)),
+            90,
+            80,
+            70,
+            60,
+            50,
+            40,
+            30,
+            20,
+            10,
+            5,
+            2,
+        ]
+
+        # Calculate the percentiles for all boundaries in one go
+        percentile_values = np.percentile(all_total_scores, percentiles_to_compute)
+
+        # Map the percentile values to their corresponding grades
+
+        # Create a dictionary mapping the grade to its percentile boundary
+        percentile_bounds = dict(zip(grades_boundaries, percentile_values))
+
+        # Add the lower bound for "F"
+        percentile_bounds["F"] = 0
+
+        # Function to determine the grade based on score
+        def determine_grade(score, percentile_bounds):
+            for grade, bound in sorted(
+                percentile_bounds.items(), key=lambda x: x[1], reverse=True
+            ):
+                if score >= bound:
+                    return grade
+            return "F"  # If for some reason the score does not exceed the lowest bound
+
+        # Assign grades to each document based on the total score and calculated percentiles
+        for doc_name, scores in new_scores.items():
+            # Calculate the total score based on the weighted sum of the individual scores
+            scores["total"] = sum(
+                scores[key] * weight_dict.get(key, 0) for key in scores.keys()
+            )
+
+            # Determine the grade based on the total score
+            scores["grade"] = determine_grade(scores["total"], percentile_bounds)
+
+            # Update the documents in the database with the new scores and grades
+            self.collection_refs["widgets"].document("repositories").collection(
+                doc_name
+            ).document("health_score").set({"data": scores})
+            self.collection_refs["projects"].document(doc_name).set(
+                {"health_score": scores}, merge=True
+            )
 
     def cumulative_participation(self, **kwargs):
         d1 = None
@@ -195,7 +282,9 @@ class GithubCumulative:
                 continue
 
             d2 = doc_val.to_dict().get("data", None)
-            today_utc = datetime.datetime.utcnow()  # Switch from datetime.now() to datetime.utcnow()
+            today_utc = (
+                datetime.datetime.utcnow()
+            )  # Switch from datetime.now() to datetime.utcnow()
 
             if d2 is None:
                 continue
@@ -205,7 +294,10 @@ class GithubCumulative:
                 d1 = {
                     "xAxis": {
                         "type": "category",
-                        "data": [(today_utc - timedelta(weeks=i)).strftime("%Y-%m-%d") for i in range(52)][::-1],
+                        "data": [
+                            (today_utc - timedelta(weeks=i)).strftime("%Y-%m-%d")
+                            for i in range(52)
+                        ][::-1],
                     },
                     "yAxis": {"type": "value"},
                     "series": [
@@ -218,7 +310,9 @@ class GithubCumulative:
                     ],
                 }
 
-        self.collection_refs["cumulative"].document("cumulative_participation").set({"data": d1})
+        self.collection_refs["cumulative"].document("cumulative_participation").set(
+            {"data": d1}
+        )
 
     def cumulative_code_frequency(self, **kwargs):
         def aggregate_sum(data1, data2):
@@ -235,7 +329,10 @@ class GithubCumulative:
             final_data = {
                 "xAxis": {"data": []},
                 "yAxis": {},
-                "series": [{"data": [], "type": "line", "stack": "x"} for _ in range(len(data1["series"]))],
+                "series": [
+                    {"data": [], "type": "line", "stack": "x"}
+                    for _ in range(len(data1["series"]))
+                ],
             }
 
             for date, series_dict in sorted(result.items()):
@@ -263,7 +360,9 @@ class GithubCumulative:
             else:
                 d1 = aggregate_sum(d1, d2)
 
-        self.collection_refs["cumulative"].document("cumulative_code_frequency").set({"data": d1})
+        self.collection_refs["cumulative"].document("cumulative_code_frequency").set(
+            {"data": d1}
+        )
 
     def cumulative_punch_card(self, **kwargs):
         d1 = None
@@ -283,7 +382,9 @@ class GithubCumulative:
                 for i in range(len(d1)):
                     d1[i]["commits"] = d1[i]["commits"] + d2[i]["commits"]
 
-        self.collection_refs["cumulative"].document("cumulative_punch_card").set({"data": d1})
+        self.collection_refs["cumulative"].document("cumulative_punch_card").set(
+            {"data": d1}
+        )
 
     def cumulative_issue_count(self, **kwargs):
         cumulative_open_sum = 0
@@ -327,21 +428,31 @@ class GithubCumulative:
 
             if data.get("day", None):
                 dayly.extend(data["day"])
-                dayly = sorted(dayly, key=lambda x: x["comments_count"], reverse=True)[:10]
+                dayly = sorted(dayly, key=lambda x: x["comments_count"], reverse=True)[
+                    :10
+                ]
 
             if data.get("week", None):
                 weekly.extend(data["week"])
-                weekly = sorted(weekly, key=lambda x: x["comments_count"], reverse=True)[:10]
+                weekly = sorted(
+                    weekly, key=lambda x: x["comments_count"], reverse=True
+                )[:10]
 
             if data.get("month", None):
                 monthly.extend(data["month"])
-                monthly = sorted(monthly, key=lambda x: x["comments_count"], reverse=True)[:10]
+                monthly = sorted(
+                    monthly, key=lambda x: x["comments_count"], reverse=True
+                )[:10]
 
             if data.get("year", None):
                 yearly.extend(data["year"])
-                yearly = sorted(yearly, key=lambda x: x["comments_count"], reverse=True)[:10]
+                yearly = sorted(
+                    yearly, key=lambda x: x["comments_count"], reverse=True
+                )[:10]
 
-        self.collection_refs["cumulative"].document("cumulative_most_active_issues").set(
+        self.collection_refs["cumulative"].document(
+            "cumulative_most_active_issues"
+        ).set(
             {
                 "data": {
                     "day": dayly,
@@ -368,7 +479,9 @@ class GithubCumulative:
             cumulative_open_sum += data["open"]
             cumulative_closed_sum += data["closed"]
 
-        self.collection_refs["cumulative"].document("cumulative_pull_request_count").set(
+        self.collection_refs["cumulative"].document(
+            "cumulative_pull_request_count"
+        ).set(
             {
                 "data": {
                     "open": cumulative_open_sum,
@@ -410,7 +523,9 @@ class GithubCumulative:
             }
             cumulative_flatten.append(flattened_language)
 
-        self.collection_refs["cumulative"].document("cumulative_language_breakdown").set({"data": cumulative_flatten})
+        self.collection_refs["cumulative"].document(
+            "cumulative_language_breakdown"
+        ).set({"data": cumulative_flatten})
 
     class CumulativeRecentIssuesOrder(Enum):
         CREATED_AT = "CREATED_AT"
@@ -441,14 +556,18 @@ class GithubCumulative:
                 reverse=True,
             )[:10]
 
-        self.collection_refs["cumulative"].document(f"cumulative_{field_name}").set({"data": cumulative_recent_issues})
+        self.collection_refs["cumulative"].document(f"cumulative_{field_name}").set(
+            {"data": cumulative_recent_issues}
+        )
 
     class CumulativeRecentPullRequestsOrder(Enum):
         CREATED_AT = "CREATED_AT"
         UPDATED_AT = "UPDATED_AT"
 
     def cumulative_recent_pull_requests(self, **kwargs):
-        order_by = kwargs.get("order_by", self.CumulativeRecentPullRequestsOrder.CREATED_AT)
+        order_by = kwargs.get(
+            "order_by", self.CumulativeRecentPullRequestsOrder.CREATED_AT
+        )
 
         if order_by == self.CumulativeRecentPullRequestsOrder.CREATED_AT:
             field_name = "recent_created_pull_requests"
@@ -473,7 +592,9 @@ class GithubCumulative:
                 reverse=True,
             )[:10]
 
-        self.collection_refs["cumulative"].document(f"cumulative_{field_name}").set({"data": cumulative_recent_issues})
+        self.collection_refs["cumulative"].document(f"cumulative_{field_name}").set(
+            {"data": cumulative_recent_issues}
+        )
 
     def cumulative_recent_commits(self, **kwargs):
         cumulative_recent_commits = []
@@ -493,7 +614,7 @@ class GithubCumulative:
                 reverse=True,
             )[:10]
 
-        self.collection_refs["cumulative"].document(f"cumulative_recent_commits").set(
+        self.collection_refs["cumulative"].document("cumulative_recent_commits").set(
             {"data": cumulative_recent_commits}
         )
 
@@ -514,6 +635,6 @@ class GithubCumulative:
                 reverse=True,
             )[:10]
 
-        self.collection_refs["cumulative"].document(f"cumulative_recent_releases").set(
+        self.collection_refs["cumulative"].document("cumulative_recent_releases").set(
             {"data": cumulative_recent_releases}
         )

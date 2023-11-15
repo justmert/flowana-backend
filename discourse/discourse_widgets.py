@@ -1,7 +1,6 @@
 from .discourse_actor import DiscourseActor
 import logging
 from datetime import datetime
-import tools.log_config as log_config
 
 logger = logging.getLogger(__name__)
 
@@ -34,16 +33,22 @@ class DiscourseWidgets:
         data = True
         date_and_count = {}
         while data:
-            data = self.actor.discourse_rest_make_request(f"/latest.json", variables={"page": page})
+            data = self.actor.discourse_rest_make_request(
+                "/latest.json", variables={"page": page}
+            )
 
             topics = data["topic_list"]["topics"]
             if not self.is_valid(data) or not topics:
-                logger.info(f"[!] Invalid or empty data returned")
+                logger.info("[!] Invalid or empty data returned")
                 break
 
             for topic in topics:
-                created_date = datetime.strptime(topic["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ").date()
-                created_date = created_date.strftime("%Y-%m-%d")  # format it to 'yyyy-mm-dd'
+                created_date = datetime.strptime(
+                    topic["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ"
+                ).date()
+                created_date = created_date.strftime(
+                    "%Y-%m-%d"
+                )  # format it to 'yyyy-mm-dd'
                 if created_date in date_and_count:
                     date_and_count[created_date] += 1
 
@@ -64,10 +69,12 @@ class DiscourseWidgets:
         average_likes_per_topic = total_likes / total_topics
 
         if not date_and_count:
-            logger.info(f"[#invalid] No topics for protocol ")
+            logger.info("[#invalid] No topics for protocol ")
             return
 
-        self.collection_refs["discourse"].document("topic_activity").set({"data": date_and_count})
+        self.collection_refs["discourse"].document("topic_activity").set(
+            {"data": date_and_count}
+        )
 
         data = {
             "total_topics": total_topics,
@@ -111,7 +118,7 @@ class DiscourseWidgets:
         data = True
         while data:
             data = self.actor.discourse_rest_make_request(
-                f"/directory_items",
+                "/directory_items",
                 variables={
                     "order": "likes_received",
                     "desc": "true",
@@ -170,11 +177,11 @@ class DiscourseWidgets:
             if isinstance(v, float):
                 data[k] = round(v, 2)
 
-        self.collection_refs["discourse"].document(f"user_metrics").set({"data": data})
+        self.collection_refs["discourse"].document("user_metrics").set({"data": data})
 
     def categories(self, **kwargs):
         # formatting will be in frontend
-        data = self.actor.discourse_rest_make_request(f"/categories.json")
+        data = self.actor.discourse_rest_make_request("/categories.json")
 
         if not self.is_valid(data):
             logger.warning("[!] Invalid or empty data returned")
@@ -200,9 +207,11 @@ class DiscourseWidgets:
             }
 
             for sub_c_id in category["subcategory_ids"]:
-                sub_data = self.actor.discourse_rest_make_request(f"/c/{sub_c_id}/show.json")
+                sub_data = self.actor.discourse_rest_make_request(
+                    f"/c/{sub_c_id}/show.json"
+                )
                 if not self.is_valid(sub_data):
-                    logger.info(f'"[!] Invalid or empty data returned"')
+                    logger.info('"[!] Invalid or empty data returned"')
                     continue
                 sub_data = sub_data["category"]
                 sub_category_data = {
@@ -217,11 +226,13 @@ class DiscourseWidgets:
                 category_data["subcategories"].append(sub_category_data)
             categories.append(category_data)
 
-        self.collection_refs["discourse"].document("categories").set({"data": categories})
+        self.collection_refs["discourse"].document("categories").set(
+            {"data": categories}
+        )
 
     def tags(self, **kwargs):
         # formatting will be in frontend
-        data = self.actor.discourse_rest_make_request(f"/tags.json")
+        data = self.actor.discourse_rest_make_request("/tags.json")
 
         if not self.is_valid(data):
             logger.warning("[!] Invalid or empty data returned")
@@ -292,7 +303,9 @@ class DiscourseWidgets:
             latest_topics[order] = []
 
             # formatting will be in frontend
-            data = self.actor.discourse_rest_make_request(f"/latest.json", variables={"order": order})
+            data = self.actor.discourse_rest_make_request(
+                "/latest.json", variables={"order": order}
+            )
 
             if not self.is_valid(data):
                 logger.warning("[!] Invalid or empty data returned")
@@ -316,12 +329,14 @@ class DiscourseWidgets:
                 if len(latest_topics[order]) == 10:
                     break
 
-        self.collection_refs["discourse"].document("latest_topics").set({"data": latest_topics})
+        self.collection_refs["discourse"].document("latest_topics").set(
+            {"data": latest_topics}
+        )
 
     def latest_posts(self, **kwargs):
         latest_posts = []
         # formatting will be in frontend
-        data = self.actor.discourse_rest_make_request(f"/posts.json")
+        data = self.actor.discourse_rest_make_request("/posts.json")
 
         if not self.is_valid(data):
             logger.warning("[!] Invalid or empty data returned")
@@ -330,7 +345,7 @@ class DiscourseWidgets:
         for post in data["latest_posts"]:
             post_data = {
                 "id": post["id"],
-                "name": post["name"],
+                "name": None if post.get("name", None) is not None else post["name"],
                 "username": post["username"],
                 "user_id": post["user_id"],
                 "avatar_template": post["avatar_template"],
@@ -350,7 +365,9 @@ class DiscourseWidgets:
             if len(latest_posts) == 10:
                 break
 
-        self.collection_refs["discourse"].document("latest_posts").set({"data": latest_posts})
+        self.collection_refs["discourse"].document("latest_posts").set(
+            {"data": latest_posts}
+        )
 
     def top_users(self, **kwargs):
         top_users = {}
@@ -376,7 +393,7 @@ class DiscourseWidgets:
 
                 # formatting will be in frontend
                 data = self.actor.discourse_rest_make_request(
-                    f"/directory_items",
+                    "/directory_items.json",
                     variables={
                         "order": order,
                         "desc": "true",
@@ -400,11 +417,13 @@ class DiscourseWidgets:
                         "days_visited": user["days_visited"],
                         "user_id": user["user"]["id"],
                         "username": user["user"]["username"],
-                        "name": user["user"]["name"],
+                        "name": None
+                        if user["user"].get("name", None) is not None
+                        else user["user"]["name"],
                         "avatar_template": user["user"]["avatar_template"],
                     }
                     top_users[interval][order].append(user_data)
                     if len(top_users[interval][order]) == 10:
                         break
 
-        self.collection_refs["discourse"].document(f"top_users").set({"data": top_users})
+        self.collection_refs["discourse"].document("top_users").set({"data": top_users})

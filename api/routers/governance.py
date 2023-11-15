@@ -57,13 +57,17 @@ class VotingPowerInterval(Enum):
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
 def voting_power_chart(
     protocol_name: str = Path(..., description="Protocol name"),
-    interval: VotingPowerInterval = Query(VotingPowerInterval.WEEK, description="Interval to group by"),
+    interval: VotingPowerInterval = Query(
+        VotingPowerInterval.WEEK, description="Interval to group by"
+    ),
 ):
     """
     Returns the voting power chart.
@@ -162,13 +166,17 @@ class DelegateSortField(Enum):
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
 def delegates(
     protocol_name: str = Path(..., description="Protocol name"),
-    sort_by: DelegateSortField = Query(DelegateSortField.VOTING_WEIGHT, description="Sort by"),
+    sort_by: DelegateSortField = Query(
+        DelegateSortField.VOTING_WEIGHT, description="Sort by"
+    ),
 ):
     """
     Returns the delegates sorted by the given field.
@@ -362,7 +370,9 @@ def delegates(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -375,7 +385,12 @@ def proposals(
     """
 
     try:
-        ref = db.collection(f"{protocol_name}-governance").document(f"proposals").get(field_paths=["data"]).to_dict()
+        ref = (
+            db.collection(f"{protocol_name}-governance")
+            .document("proposals")
+            .get(field_paths=["data"])
+            .to_dict()
+        )
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -457,9 +472,17 @@ def proposals(
                         ],
                         "id": "eip155:1:0xc0Da02939E1441F497fd74F78cE7Decb17B66529",
                         "contracts": {
-                            "timelock": {"address": "0x6d903f6003cca6255D85CcA4D3B5E5146dC33925"},
-                            "tokens": [{"address": "0xc00e94Cb662C3520282E6f5717214004A7f26888"}],
-                            "governor": {"address": "0xc0Da02939E1441F497fd74F78cE7Decb17B66529"},
+                            "timelock": {
+                                "address": "0x6d903f6003cca6255D85CcA4D3B5E5146dC33925"
+                            },
+                            "tokens": [
+                                {
+                                    "address": "0xc00e94Cb662C3520282E6f5717214004A7f26888"
+                                }
+                            ],
+                            "governor": {
+                                "address": "0xc0Da02939E1441F497fd74F78cE7Decb17B66529"
+                            },
                         },
                         "proposalThreshold": 25,
                     }
@@ -472,7 +495,9 @@ def proposals(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -487,7 +512,7 @@ def info(
     try:
         ref = (
             db.collection(f"{protocol_name}-governance")
-            .document(f"governance_info")
+            .document("governance_info")
             .get(field_paths=["data"])
             .to_dict()
         )
@@ -565,7 +590,9 @@ def info(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -578,7 +605,12 @@ def safes(
     """
 
     try:
-        ref = db.collection(f"{protocol_name}-governance").document(f"safes").get(field_paths=["data"]).to_dict()
+        ref = (
+            db.collection(f"{protocol_name}-governance")
+            .document("safes")
+            .get(field_paths=["data"])
+            .to_dict()
+        )
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")

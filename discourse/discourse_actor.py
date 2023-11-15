@@ -2,7 +2,6 @@ import requests
 import os
 import time
 import logging
-import tools.log_config as log_config
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +27,9 @@ class DiscourseActor:
         if not self.session:
             self.session = requests.Session()
 
-    def discourse_rest_make_request(self, url, variables=None, max_page_fetch=float("inf")):
+    def discourse_rest_make_request(
+        self, url, variables=None, max_page_fetch=float("inf")
+    ):
         url = f"{self.discourse_api_endpoint}{url}"
         result = []
 
@@ -49,7 +50,9 @@ class DiscourseActor:
                 continue
 
             else:
-                logger.error(f" [-] Failed to retrieve from API. Status code: {response.status_code} - {response.text}")
+                logger.error(
+                    f" [-] Failed to retrieve from API. Status code: {response.status_code} - {response.text}"
+                )
                 logger.info(f" [#] Rest endpoint: {url}")
                 logger.info(f" [#] Variables: {variables}")
                 break

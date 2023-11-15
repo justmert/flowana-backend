@@ -34,7 +34,9 @@ router = APIRouter()
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -47,7 +49,12 @@ def full_time(
     """
 
     try:
-        ref = db.collection(f"{protocol_name}-developers").document(f"full_time").get(field_paths=["data"]).to_dict()
+        ref = (
+            db.collection(f"{protocol_name}-developers")
+            .document("full_time")
+            .get(field_paths=["data"])
+            .to_dict()
+        )
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -90,7 +97,9 @@ def full_time(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -105,7 +114,7 @@ def developers_monthly_active_devs(
     try:
         ref = (
             db.collection(f"{protocol_name}-developers")
-            .document(f"monthly_active_devs")
+            .document("monthly_active_devs")
             .get(field_paths=["data"])
             .to_dict()
         )
@@ -151,7 +160,9 @@ def developers_monthly_active_devs(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -164,7 +175,12 @@ def developers_total_repos(
     """
 
     try:
-        ref = db.collection(f"{protocol_name}-developers").document(f"total_repos").get(field_paths=["data"]).to_dict()
+        ref = (
+            db.collection(f"{protocol_name}-developers")
+            .document("total_repos")
+            .get(field_paths=["data"])
+            .to_dict()
+        )
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -207,7 +223,9 @@ def developers_total_repos(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -221,7 +239,10 @@ def developers_total_commits(
 
     try:
         ref = (
-            db.collection(f"{protocol_name}-developers").document(f"total_commits").get(field_paths=["data"]).to_dict()
+            db.collection(f"{protocol_name}-developers")
+            .document("total_commits")
+            .get(field_paths=["data"])
+            .to_dict()
         )
 
         if ref is None:
@@ -278,7 +299,9 @@ def developers_total_commits(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -293,7 +316,7 @@ def developers_monthly_active_dev_chart(
     try:
         ref = (
             db.collection(f"{protocol_name}-developers")
-            .document(f"monthly_active_dev_chart")
+            .document("monthly_active_dev_chart")
             .get(field_paths=["data"])
             .to_dict()
         )
@@ -344,7 +367,9 @@ def developers_monthly_active_dev_chart(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -359,7 +384,7 @@ def developers_total_monthly_active_dev_chart(
     try:
         ref = (
             db.collection(f"{protocol_name}-developers")
-            .document(f"total_monthly_active_dev_chart")
+            .document("total_monthly_active_dev_chart")
             .get(field_paths=["data"])
             .to_dict()
         )
@@ -425,7 +450,9 @@ def developers_total_monthly_active_dev_chart(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -439,7 +466,10 @@ def developers_dev_type_table(
 
     try:
         ref = (
-            db.collection(f"{protocol_name}-developers").document(f"dev_type_table").get(field_paths=["data"]).to_dict()
+            db.collection(f"{protocol_name}-developers")
+            .document("dev_type_table")
+            .get(field_paths=["data"])
+            .to_dict()
         )
 
         if ref is None:
@@ -496,7 +526,9 @@ def developers_dev_type_table(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -511,7 +543,7 @@ def developers_monthly_commits_by_dev_type_chart(
     try:
         ref = (
             db.collection(f"{protocol_name}-developers")
-            .document(f"monthly_commits_by_dev_type_chart")
+            .document("monthly_commits_by_dev_type_chart")
             .get(field_paths=["data"])
             .to_dict()
         )
@@ -562,7 +594,9 @@ def developers_monthly_commits_by_dev_type_chart(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -577,7 +611,7 @@ def developers_monthly_commits_chart(
     try:
         ref = (
             db.collection(f"{protocol_name}-developers")
-            .document(f"monthly_commits_chart")
+            .document("monthly_commits_chart")
             .get(field_paths=["data"])
             .to_dict()
         )

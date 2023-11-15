@@ -84,7 +84,9 @@ router = APIRouter()
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -99,7 +101,7 @@ def project_leaderboard(
     try:
         ref = (
             db.collection(f"{protocol_name}-leaderboard")
-            .document(f"project_leaderboard")
+            .document("project_leaderboard")
             .get(field_paths=["data"])
             .to_dict()
         )
@@ -158,7 +160,9 @@ def project_leaderboard(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -173,7 +177,7 @@ def project_contributors(
     try:
         ref = (
             db.collection(f"{protocol_name}-leaderboard")
-            .document(f"contributor_leaderboard")
+            .document("contributor_leaderboard")
             .get(field_paths=["data"])
             .to_dict()
         )

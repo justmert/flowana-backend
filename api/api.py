@@ -15,7 +15,6 @@ from pydantic import BaseModel
 from fastapi import HTTPException
 import os
 from fastapi import Depends, HTTPException, status
-import tools.log_config as log_config
 
 SECRET_KEY = os.environ["API_SECRET_KEY"]
 ALGORITHM = "HS256"
@@ -118,12 +117,26 @@ from api.routers import (
     misc,
 )
 
-app.include_router(github_project.router, prefix="/github-project", tags=[tags_metadata[1]["name"]])
-app.include_router(github_ecosystem.router, prefix="/github-ecosystem", tags=[tags_metadata[2]["name"]])
-app.include_router(github_leaderboard.router, prefix="/github-leaderboard", tags=[tags_metadata[3]["name"]])
-app.include_router(discourse.router, prefix="/discourse", tags=[tags_metadata[4]["name"]])
-app.include_router(developers.router, prefix="/developers", tags=[tags_metadata[5]["name"]])
-app.include_router(governance.router, prefix="/governance", tags=[tags_metadata[6]["name"]])
+app.include_router(
+    github_project.router, prefix="/github-project", tags=[tags_metadata[1]["name"]]
+)
+app.include_router(
+    github_ecosystem.router, prefix="/github-ecosystem", tags=[tags_metadata[2]["name"]]
+)
+app.include_router(
+    github_leaderboard.router,
+    prefix="/github-leaderboard",
+    tags=[tags_metadata[3]["name"]],
+)
+app.include_router(
+    discourse.router, prefix="/discourse", tags=[tags_metadata[4]["name"]]
+)
+app.include_router(
+    developers.router, prefix="/developers", tags=[tags_metadata[5]["name"]]
+)
+app.include_router(
+    governance.router, prefix="/governance", tags=[tags_metadata[6]["name"]]
+)
 app.include_router(messari.router, prefix="/messari", tags=[tags_metadata[7]["name"]])
 app.include_router(misc.router, prefix="/misc", tags=[tags_metadata[8]["name"]])
 
@@ -178,7 +191,9 @@ class UserOut(BaseModel):
 
 
 @app.post("/admin-create-user/", response_model=UserOut, tags=["Auth"])
-async def admin_create_user(user_in: UserIn, admin_in: AdminIn = Depends(verify_admin_credentials)):
+async def admin_create_user(
+    user_in: UserIn, admin_in: AdminIn = Depends(verify_admin_credentials)
+):
     """
     Create a new user with admin credentials.
     """

@@ -1,107 +1,5 @@
 [
   {
-    "name": "lens",
-    "update": true,
-    "updater": {
-      "index_now": false
-    },
-    "crawl": true,
-    "crawler": {
-      "index_now": false,
-      "include_sub_ecosystems": true,
-      "tomls": ["lens-protocol.toml"]
-    },
-    "forum": null,
-    "developers": null,
-    "governance": null,
-    "messari": {
-      "asset_key": "lens-protocol"
-    }
-  },
-  {
-    "name": "flow",
-    "update": true,
-    "updater": {
-      "index_now": false
-    },
-    "crawl": true,
-    "crawler": {
-      "index_now": false,
-      "include_sub_ecosystems": true,
-      "tomls": ["flow.toml"]
-    },
-    "forum": "https://forum.onflow.org",
-    "developers": "flow",
-    "governance": null,
-    "messari": {
-      "asset_key": "flow"
-    }
-  },
-  {
-    "name": "compound",
-    "update": true,
-    "updater": {
-      "index_now": false
-    },
-    "crawl": true,
-    "crawler": {
-      "index_now": false,
-      "include_sub_ecosystems": true,
-      "tomls": ["compound.toml"]
-    },
-    "forum": "https://www.comp.xyz/",
-    "developers": "compound",
-    "governance": {
-      "slug": "compound",
-      "organization_id": 1,
-      "chain_id": "eip155:1",
-      "governance_id": "eip155:1:0xc0Da02939E1441F497fd74F78cE7Decb17B66529"
-    },
-    "messari": {
-      "asset_key": "comp"
-    }
-  },
-  {
-    "name": "polkadot",
-    "update": true,
-    "updater": {
-      "index_now": false
-    },
-    "crawl": true,
-    "crawler": {
-      "index_now": false,
-      "include_sub_ecosystems": false,
-      "tomls": ["polkadot.toml"]
-    },
-    "forum": "https://forum.polkadot.network/",
-    "developers": "polkadot",
-    "governance": null,
-    "messari": {
-      "asset_key": "dot"
-    }
-  },
-
-  {
-    "name": "balancer",
-    "update": true,
-    "updater": {
-      "index_now": true
-    },
-    "crawl": true,
-    "crawler": {
-      "index_now": false,
-      "include_sub_ecosystems": true,
-      "tomls": ["balancer.toml"]
-    },
-    "forum": "https://forum.balancer.fi/",
-    "developers": "balancer",
-    "governance": null,
-    "messari": {
-      "asset_key": "balancer"
-    }
-  },
-
-  {
     "name": "aave",
     "update": true,
     "updater": {
@@ -109,7 +7,7 @@
     },
     "crawl": true,
     "crawler": {
-      "index_now": false,
+      "index_now": true,
       "include_sub_ecosystems": true,
       "tomls": ["aave.toml"]
     },
@@ -122,7 +20,226 @@
       "governance_id": "eip155:1:0xEC568fffba86c094cf06b22134B23074DFE2252c"
     },
     "messari": {
-      "asset_key": "aave"
+      "asset_key": null
+    }
+  },
+  {
+    "name": "lens",
+    "update": true,
+    "updater": {
+      "index_now": true
+    },
+    "crawl": true,
+    "crawler": {
+      "index_now": true,
+      "include_sub_ecosystems": true,
+      "tomls": ["lens-protocol.toml"]
+    },
+    "forum": null,
+    "developers": null,
+    "governance": null,
+    "messari": {
+      "asset_key": null
+    }
+  },
+  {
+    "name": "mantle",
+    "update": true,
+    "updater": {
+      "index_now": true
+    },
+    "crawl": true,
+    "crawler": {
+      "index_now": true,
+      "include_sub_ecosystems": true,
+      "tomls": ["mantle.toml"]
+    },
+    "forum": "https://forum.mantle.xyz",
+    "developers": null,
+    "governance": null,
+    "messari": {
+      "asset_key": null
+    }
+  },
+  {
+    "name": "aleo",
+    "update": true,
+    "updater": {
+      "index_now": true
+    },
+    "crawl": true,
+    "crawler": {
+      "index_now": true,
+      "include_sub_ecosystems": true,
+      "tomls": ["aleo.toml"]
+    },
+    "forum": "https://community.aleo.org",
+    "developers": null,
+    "governance": null,
+    "messari": {
+      "asset_key": null
+    }
+  },
+
+  {
+    "name": "aztec",
+    "update": true,
+    "updater": {
+      "index_now": true
+    },
+    "crawl": true,
+    "crawler": {
+      "index_now": true,
+      "include_sub_ecosystems": true,
+      "tomls": ["aztec-protocol.toml"]
+    },
+    "forum": "https://forum.aztec.network",
+    "developers": "aztec-protocol",
+    "governance": null,
+    "messari": {
+      "asset_key": null
+    }
+  },
+  {
+    "name": "neon-evm",
+    "update": true,
+    "updater": {
+      "index_now": true
+    },
+    "crawl": true,
+    "crawler": {
+      "index_now": true,
+      "include_sub_ecosystems": true,
+      "tomls": ["neon-labs.toml"]
+    },
+    "developers": null,
+    "governance": null,
+    "messari": {
+      "asset_key": null
+    }
+  },
+  {
+    "name": "the-graph",
+    "update": true,
+    "updater": {
+      "index_now": true
+    },
+    "crawl": true,
+    "crawler": {
+      "index_now": true,
+      "include_sub_ecosystems": true,
+      "tomls": ["the-graph.toml"]
+    },
+    "forum": "https://forum.thegraph.com/",
+    "developers": "the-graph",
+    "governance": null,
+    "messari": {
+      "asset_key": null
+    }
+  },
+  {
+    "name": "gnosis",
+    "update": true,
+    "updater": {
+      "index_now": true
+    },
+    "crawl": true,
+    "crawler": {
+      "index_now": true,
+      "include_sub_ecosystems": true,
+      "tomls": ["gnosis-chain.toml"]
+    },
+    "forum": "https://forum.gnosis.io",
+    "developers": "gnosis",
+    "governance": null,
+    "messari": {
+      "asset_key": null
+    }
+  },
+  {
+    "name": "arbitrum",
+    "update": true,
+    "updater": {
+      "index_now": true
+    },
+    "crawl": true,
+    "crawler": {
+      "index_now": true,
+      "include_sub_ecosystems": true,
+      "tomls": ["arbitrum.toml"]
+    },
+    "forum": "https://research.arbitrum.io",
+    "developers": "arbitrum",
+    "governance": {
+      "slug": "arbitrum",
+      "organization_id": "15233604-523c-46b0-a7cd-f2b41e93cd51",
+      "chain_id": "eip155:42161",
+      "governance_id": "eip155:42161:0xf07DeD9dC292157749B6Fd268E37DF6EA38395B9"
+    },
+    "messari": {
+      "asset_key": null
+    }
+  },
+  {
+    "name": "1inch",
+    "update": true,
+    "updater": {
+      "index_now": true
+    },
+    "crawl": true,
+    "crawler": {
+      "index_now": true,
+      "include_sub_ecosystems": true,
+      "tomls": ["1inch.toml"]
+    },
+    "forum": null,
+    "developers": null,
+    "governance": null,
+    "messari": {
+      "asset_key": null
+    }
+  },
+  {
+    "name": "compound",
+    "update": true,
+    "updater": {
+      "index_now": true
+    },
+    "crawl": true,
+    "crawler": {
+      "index_now": true,
+      "include_sub_ecosystems": true,
+      "tomls": ["compound.toml"]
+    },
+    "forum": "https://www.comp.xyz/",
+    "developers": "compound",
+    "governance": {
+      "slug": "compound",
+      "organization_id": 1,
+      "chain_id": "eip155:1",
+      "governance_id": "eip155:1:0xc0Da02939E1441F497fd74F78cE7Decb17B66529"
+    },
+    "messari": {
+      "asset_key": null
+    }
+  },
+  {
+    "name": "polkadot",
+    "update": true,
+    "updater": {
+      "index_now": true
+    },
+    "crawl": true,
+    "crawler": {
+      "index_now": true,
+      "include_sub_ecosystems": true,
+      "tomls": ["polkadot.toml"]
+    },
+    "forum": "https://forum.polkadot.network/",
+    "developers": "polkadot",
+    "governance": null,
+    "messari": {
+      "asset_key": null
     }
   },
 
@@ -134,7 +251,7 @@
     },
     "crawl": true,
     "crawler": {
-      "index_now": false,
+      "index_now": true,
       "include_sub_ecosystems": true,
       "tomls": ["proton.toml"]
     },
@@ -142,107 +259,7 @@
     "developers": null,
     "governance": null,
     "messari": {
-      "asset_key": "proton"
-    }
-  },
-
-  {
-    "name": "osmosis",
-    "update": true,
-    "updater": {
-      "index_now": true
-    },
-    "crawl": true,
-    "crawler": {
-      "index_now": false,
-      "include_sub_ecosystems": true,
-      "tomls": ["osmosis.toml"]
-    },
-    "forum": null,
-    "developers": "osmosis",
-    "governance": null,
-    "messari": {
-      "asset_key": "osmosis"
-    }
-  },
-
-  {
-    "name": "the-graph",
-    "update": true,
-    "updater": {
-      "index_now": true
-    },
-    "crawl": true,
-    "crawler": {
-      "index_now": false,
-      "include_sub_ecosystems": true,
-      "tomls": ["the-graph.toml"]
-    },
-    "forum": "https://forum.thegraph.com/",
-    "developers": "the-graph",
-    "governance": null,
-    "messari": {
-      "asset_key": "the-graph"
-    }
-  },
-
-  {
-    "name": "ton",
-    "update": true,
-    "updater": {
-      "index_now": true
-    },
-    "crawl": true,
-    "crawler": {
-      "index_now": false,
-      "include_sub_ecosystems": true,
-      "tomls": ["ton.toml"]
-    },
-    "forum": null,
-    "developers": "ton",
-    "governance": null,
-    "messari": {
-      "asset_key": "the-open-network"
-    }
-  },
-
-  {
-    "name": "ocean",
-    "update": true,
-    "updater": {
-      "index_now": true
-    },
-    "crawl": true,
-    "crawler": {
-      "index_now": false,
-      "include_sub_ecosystems": true,
-      "tomls": ["ocean-protocol.toml"]
-    },
-    "forum": null,
-    "developers": null,
-    "governance": null,
-    "messari": {
-      "asset_key": "ocean-protocol"
-    }
-  },
-
-  {
-    "name": "eos",
-    "update": false,
-    "updater": {
-      "index_now": false
-    },
-    "crawl": false,
-    "crawler": {
-      "index_now": false,
-      "include_sub_ecosystems": true,
-      "tomls": ["eos.toml"]
-    },
-    "forum": "https://forums.eoscommunity.org/",
-    "developers": "eos",
-    "governance": null,
-    "messari": {
-      "asset_key": "eos"
+      "asset_key": null
     }
   }
 ]

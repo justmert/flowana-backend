@@ -2,7 +2,6 @@ import os
 import firebase_admin
 from firebase_admin import firestore, credentials
 import os
-import tools.log_config as log_config
 
 # Get the current file's directory
 current_dir = os.path.dirname(os.path.realpath(__file__))
@@ -19,6 +18,8 @@ if not os.path.exists(admin_sdk_path):
 cred = credentials.Certificate(admin_sdk_path)
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = admin_sdk_path
 
-app = firebase_admin.initialize_app(cred, {"projectId": os.environ["FIREBASE_PROJECT_ID"]}, name="flowana_api")
+app = firebase_admin.initialize_app(
+    cred, {"projectId": os.environ["FIREBASE_PROJECT_ID"]}, name="flowana_api"
+)
 
 db = firestore.Client()

@@ -3,7 +3,6 @@ import os
 import time
 from time import sleep
 import logging
-import tools.log_config as log_config
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +27,10 @@ class GithubActor:
         if not self.session:
             self.session = requests.Session()
 
-    def github_graphql_make_query(self, _query, variables=None):
-        logger.info(f". [=] Fetching data from Graphql API from {self.github_graphql_endpoint}")
+    def github_graphql_make_query(self, _query, variables=None, try_val=0):
+        logger.info(
+            f". [=] Fetching data from Graphql API from {self.github_graphql_endpoint}"
+        )
         self.session.headers.update(self.github_graphql_headers)
         response = self.session.post(
             self.github_graphql_endpoint,
@@ -42,7 +43,7 @@ class GithubActor:
 
         elif response.status_code in [202, 429]:
             logger.info(". [...] Waiting for the data to be ready.")
-            time.sleep(1)
+            time.sleep(1.5)
             return self.github_graphql_make_query(_query, variables)  # fetch again!
 
         elif response.status_code in (301, 302):
@@ -52,17 +53,31 @@ class GithubActor:
             )
 
         elif response.status_code == 403:
-            self.rate_limit_wait()
+            self.rate_limit_wait(response.headers)
             return self.github_graphql_make_query(_query, variables)
 
+        elif response.status_code == 502:
+            logger.warning(". [-] Bad gateway.")
+            time.sleep(30)  # Wait for 10 second
+            if try_val > 5:
+                logger.warning(". [-] Too many tries. Aborting.")
+                return None
+            return self.github_graphql_make_query(
+                _query, variables, try_val=try_val + 1
+            )  # fetch again!
+
         else:
-            logger.error(f". [-] Failed to retrieve from API. Status code: {response.status_code} - {response.text}")
+            logger.error(
+                f". [-] Failed to retrieve from API. Status code: {response.status_code} - {response.text}"
+            )
             logger.info(f". [#] Graphql endpoint: {self.github_graphql_endpoint}")
             logger.info(f". [#] Query: {_query}")
             logger.info(f". [#] Variables: {variables}")
             return None
 
-    def github_rest_make_request(self, url, variables=None, max_page_fetch=float("inf")):
+    def github_rest_make_request(
+        self, url, variables=None, max_page_fetch=float("inf"), try_val=0
+    ):
         url = f"{self.github_rest_endpoint}{url}"
         logger.info(f". [=] Fetching data from REST API from {url}")
 
@@ -79,7 +94,12 @@ class GithubActor:
                 continue  # fetch again!
 
             elif response.status_code == 403:
-                self.rate_limit_wait()
+                self.rate_limit_wait(response.headers)
+                continue
+
+            elif response.status_code == 502:
+                logger.warning(". [-] Bad gateway.")
+                sleep(30)
                 continue
 
             elif response.status_code == 200:
@@ -100,18 +120,28 @@ class GithubActor:
 
                 current_fetch_count += 1
             else:
-                logger.error(f" [-] Failed to retrieve from API. Status code: {response.status_code} - {response.text}")
+                logger.error(
+                    f" [-] Failed to retrieve from API. Status code: {response.status_code} - {response.text}"
+                )
                 logger.info(f" [#] Rest endpoint: {url}")
                 logger.info(f" [#] Variables: {variables}")
                 break
         return result
 
-    def rate_limit_wait(self, rate_limit_reset):
-        reset_time = int(rate_limit_reset)
+    def rate_limit_wait(self, headers):
+        logger.warning(
+            ". [-] The user has exceeded the rate limit and needs to wait before making more requests."
+        )
+        logger.info(f". [#] Rate limit: {headers['x-ratelimit-limit']}")
+        logger.info(f". [#] Remaining: {headers['x-ratelimit-remaining']}")
+        logger.info(f". [#] Reset time: {headers['x-ratelimit-reset']}")
+        reset_time = int(headers["x-ratelimit-reset"])
         time_to_wait = reset_time - int(time.time())
         if time_to_wait <= 0:
             return
-        logger.warning(f". [-] Waiting for {time_to_wait} seconds which is {round(time_to_wait / 60, 2)} minutes.")
+        logger.warning(
+            f". [-] Waiting for {time_to_wait} seconds which is {round(time_to_wait / 60, 2)} minutes."
+        )
         time.sleep(time_to_wait)
 
     def check_repo_validity(self, owner, repo, try_val=0):
@@ -124,28 +154,27 @@ class GithubActor:
             return response.json()
 
         elif response.status_code == 202:
-            logger.info(f". [-] The request was successful and there is no response body. Trying again.")
-            sleep(1.5)  # Wait for 1 second
+            logger.info(
+                ". [-] The request was successful and there is no response body. Trying again."
+            )
+            time.sleep(1.5)  # Wait for 1 second
             if try_val > 5:
-                logger.warning(f". [-] Too many tries. Aborting.")
+                logger.warning(". [-] Too many tries. Aborting.")
                 return False
             return self.check_repo_validity(owner, repo, try_val + 1)
 
         elif response.status_code == 400:
-            logger.warning(f". [-] Bad request.")
+            logger.warning(". [-] Bad request.")
             return False
 
         elif response.status_code == 401:
-            logger.warning(f". [-] The repository {repo} is private and the user is not authenticated.")
+            logger.warning(
+                f". [-] The repository {repo} is private and the user is not authenticated."
+            )
             return False
 
         elif response.status_code == 403:
-            logger.warning(f". [-] The user has exceeded the rate limit and needs to wait before making more requests.")
-            # print rate limits
-            logger.info(f". [#] Rate limit: {response.headers['x-ratelimit-limit']}")
-            logger.info(f". [#] Remaining: {response.headers['x-ratelimit-remaining']}")
-            logger.info(f". [#] Reset time: {response.headers['x-ratelimit-reset']}")
-            self.rate_limit_wait(response.headers["x-ratelimit-reset"])
+            self.rate_limit_wait(response.headers)
             return self.check_repo_validity(owner, repo, try_val + 1)
 
         elif response.status_code == 404:
@@ -157,21 +186,27 @@ class GithubActor:
             return False
 
         elif response.status_code == 422:
-            logger.warning(f". [-] The request was well-formed but was unable to be followed due to semantic errors.")
+            logger.warning(
+                ". [-] The request was well-formed but was unable to be followed due to semantic errors."
+            )
             return False
 
         elif response.status_code == 429:
-            logger.warning(f". [-] The user has sent too many requests in a given amount of time.")
-            sleep(1)  # Wait for 1 second
+            logger.warning(
+                ". [-] The user has sent too many requests in a given amount of time."
+            )
+            time.sleep(1.5)  # Wait for 1 second
             if try_val > 5:
-                logger.warning(f". [-] Too many tries. Aborting.")
+                logger.warning(". [-] Too many tries. Aborting.")
                 return False
             return self.check_repo_validity(owner, repo, try_val + 1)
 
         elif response.status_code == 500:
-            logger.warning(f". [-] An error occurred on the server.")
+            logger.warning(". [-] An error occurred on the server.")
             return False
 
         else:
-            logger.warning(f". [-] Unknown error [{response.status_code}] - {response.reason}: {response.text}")
+            logger.warning(
+                f". [-] Unknown error [{response.status_code}] - {response.reason}: {response.text}"
+            )
             return False

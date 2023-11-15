@@ -79,7 +79,9 @@ router = APIRouter()
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -92,7 +94,12 @@ def asset(
     """
 
     try:
-        ref = db.collection(f"{protocol_name}-messari").document(f"asset").get(field_paths=["data"]).to_dict()
+        ref = (
+            db.collection(f"{protocol_name}-messari")
+            .document("asset")
+            .get(field_paths=["data"])
+            .to_dict()
+        )
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -341,7 +348,9 @@ def asset(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -354,7 +363,12 @@ def asset_profile(
     """
 
     try:
-        ref = db.collection(f"{protocol_name}-messari").document(f"asset_profile").get(field_paths=["data"]).to_dict()
+        ref = (
+            db.collection(f"{protocol_name}-messari")
+            .document("asset_profile")
+            .get(field_paths=["data"])
+            .to_dict()
+        )
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -821,7 +835,9 @@ def asset_profile(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -834,7 +850,12 @@ def asset_metrics(
     """
 
     try:
-        ref = db.collection(f"{protocol_name}-messari").document(f"asset_metrics").get(field_paths=["data"]).to_dict()
+        ref = (
+            db.collection(f"{protocol_name}-messari")
+            .document("asset_metrics")
+            .get(field_paths=["data"])
+            .to_dict()
+        )
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
@@ -879,7 +900,9 @@ def asset_metrics(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -894,7 +917,7 @@ def indexed_timeseries_list(
     try:
         ref = (
             db.collection(f"{protocol_name}-messari")
-            .document(f"indexed_timeseries_list")
+            .document("indexed_timeseries_list")
             .get(field_paths=["data"])
             .to_dict()
         )
@@ -936,7 +959,9 @@ def indexed_timeseries_list(
         },
         404: {
             "description": "Not found",
-            "content": {"application/json": {"example": {"error": "Error description"}}},
+            "content": {
+                "application/json": {"example": {"error": "Error description"}}
+            },
         },
     },
 )
@@ -950,7 +975,12 @@ def timeseries(
     """
 
     try:
-        ref = db.collection(f"{protocol_name}-messari").document(timeseries_name).get(field_paths=["data"]).to_dict()
+        ref = (
+            db.collection(f"{protocol_name}-messari")
+            .document(timeseries_name)
+            .get(field_paths=["data"])
+            .to_dict()
+        )
 
         if ref is None:
             raise exceptions.NotFound("Collection or document not found")
