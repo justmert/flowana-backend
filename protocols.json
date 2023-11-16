@@ -7,7 +7,7 @@
     },
     "crawl": true,
     "crawler": {
-      "index_now": true,
+      "index_now": false,
       "include_sub_ecosystems": true,
       "tomls": ["aave.toml"]
     },
@@ -31,166 +31,9 @@
     },
     "crawl": true,
     "crawler": {
-      "index_now": true,
+      "index_now": false,
       "include_sub_ecosystems": true,
       "tomls": ["lens-protocol.toml"]
-    },
-    "forum": null,
-    "developers": null,
-    "governance": null,
-    "messari": {
-      "asset_key": null
-    }
-  },
-  {
-    "name": "mantle",
-    "update": true,
-    "updater": {
-      "index_now": true
-    },
-    "crawl": true,
-    "crawler": {
-      "index_now": true,
-      "include_sub_ecosystems": true,
-      "tomls": ["mantle.toml"]
-    },
-    "forum": "https://forum.mantle.xyz",
-    "developers": null,
-    "governance": null,
-    "messari": {
-      "asset_key": null
-    }
-  },
-  {
-    "name": "aleo",
-    "update": true,
-    "updater": {
-      "index_now": true
-    },
-    "crawl": true,
-    "crawler": {
-      "index_now": true,
-      "include_sub_ecosystems": true,
-      "tomls": ["aleo.toml"]
-    },
-    "forum": "https://community.aleo.org",
-    "developers": null,
-    "governance": null,
-    "messari": {
-      "asset_key": null
-    }
-  },
-
-  {
-    "name": "aztec",
-    "update": true,
-    "updater": {
-      "index_now": true
-    },
-    "crawl": true,
-    "crawler": {
-      "index_now": true,
-      "include_sub_ecosystems": true,
-      "tomls": ["aztec-protocol.toml"]
-    },
-    "forum": "https://forum.aztec.network",
-    "developers": "aztec-protocol",
-    "governance": null,
-    "messari": {
-      "asset_key": null
-    }
-  },
-  {
-    "name": "neon-evm",
-    "update": true,
-    "updater": {
-      "index_now": true
-    },
-    "crawl": true,
-    "crawler": {
-      "index_now": true,
-      "include_sub_ecosystems": true,
-      "tomls": ["neon-labs.toml"]
-    },
-    "developers": null,
-    "governance": null,
-    "messari": {
-      "asset_key": null
-    }
-  },
-  {
-    "name": "the-graph",
-    "update": true,
-    "updater": {
-      "index_now": true
-    },
-    "crawl": true,
-    "crawler": {
-      "index_now": true,
-      "include_sub_ecosystems": true,
-      "tomls": ["the-graph.toml"]
-    },
-    "forum": "https://forum.thegraph.com/",
-    "developers": "the-graph",
-    "governance": null,
-    "messari": {
-      "asset_key": null
-    }
-  },
-  {
-    "name": "gnosis",
-    "update": true,
-    "updater": {
-      "index_now": true
-    },
-    "crawl": true,
-    "crawler": {
-      "index_now": true,
-      "include_sub_ecosystems": true,
-      "tomls": ["gnosis-chain.toml"]
-    },
-    "forum": "https://forum.gnosis.io",
-    "developers": "gnosis",
-    "governance": null,
-    "messari": {
-      "asset_key": null
-    }
-  },
-  {
-    "name": "arbitrum",
-    "update": true,
-    "updater": {
-      "index_now": true
-    },
-    "crawl": true,
-    "crawler": {
-      "index_now": true,
-      "include_sub_ecosystems": true,
-      "tomls": ["arbitrum.toml"]
-    },
-    "forum": "https://research.arbitrum.io",
-    "developers": "arbitrum",
-    "governance": {
-      "slug": "arbitrum",
-      "organization_id": "15233604-523c-46b0-a7cd-f2b41e93cd51",
-      "chain_id": "eip155:42161",
-      "governance_id": "eip155:42161:0xf07DeD9dC292157749B6Fd268E37DF6EA38395B9"
-    },
-    "messari": {
-      "asset_key": null
-    }
-  },
-  {
-    "name": "1inch",
-    "update": true,
-    "updater": {
-      "index_now": true
-    },
-    "crawl": true,
-    "crawler": {
-      "index_now": true,
-      "include_sub_ecosystems": true,
-      "tomls": ["1inch.toml"]
     },
     "forum": null,
     "developers": null,
@@ -207,7 +50,7 @@
     },
     "crawl": true,
     "crawler": {
-      "index_now": true,
+      "index_now": false,
       "include_sub_ecosystems": true,
       "tomls": ["compound.toml"]
     },
@@ -231,7 +74,7 @@
     },
     "crawl": true,
     "crawler": {
-      "index_now": true,
+      "index_now": false,
       "include_sub_ecosystems": true,
       "tomls": ["polkadot.toml"]
     },
@@ -251,7 +94,7 @@
     },
     "crawl": true,
     "crawler": {
-      "index_now": true,
+      "index_now": false,
       "include_sub_ecosystems": true,
       "tomls": ["proton.toml"]
     },
