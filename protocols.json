@@ -43,6 +43,25 @@
     }
   },
   {
+    "name": "flow",
+    "update": true,
+    "updater": {
+      "index_now": true
+    },
+    "crawl": true,
+    "crawler": {
+      "index_now": false,
+      "include_sub_ecosystems": true,
+      "tomls": ["flow.toml"]
+    },
+    "forum": "https://forum.onflow.org",
+    "developers": "flow",
+    "governance": null,
+    "messari": {
+      "asset_key": "flow"
+    }
+  },
+  {
     "name": "compound",
     "update": true,
     "updater": {
@@ -80,26 +99,6 @@
     },
     "forum": "https://forum.polkadot.network/",
     "developers": "polkadot",
-    "governance": null,
-    "messari": {
-      "asset_key": null
-    }
-  },
-
-  {
-    "name": "proton",
-    "update": true,
-    "updater": {
-      "index_now": true
-    },
-    "crawl": true,
-    "crawler": {
-      "index_now": false,
-      "include_sub_ecosystems": true,
-      "tomls": ["proton.toml"]
-    },
-    "forum": null,
-    "developers": null,
     "governance": null,
     "messari": {
       "asset_key": null
