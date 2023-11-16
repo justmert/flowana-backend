@@ -61,8 +61,7 @@ class GovernanceWidgets:
                                 email
                                 twitter
                                 ens
-                            }
-                            participation {
+								participations (governanceIds: [$governanceId]) {
                                 weightChanges(
                                     sort: $weightChangesSort
                                     interval: $weightChangesInterval
@@ -71,6 +70,7 @@ class GovernanceWidgets:
                                     timestamp
                                     newBalance
                                     prevBalance
+                                }
                                 }
                             }
                         }
@@ -117,21 +117,20 @@ class GovernanceWidgets:
                     "data": [],
                 }
 
-                for change in delegate["participation"]["weightChanges"]:
-                    # Append timestamp as X and newBalance as Y, normalized to K
-                    series_data["data"].append(
-                        {
-                            "timestamp": change["timestamp"],
-                            # rounding to 2 decimal places
-                            # "balance": self._scale_down(change["newBalance"]),
-                            "balance": change["newBalance"],
-                        }
-                    )
+                if len(delegate["account"]["participations"]) > 0:
+                    for change in delegate["account"]["participations"][0]["weightChanges"]:
+                        # Append timestamp as X and newBalance as Y, normalized to K
+                        series_data["data"].append(
+                            {
+                                "timestamp": change["timestamp"],
+                                # rounding to 2 decimal places
+                                # "balance": self._scale_down(change["newBalance"]),
+                                "balance": change["newBalance"],
+                            }
+                        )
 
                 # Append series data to chart data
                 chart_data["series"].append(series_data)
-
-            # all_intervals[interval.value] = chart_data
 
             self.collection_refs["governance"].document(
                 f"voting_power_chart_{interval.value.lower()}"
@@ -160,18 +159,17 @@ class GovernanceWidgets:
                 governance(id: $governanceId) {
                     delegates(sort: $sort, pagination: $pagination) {
                         account {
-							id
-							name
-							picture
-							address
-							bio
-							email
-							twitter
-							ens
-                        }
-                        participation {
+                            id
+                            name
+                            picture
+                            address
+                            bio
+                            email
+                            twitter
+                            ens
+                            participations (governanceIds: [$governanceId]) {
                             stats {
-								tokenBalance
+                                tokenBalance
                                 activeDelegationCount
                                 createdProposalsCount
                                 delegationCount
@@ -198,6 +196,8 @@ class GovernanceWidgets:
                                 }
                             }
                         }
+                        }
+
                     }
                 }
             }
@@ -218,9 +218,13 @@ class GovernanceWidgets:
                 continue
 
             delegates = result["data"]
+            if delegates is None:
+                continue
+            
             delegates = delegates.get("governance", None)
             if delegates is None:
                 continue
+            
             delegates = delegates.get("delegates", None)
             if delegates is None:
                 continue

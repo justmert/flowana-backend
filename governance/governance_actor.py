@@ -1,8 +1,10 @@
+from socket import timeout
 import requests
 import os
 import time
 import time
 import logging
+from requests.adapters import HTTPAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +72,7 @@ class GovernanceActor:
         response = self.session.post(
             self.governance_graphql_endpoint,
             json={"query": _query, "variables": variables},
+            timeout=120
         )
 
         if response.status_code in (301, 302):

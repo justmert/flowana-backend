@@ -123,27 +123,6 @@ class DelegateSortField(Enum):
                 "application/json": {
                     "example": [
                         {
-                            "participation": {
-                                "stats": {
-                                    "delegationCount": 162,
-                                    "votingPower": {
-                                        "in": 330.94,
-                                        "net": 330.94,
-                                        "out": 0,
-                                    },
-                                    "activeDelegationCount": 119,
-                                    "weight": {"total": 330.94, "owned": 0},
-                                    "votes": {"total": 47},
-                                    "voteCount": 47,
-                                    "delegations": {"total": 162},
-                                    "recentParticipationRate": {
-                                        "recentProposalCount": 10,
-                                        "recentVoteCount": 8,
-                                    },
-                                    "tokenBalance": 0,
-                                    "createdProposalsCount": 0,
-                                }
-                            },
                             "account": {
                                 "twitter": "",
                                 "address": "0xea6C3Db2e7FCA00Ea9d7211a03e83f568Fc13BF7",
@@ -154,6 +133,27 @@ class DelegateSortField(Enum):
                                 "ens": "",
                                 "picture": "https://static.tally.xyz/7b888910-fdfb-40af-84b1-09847c6054b2_400x400.jpg",
                                 "email": "",
+                                "participations": {
+                                    "stats": {
+                                        "delegationCount": 162,
+                                        "votingPower": {
+                                            "in": 330.94,
+                                            "net": 330.94,
+                                            "out": 0,
+                                        },
+                                        "activeDelegationCount": 119,
+                                        "weight": {"total": 330.94, "owned": 0},
+                                        "votes": {"total": 47},
+                                        "voteCount": 47,
+                                        "delegations": {"total": 162},
+                                        "recentParticipationRate": {
+                                            "recentProposalCount": 10,
+                                            "recentVoteCount": 8,
+                                        },
+                                        "tokenBalance": 0,
+                                        "createdProposalsCount": 0,
+                                    }
+                                },
                             },
                         }
                     ]
